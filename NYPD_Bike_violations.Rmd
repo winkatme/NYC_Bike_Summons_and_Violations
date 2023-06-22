@@ -1,0 +1,190 @@
+---
+title: "R Notebook"
+output:
+  html_document: 
+    toc: yes
+---
+
+
+```{r message=FALSE}
+library(knitr)
+library(fpp3)
+library(readxl)
+library(httr)
+```
+
+
+
+# Import and clean violations xlsx
+```{r}
+# import Code Violations xlsx
+# source:  https://dmv.ny.gov/e-data/violationcodes.xlsx
+# library(readxl)
+# library(httr)
+
+path = 'https://dmv.ny.gov/e-data/violationcodes.xlsx'
+
+GET(path, write_disk(tf <- tempfile(fileext = ".xlsx")))
+violations <- read_xlsx(tf, sheet=1)
+
+violations <- violations %>% 
+  rename('VIOLATION_CODE'='ADJ Code') %>% 
+  rename('LAW_CODE_ON_TICKET' ='Law Code printed on ticket') %>% 
+  select(1:4)
+
+# Check for VIOLATION_CODE duplicates: (1110A and 1151A)
+# This step proved to be necessary, as merging the two documents would duplicate the number of rows of any violation code in df to match any duplicates in violations.  This caused the # of rows of df to be over 200,000, when it should have remained the same (184770)
+
+violations %>% 
+  count(VIOLATION_CODE) %>% 
+  arrange(desc(n))
+
+# view descriptions for 1110A
+violations %>% 
+  filter(VIOLATION_CODE=='1110A')
+# DISOBEYED TRAFFIC DEVICE
+# DISOBEYED TRAFFIC DEVICE - PAVEMENT MARKINGS
+# we will change all to the second, longer description
+
+# view descriptions for 1151A
+violations %>% 
+  filter(VIOLATION_CODE=='1151A')
+# FAILED TO YIELD RIGHT-OF-WAY TO PEDESTRIAN IN CROSSWALK
+# FAILED TO YIELD RIGHT-OF-WAY TO PEDESTRIAN ON SIDEWALK
+# We will change all to read: 
+# FAILED TO YIELD RIGHT-OF-WAY TO PEDESTRIAN ON SIDEWALK OR CROSSWALK
+
+
+# Remove duplicates of violation codes
+# and manually merge descriptions for duplicate violation_Codes
+
+violations_no_dupes<-violations %>% 
+  distinct(VIOLATION_CODE, .keep_all=TRUE) %>% 
+  mutate(DESCRIPTION = case_when(VIOLATION_CODE=='1151A' ~ "FAILED TO YIELD RIGHT-OF-WAY TO PEDESTRIAN ON SIDEWALK OR CROSSWALK", TRUE ~ DESCRIPTION)) %>% 
+  mutate(DESCRIPTION = case_when(VIOLATION_CODE=='1110A' ~ "DISOBEYED TRAFFIC DEVICE - PAVEMENT MARKINGS", TRUE ~ DESCRIPTION))
+  
+# OPTIONAL double-check no dupes
+# violations_no_dupes %>%   
+#   count(VIOLATION_CODE) %>% 
+#   distinct(n)
+
+# OPTIONAL double-check that 1110A and 1151A read what they are supposed to
+# violations_no_dupes %>% 
+#   filter(VIOLATION_CODE=='1151A'|VIOLATION_CODE=='1110A')
+
+```
+
+
+# Import Year to Date NYPD Summons csv and merge with Violations
+```{r}
+# only run once
+
+# import NYPD Summons csv
+# source: https://data.cityofnewyork.us/Public-Safety/NYPD-B-Summons-Year-to-Date-/57p3-pdcj
+
+df <- read.csv('C:/Users/WinklemD/Downloads/NYPD_B_Summons__Year_to_Date_.csv')
+
+#View(df)
+# str(df)
+# Merge df and violation_no_dupes so that description column aligns with each violation code.  
+
+
+df<-df %>% 
+  left_join(x=df, y=violations_no_dupes, by='VIOLATION_CODE', all.x = TRUE) 
+
+# OPTIONAL - double check values for code 1110A
+# df %>% 
+#   filter(VIOLATION_CODE=='1110A')
+```
+
+
+# Clean dataset
+```{r}
+# Clean df
+# Remove unneeded columns.  update column types as needed
+# CHG_LAW_CD & LAW_TITLE- can be removed.  Just determines if it was ny state or local nyc law
+# JURIS_CD - can be removed.  no info in metadata.  only one distinct value.
+# LAW_CODE_ON_TICKET - can probably be removed.  most likely redundant with VIOLATION_CODE
+
+#RPT_OWNING_CMD - precinct where reported. change this from integer to factor, since it acts similar to a zip code.
+
+df<-df %>% 
+  mutate(VIOLATION_CODE = as.factor(VIOLATION_CODE)) %>%
+  mutate(VEH_CATEGORY = as.factor(VEH_CATEGORY)) %>% 
+  mutate(CITY_NM = as.factor(CITY_NM)) %>% 
+  mutate(RPT_OWNING_CMD = as.factor(RPT_OWNING_CMD)) %>% 
+  mutate(VIOLATION_DATE = mdy(VIOLATION_DATE)+hms(VIOLATION_TIME)) %>% 
+  select(-c(CHG_LAW_CD,LAW_TITLE, JURIS_CD, LAW_CODE_ON_TICKET, VIOLATION_TIME)) %>% 
+  glimpse()
+
+
+#glimpse(df)
+View(df)
+
+# attempt to find missing dates
+# source: https://stackoverflow.com/questions/50724137/find-missing-days-in-r-date-sequence
+date_range <- seq(min(date(df$VIOLATION_DATE)), max(date(df$VIOLATION_DATE)), by = 1) 
+
+date_range[!date_range %in% date(df$VIOLATION_DATE)] 
+
+length(unique(date(df$VIOLATION_DATE)))
+
+max(date(df$VIOLATION_DATE))-min(date(df$VIOLATION_DATE))
+
+
+```
+
+# To do: Merge with and clean historic data
+```{r}
+# merge with and clean historic data
+# https://data.cityofnewyork.us/Public-Safety/NYPD-B-Summons-Historic-/bme5-7ty4
+```
+
+
+# to do: find and add total rider data
+```{r}
+#https://data.cityofnewyork.us/Transportation/Bicycle-Counts/uczf-rk3c
+
+df_riders <- read.csv('C:/Users/WinklemD/Downloads/Bicycle_Counts.csv')
+
+df_riders %>% 
+  mutate(date = mdy_hms(date))
+
+head(df_riders)
+str(df_riders)
+
+```
+
+
+
+# EDA
+```{r}
+# EDA
+
+# distinct vehicle categories (8 total)
+df %>% 
+  distinct(VEH_CATEGORY)
+
+
+# let's choose bike and ebike and e-scooter
+df_bike <- df %>% 
+  filter(VEH_CATEGORY=='BIKE' | VEH_CATEGORY=='EBIKE' | VEH_CATEGORY=='ESCOOTER')
+
+# how many separate violations, and their counts? (ans: 82)
+df_bike %>% 
+  group_by(VIOLATION_CODE) %>% 
+  count %>% 
+  arrange(desc(n)) %>% 
+  ungroup() %>% 
+  head()
+
+
+
+# date range
+#ts_bike<-df_bike %>% 
+#  mutate(VIOLATION_DATE = mdy(VIOLATION_DATE)) %>% 
+#  as_tsibble(key = EVNT_KEY)
+
+#str(ts_bike)
+```
+
