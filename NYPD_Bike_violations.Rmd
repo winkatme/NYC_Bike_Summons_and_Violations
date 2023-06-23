@@ -158,14 +158,25 @@ df_historic<-df_historic %>%
   left_join(x=df_historic, y=violations_no_dupes, by='VIOLATION_CODE') %>% 
   glimpse()
 
-View(df_historic)
+str(df_historic)
 
-max(date(df_historic$VIOLATION_DATE))
+length(unique(df_historic$VIOLATION_CODE))
 ```
 
 ## Merge historic data with current year data
 ```{r}
+df_historic %>% 
+  left_join(x=df_historic, y=df, by='VIOLATION_DATE') %>% 
+  glimpse()
 
+df_all<-merge(df_historic, df, all.x = TRUE, all.y = TRUE)
+
+# for whatever reason, violation_code was not saved as a factor when merged
+df_all<-df_all %>% 
+  mutate(VIOLATION_CODE = as.factor(VIOLATION_CODE))
+
+str(df_all)
+length(unique(df_all$VIOLATION_CODE))
 ```
 
 
