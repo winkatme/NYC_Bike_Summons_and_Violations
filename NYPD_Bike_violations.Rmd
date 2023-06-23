@@ -115,6 +115,7 @@ df<-df %>%
   mutate(RPT_OWNING_CMD = as.factor(RPT_OWNING_CMD)) %>% 
   mutate(VIOLATION_DATE = mdy(VIOLATION_DATE)+hms(VIOLATION_TIME)) %>% 
   select(-c(CHG_LAW_CD,LAW_TITLE, JURIS_CD, LAW_CODE_ON_TICKET, VIOLATION_TIME)) %>% 
+  rename('location' = 'Location.Point') %>% 
   glimpse()
 
 
@@ -138,6 +139,23 @@ max(date(df$VIOLATION_DATE))-min(date(df$VIOLATION_DATE))
 ```{r}
 # merge with and clean historic data
 # https://data.cityofnewyork.us/Public-Safety/NYPD-B-Summons-Historic-/bme5-7ty4
+
+path = 'https://www.dropbox.com/s/9pikbkygm7ywq2h/NYPD_B_Summons__Historic_.csv?dl=1'
+df_historic <- read.csv(path)
+
+df_historic %>% 
+  mutate(VIOLATION_CODE = as.factor(VIOLATION_CODE)) %>%
+  mutate(VEH_CATEGORY = as.factor(VEH_CATEGORY)) %>% 
+  mutate(CITY_NM = as.factor(CITY_NM)) %>% 
+  mutate(RPT_OWNING_CMD = as.factor(RPT_OWNING_CMD)) %>% 
+  mutate(VIOLATION_DATE = mdy(VIOLATION_DATE)+hms(VIOLATION_TIME)) %>% 
+  select(-c(CHG_LAW_CD, JURIS_CD, VIOLATION_TIME)) %>% 
+  glimpse()
+
+df_historic<-df_historic %>% 
+  left_join(x=df_historic, y=violations_no_dupes, by='VIOLATION_CODE') 
+
+str(df_historic)
 ```
 
 
