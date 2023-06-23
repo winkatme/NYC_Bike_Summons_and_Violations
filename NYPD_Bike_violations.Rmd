@@ -82,15 +82,15 @@ violations_no_dupes<-violations %>%
 # import NYPD Summons csv
 # source: https://data.cityofnewyork.us/Public-Safety/NYPD-B-Summons-Year-to-Date-/57p3-pdcj
 
-df <- read.csv('C:/Users/WinklemD/Downloads/NYPD_B_Summons__Year_to_Date_.csv')
+df <- read.csv('NYPD_B_Summons__Year_to_Date_.csv')
 
 #View(df)
-# str(df)
-# Merge df and violation_no_dupes so that description column aligns with each violation code.  
+str(df)
+## Merge df and violation_no_dupes so that description column aligns with each violation code.  
 
 
 df<-df %>% 
-  left_join(x=df, y=violations_no_dupes, by='VIOLATION_CODE', all.x = TRUE) 
+  left_join(x=df, y=violations_no_dupes, by='VIOLATION_CODE') 
 
 # OPTIONAL - double check values for code 1110A
 # df %>% 
