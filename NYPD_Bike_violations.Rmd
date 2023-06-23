@@ -119,7 +119,7 @@ df<-df %>%
 
 
 #glimpse(df)
-View(df)
+#View(df)
 
 # attempt to find missing dates
 # source: https://stackoverflow.com/questions/50724137/find-missing-days-in-r-date-sequence
@@ -145,13 +145,15 @@ max(date(df$VIOLATION_DATE))-min(date(df$VIOLATION_DATE))
 ```{r}
 #https://data.cityofnewyork.us/Transportation/Bicycle-Counts/uczf-rk3c
 
-df_riders <- read.csv('C:/Users/WinklemD/Downloads/Bicycle_Counts.csv')
+path2 = 'https://www.dropbox.com/s/oaklaldm8td9wem/Bicycle_Counts.csv?dl=1'
+df_counts <- read.csv(path2)
 
-df_riders %>% 
+
+df_counts<-df_counts %>% 
   mutate(date = mdy_hms(date))
 
-head(df_riders)
-str(df_riders)
+head(df_counts)
+str(df_counts)
 
 ```
 
