@@ -187,7 +187,7 @@ length(unique(df_all$VIOLATION_CODE))
 
 path2 = 'https://www.dropbox.com/s/oaklaldm8td9wem/Bicycle_Counts.csv?dl=1'
 df_counts <- read.csv(path2)
-
+ 
 
 df_counts<-df_counts %>% 
   mutate(date = mdy_hms(date))
