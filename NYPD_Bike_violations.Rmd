@@ -197,6 +197,17 @@ df_counts<-df_counts %>%
 head(df_counts)
 str(df_counts)
 
+# graph per-day counts
+df_counts %>% 
+  mutate(date = date(date)) %>% 
+  group_by(date) %>% 
+  summarize(per_day_counts = sum(counts)) %>% 
+  #View()
+  as_tsibble(index=date) %>% 
+  autoplot()
+
+date(df_counts$date[1])
+
 
 ```
 
