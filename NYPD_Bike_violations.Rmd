@@ -177,6 +177,8 @@ df_all<-df_all %>%
 
 str(df_all)
 length(unique(df_all$VIOLATION_CODE))
+
+# to do: sum all violations per day and plot
 ```
 
 
@@ -194,6 +196,7 @@ df_counts<-df_counts %>%
 
 head(df_counts)
 str(df_counts)
+
 
 ```
 
