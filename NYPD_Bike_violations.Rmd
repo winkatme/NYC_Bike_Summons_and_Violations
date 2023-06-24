@@ -15,7 +15,10 @@ library(httr)
 
 
 # Import, Merge, and Clean Data
-## Import and clean violations xlsx
+
+## violationscodes.xlsx
+
+### Import violations xlsx
 ```{r}
 # import Code Violations xlsx
 # source:  https://dmv.ny.gov/e-data/violationcodes.xlsx
@@ -32,7 +35,15 @@ violations <- violations %>%
   select(c('VIOLATION_CODE', 'DESCRIPTION')) %>% 
   glimpse()
 
-# Check for VIOLATION_CODE duplicates: (1110A and 1151A)
+
+```
+
+
+### Clean violations codes
+```{r}
+# Remove duplicates
+
+# IOLATION_CODE duplicates found: (1110A and 1151A)
 # This step proved to be necessary, as merging the two documents would duplicate the number of rows of any violation code in df to match any duplicates in violations.  This caused the # of rows of df to be over 200,000, when it should have remained the same (184770)
 
 violations %>% 
@@ -76,8 +87,9 @@ violations_no_dupes<-violations %>%
 dim(violations_no_dupes)
 ```
 
+## Year to date NYPD Summons csv
 
-## Import Year to Date NYPD Summons csv and merge with Violations
+### Import Year to Date NYPD Summons csv  
 ```{r}
 # only run once
 
@@ -88,9 +100,11 @@ df <- read.csv('NYPD_B_Summons__Year_to_Date_.csv')
 
 #View(df)
 str(df)
-## Merge df and violation_no_dupes so that description column aligns with each violation code.  
+```
 
 
+### merge with Violations
+```{r}
 df<-df %>% 
   left_join(x=df, y=violations_no_dupes, by='VIOLATION_CODE') 
 
@@ -100,15 +114,15 @@ df<-df %>%
 ```
 
 
-## Clean dataset
+
+### Clean merged data
 ```{r}
 # Clean df
 # Remove unneeded columns.  update column types as needed
 # CHG_LAW_CD & LAW_TITLE- can be removed.  Just determines if it was ny state or local nyc law
 # JURIS_CD - can be removed.  no info in metadata.  only one distinct value.
 # LAW_CODE_ON_TICKET - can probably be removed.  most likely redundant with VIOLATION_CODE
-
-#RPT_OWNING_CMD - precinct where reported. change this from integer to factor, since it acts similar to a zip code.
+# RPT_OWNING_CMD - precinct where reported. change this from integer to factor, since it acts similar to a zip code.
 
 df<-df %>% 
   mutate(VIOLATION_CODE = as.factor(VIOLATION_CODE)) %>%
@@ -137,14 +151,20 @@ max(date(df$VIOLATION_DATE))-min(date(df$VIOLATION_DATE))
 
 ```
 
-## Import and clean historic data
+## Historic summons data
+
+### Import historic data
 ```{r}
-# merge with and clean historic data
 # https://data.cityofnewyork.us/Public-Safety/NYPD-B-Summons-Historic-/bme5-7ty4
 
 path = 'https://www.dropbox.com/s/9pikbkygm7ywq2h/NYPD_B_Summons__Historic_.csv?dl=1'
 df_historic <- read.csv(path)
 
+
+```
+
+### Clean historic data
+```{r}
 df_historic<-df_historic %>% 
   mutate(VIOLATION_CODE = as.factor(VIOLATION_CODE)) %>%
   mutate(VEH_CATEGORY = as.factor(VEH_CATEGORY)) %>% 
@@ -161,7 +181,10 @@ df_historic<-df_historic %>%
 str(df_historic)
 
 length(unique(df_historic$VIOLATION_CODE))
+
 ```
+
+
 
 ## Merge historic data with current year data
 ```{r}
@@ -183,21 +206,26 @@ length(unique(df_all$VIOLATION_CODE))
 ```
 
 
+## Rider Count Data
 
-## to do: find and add total rider data
+### Import total rider counts
 ```{r}
 #https://data.cityofnewyork.us/Transportation/Bicycle-Counts/uczf-rk3c
 
 path2 = 'https://www.dropbox.com/s/oaklaldm8td9wem/Bicycle_Counts.csv?dl=1'
 df_counts <- read.csv(path2)
  
-
 df_counts<-df_counts %>% 
   mutate(date = mdy_hms(date))
 
 head(df_counts)
 str(df_counts)
 
+```
+
+
+### create daily and weekly rider columns
+```{r}
 # graph per-day counts
 df_counts %>% 
   mutate(date = date(date)) %>% 
@@ -218,15 +246,19 @@ df_counts %>%
   as_tsibble(index=date) %>% 
   autoplot()
 
-# create new column of weekly totals
-df_counts %>% 
+# create new columns for daily and weekly totals
+df_counts<-df_counts %>% 
+  group_by(date(date)) %>% 
+  mutate(day_total = sum(counts)) %>% 
+  ungroup %>%
   group_by(yearweek(date)) %>% 
   mutate(week_sum = sum(counts)) %>% 
   ungroup %>% 
-  arrange(date)
-
+  arrange(date) %>% 
+  select(-c('date(date)', 'yearweek(date)'))
 
 ```
+
 
 ## Merge total rider data with df_all
 
