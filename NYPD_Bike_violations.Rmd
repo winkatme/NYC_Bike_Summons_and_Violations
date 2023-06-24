@@ -32,8 +32,7 @@ violations <- read_xlsx(tf, sheet=1)
 
 violations <- violations %>% 
   rename('VIOLATION_CODE'='ADJ Code') %>% 
-  select(c('VIOLATION_CODE', 'DESCRIPTION')) %>% 
-  glimpse()
+  select(c('VIOLATION_CODE', 'DESCRIPTION'))
 
 
 ```
@@ -109,7 +108,7 @@ df<-df %>%
   left_join(x=df, y=violations_no_dupes, by='VIOLATION_CODE') 
 
 # OPTIONAL - double check values for code 1110A
-# df %>% 
+#df %>% 
 #   filter(VIOLATION_CODE=='1110A')
 ```
 
@@ -131,8 +130,7 @@ df<-df %>%
   mutate(RPT_OWNING_CMD = as.factor(RPT_OWNING_CMD)) %>% 
   mutate(VIOLATION_DATE = mdy(VIOLATION_DATE)+hms(VIOLATION_TIME)) %>% 
   select(-c(CHG_LAW_CD, JURIS_CD, VIOLATION_TIME)) %>% 
-  rename('location' = 'Location.Point') %>% 
-  glimpse()
+  rename('location' = 'Location.Point')
 
 
 #glimpse(df)
@@ -171,12 +169,10 @@ df_historic<-df_historic %>%
   mutate(CITY_NM = as.factor(CITY_NM)) %>% 
   mutate(RPT_OWNING_CMD = as.factor(RPT_OWNING_CMD)) %>% 
   mutate(VIOLATION_DATE = mdy(VIOLATION_DATE)+hms(VIOLATION_TIME)) %>% 
-  select(-c(CHG_LAW_CD, JURIS_CD, VIOLATION_TIME)) %>% 
-  glimpse()
+  select(-c(CHG_LAW_CD, JURIS_CD, VIOLATION_TIME))
 
 df_historic<-df_historic %>% 
-  left_join(x=df_historic, y=violations_no_dupes, by='VIOLATION_CODE') %>% 
-  glimpse()
+  left_join(x=df_historic, y=violations_no_dupes, by='VIOLATION_CODE')
 
 str(df_historic)
 
@@ -189,8 +185,7 @@ length(unique(df_historic$VIOLATION_CODE))
 ## Merge historic data with current year data
 ```{r}
 df_historic %>% 
-  left_join(x=df_historic, y=df, by='VIOLATION_DATE') %>% 
-  glimpse()
+  left_join(x=df_historic, y=df, by='VIOLATION_DATE')
 
 df_all<-merge(df_historic, df, all.x = TRUE, all.y = TRUE)
 
@@ -241,8 +236,8 @@ date(df_counts$date[1])
 df_counts %>% 
   mutate(date = yearweek(date)) %>% 
   group_by(date) %>% 
-  summarize(per_day_counts = sum(counts)) %>% 
-  View()
+  summarize(per_week_counts = sum(counts)) %>% 
+  #View()
   as_tsibble(index=date) %>% 
   autoplot()
 
