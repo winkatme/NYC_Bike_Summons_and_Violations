@@ -178,6 +178,7 @@ df_all<-df_all %>%
 str(df_all)
 length(unique(df_all$VIOLATION_CODE))
 
+
 # to do: sum all violations per day and plot
 ```
 
@@ -208,9 +209,33 @@ df_counts %>%
 
 date(df_counts$date[1])
 
+# graph per-week counts
+df_counts %>% 
+  mutate(date = yearweek(date)) %>% 
+  group_by(date) %>% 
+  summarize(per_day_counts = sum(counts)) %>% 
+  View()
+  as_tsibble(index=date) %>% 
+  autoplot()
+
+# create new column of weekly totals
+df_counts %>% 
+  group_by(yearweek(date)) %>% 
+  mutate(week_sum = sum(counts)) %>% 
+  ungroup %>% 
+  arrange(date)
+
 
 ```
 
+## Merge total rider data with df_all
+
+```{r}
+df_all %>% 
+  left_join(x=df, y=violations_no_dupes, by='VIOLATION_CODE') 
+
+
+```
 
 
 # EDA
