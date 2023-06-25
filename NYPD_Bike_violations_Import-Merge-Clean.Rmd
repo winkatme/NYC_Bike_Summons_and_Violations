@@ -286,7 +286,7 @@ df_bike_summons %>%
   distinct(VIOLATION_CODE)
 
 # There were 4 distinct Violation codes with no description:
-# 37524A - since 37524 is UNLAWFUL USE OF TV RECEIVING SET and 37524AB is OPER BICYCLE WITH MORE 1 EARPHONE, I will take the liberty to change all of these to 37524AB.
+# 37524A (NOTE: after adjusting this value, this is the 5th most common violation code) - since 37524 is UNLAWFUL USE OF TV RECEIVING SET and 37524AB is OPER BICYCLE WITH MORE 1 EARPHONE, I will take the liberty to change all of these to 37524AB.
 # 4014 does not exist, but 4014B is COMMERCIAL VEHICLE ON PARKWAY- NYC.  Change all to 4014B
 # 4021 is associated with 4 different violation codes:  4021A - NO LICENSE PLATE OR SINGLE LICENSE PLATE, 4021B1 - DIRTY PLATE OR PLATE COVERED BY GLASS OR PLASTIC, 4021B2 - PLATE KNOWINGLY COVERED WITH INTENT TO OBSCURE, 4021B3 - PLATE OBSCURED BY VEHICLE OR ANYTHING CARRIED THERON.  Since these are all related to license plates, I will change these all to 4021A
 # 22653 - this was closest to two values, 22651 - EQUIPMENT VIOLATION LIMITED USE VEHICLE and 22651M - MISCELLANEOUS EQUIPMENT VIOLATION - LIMITED USE MOTORCYCLE.  Since all 18 of the 22653 violations were either e-bike or escooter, I will change all of these to 22651M
@@ -322,9 +322,9 @@ df_bike_summons %>%
 # optional: write to csv
 # file is approx 25mb. That exceeds limit for uploading via browser, but it is able to upload to git via push
 #install.packages("glue")
-#todays_date <- Sys.Date()
-#path_name<-glue('df_bike_summons_{todays_date}.csv')
-#write.csv(df_bike_summons, path_name, row.names=FALSE)
+todays_date <- Sys.Date()
+path_name<-glue('df_bike_summons_{todays_date}.csv')
+write.csv(df_bike_summons, path_name, row.names=FALSE)
 ```
 
 

@@ -28,14 +28,6 @@ df<-df %>%
   
 head(df)
 str(df)
-
-
-
-
-
-
-
-
 ```
 
 
@@ -136,7 +128,7 @@ df %>%
 df %>% 
   distinct(VIOLATION_CODE)
   
-# ans: 187
+# ans: 184
 ```
 ### How many total violations were handed out to cyclists?
 ```{r}
@@ -145,8 +137,6 @@ length(df$VIOLATION_CODE)
 # there were zero nas.  
 #sum(is.na(df$VIOLATION_CODE))
 
-df %>% 
-  filter(is.na(DESCRIPTION))
 
 # ans: 122620
 ```
