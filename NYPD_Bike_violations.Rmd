@@ -279,7 +279,8 @@ library(glue)
 
 todays_date <- Sys.Date()
 path_name<-glue('/Users/dovwinkleman/Desktop/df_bike_summons_{todays_date}.csv')
-write.csv(df_bike_summons, path_name, row.names=FALSE)
+
+write.csv(df_bike_summons, 'df_bike_summons_2023-06-25.csv', row.names=FALSE)
 
 
 
@@ -322,9 +323,6 @@ df %>%
   distinct(VEH_CATEGORY)
 
 
-# let's choose bike and ebike and e-scooter
-df_bike <- df %>% 
-  filter(VEH_CATEGORY=='BIKE' | VEH_CATEGORY=='EBIKE' | VEH_CATEGORY=='ESCOOTER')
 
 # how many separate violations, and their counts? (ans: 82)
 df_bike %>% 
