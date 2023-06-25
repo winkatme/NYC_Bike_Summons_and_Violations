@@ -279,7 +279,7 @@ head(df_bike_summons)
 ```
 ### Clean n/a values in description
 ```{r}
-# check Violation codes for description na's
+# check to see which Violation codes correspond to empty description cells
 
 df_bike_summons %>% 
   filter(is.na(DESCRIPTION)) %>% 
