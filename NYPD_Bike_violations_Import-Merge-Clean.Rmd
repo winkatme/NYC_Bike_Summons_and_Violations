@@ -11,6 +11,7 @@ library(knitr)
 library(fpp3)
 library(readxl)
 library(httr)
+library(glue)
 ```
 
 
@@ -274,20 +275,26 @@ df_bike_summons <- df_merged %>%
   arrange(VIOLATION_DATE)
 
 # optional: write to csv
-install.packages("glue")
-library(glue)
-
+# file is approx 25mb. That exceeds limit for uploading via browser, but it is able to upload to git via push
+#install.packages("glue")
 todays_date <- Sys.Date()
-path_name<-glue('/Users/dovwinkleman/Desktop/df_bike_summons_{todays_date}.csv')
+path_name<-glue('df_bike_summons_{todays_date}.csv')
+write.csv(df_bike_summons, path_name, row.names=FALSE)
 
-write.csv(df_bike_summons, 'df_bike_summons_2023-06-25.csv', row.names=FALSE)
-
-
+path_name
 
 
 
 head(df_bike_summons)
 
+df_daily_total_summons <-df_bike_summons %>% 
+  group_by(date(VIOLATION_DATE)) %>% 
+  summarize(daily_total = sum(n()))
+
+
+df_daily_total_summons %>% 
+  as_tsibble() %>% 
+  autoplot()
 
 ?as.irts
 
