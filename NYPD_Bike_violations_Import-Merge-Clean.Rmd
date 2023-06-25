@@ -273,6 +273,8 @@ df_bike_summons <- df_merged %>%
   mutate(date=date(VIOLATION_DATE)) %>% 
   left_join(y=df_counts, by='date', multiple='first') %>% 
   select(-c('counts', 'date')) %>% 
+  rename('daily_total_cyclists' = 'day_total') %>% 
+  rename('weekly_total_cyclists' = 'week_total') %>% 
   arrange(VIOLATION_DATE)
 
 head(df_bike_summons)
