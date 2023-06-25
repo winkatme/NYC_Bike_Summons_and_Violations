@@ -16,8 +16,7 @@ library(httr)
 
 # Import, Merge, and Clean Data
 
-## violationscodes.xlsx
-
+## Violation Codes data
 ### Import violations xlsx
 ```{r}
 # import Code Violations xlsx
@@ -86,8 +85,8 @@ violations_no_dupes<-violations %>%
 dim(violations_no_dupes)
 ```
 
-## Year to date NYPD Summons csv
 
+## NYPD Summons data
 ### Import Year to Date NYPD Summons csv  
 ```{r}
 # only run once
@@ -97,31 +96,12 @@ dim(violations_no_dupes)
 
 df <- read.csv('NYPD_B_Summons__Year_to_Date_.csv')
 
-#View(df)
-str(df)
-```
-
-
-### merge with Violations
-```{r}
-df<-df %>% 
-  left_join(x=df, y=violations_no_dupes, by='VIOLATION_CODE') 
-
-# OPTIONAL - double check values for code 1110A
-#df %>% 
-#   filter(VIOLATION_CODE=='1110A')
-```
-
-
-
-### Clean merged data
-```{r}
-# Clean df
 # Remove unneeded columns.  update column types as needed
-# CHG_LAW_CD & LAW_TITLE- can be removed.  Just determines if it was ny state or local nyc law
+# CHG_LAW_CD - can be removed.  Just determines if it was ny state or local nyc law
 # JURIS_CD - can be removed.  no info in metadata.  only one distinct value.
-# LAW_CODE_ON_TICKET - can probably be removed.  most likely redundant with VIOLATION_CODE
-# RPT_OWNING_CMD - precinct where reported. change this from integer to factor, since it acts similar to a zip code.
+# VIOLATION_TIME - redundant
+### to delete ### LAW_CODE_ON_TICKET - can probably be removed.  most likely redundant with VIOLATION_CODE
+### to delete ### RPT_OWNING_CMD - precinct where reported. change this from integer to factor, since it acts similar to a zip code.
 
 df<-df %>% 
   mutate(VIOLATION_CODE = as.factor(VIOLATION_CODE)) %>%
@@ -129,77 +109,92 @@ df<-df %>%
   mutate(CITY_NM = as.factor(CITY_NM)) %>% 
   mutate(RPT_OWNING_CMD = as.factor(RPT_OWNING_CMD)) %>% 
   mutate(VIOLATION_DATE = mdy(VIOLATION_DATE)+hms(VIOLATION_TIME)) %>% 
-  select(-c(CHG_LAW_CD, JURIS_CD, VIOLATION_TIME)) %>% 
-  rename('location' = 'Location.Point')
+  select(-c(CHG_LAW_CD, VIOLATION_TIME, JURIS_CD)) %>% 
+  rename('Location' = 'Location.Point')
 
-
-#glimpse(df)
 #View(df)
-
-# attempt to find missing dates
-# source: https://stackoverflow.com/questions/50724137/find-missing-days-in-r-date-sequence
-date_range <- seq(min(date(df$VIOLATION_DATE)), max(date(df$VIOLATION_DATE)), by = 1) 
-
-date_range[!date_range %in% date(df$VIOLATION_DATE)] 
-
-length(unique(date(df$VIOLATION_DATE)))
-
-max(date(df$VIOLATION_DATE))-min(date(df$VIOLATION_DATE))
-
-
+str(df)
 ```
 
-## Historic summons data
-
-### Import historic data
+### Import historic summons data
 ```{r}
 # https://data.cityofnewyork.us/Public-Safety/NYPD-B-Summons-Historic-/bme5-7ty4
 
 path = 'https://www.dropbox.com/s/9pikbkygm7ywq2h/NYPD_B_Summons__Historic_.csv?dl=1'
 df_historic <- read.csv(path)
 
-
-```
-
-### Clean historic data
-```{r}
 df_historic<-df_historic %>% 
   mutate(VIOLATION_CODE = as.factor(VIOLATION_CODE)) %>%
   mutate(VEH_CATEGORY = as.factor(VEH_CATEGORY)) %>% 
   mutate(CITY_NM = as.factor(CITY_NM)) %>% 
   mutate(RPT_OWNING_CMD = as.factor(RPT_OWNING_CMD)) %>% 
   mutate(VIOLATION_DATE = mdy(VIOLATION_DATE)+hms(VIOLATION_TIME)) %>% 
-  select(-c(CHG_LAW_CD, JURIS_CD, VIOLATION_TIME))
-
-df_historic<-df_historic %>% 
-  left_join(x=df_historic, y=violations_no_dupes, by='VIOLATION_CODE')
+  select(-c(CHG_LAW_CD, VIOLATION_TIME, JURIS_CD))  %>% 
+  rename('Location' = 'location')
 
 str(df_historic)
-
-length(unique(df_historic$VIOLATION_CODE))
-
 ```
 
 
-
-## Merge historic data with current year data
+### Merge historic data with year to date data
 ```{r}
-df_historic %>% 
-  left_join(x=df_historic, y=df, by='VIOLATION_DATE')
-
-df_all<-merge(df_historic, df, all.x = TRUE, all.y = TRUE)
+df_merged<-merge(df_historic, df, all.x = TRUE, all.y = TRUE)
 
 # for whatever reason, violation_code was not saved as a factor when merged
-df_all<-df_all %>% 
+df_merged<-df_merged %>% 
   mutate(VIOLATION_CODE = as.factor(VIOLATION_CODE))
 
-str(df_all)
-length(unique(df_all$VIOLATION_CODE))
+str(df_merged)
+#length(unique(df_merged$VIOLATION_CODE))
 
-
-# to do: sum all violations per day and plot
 ```
 
+### Merge Summons data with with Violations data by violation code
+```{r}
+# matches violation description with violation code
+
+df_merged<-df_merged %>% 
+  left_join(x=df_merged, y=violations_no_dupes, by='VIOLATION_CODE') 
+
+df_merged<-df_merged %>% 
+  mutate(VIOLATION_CODE = as.factor(VIOLATION_CODE)) 
+  
+
+# OPTIONAL - double check values for code 1110A
+#df %>% 
+#   filter(VIOLATION_CODE=='1110A')
+
+str(df_merged)
+tail(df_merged)
+```
+
+
+
+### Clean merged data
+```{r}
+# convert to tsibble
+
+
+
+
+
+# attempt to find missing dates
+
+# To Double Check: possibly missing dec 31 2018 and dec 31 2019.  
+
+# source: https://stackoverflow.com/questions/50724137/find-missing-days-in-r-date-sequence
+date_range <- seq(min(date(df_merged$VIOLATION_DATE)), max(date(df_merged$VIOLATION_DATE)), by = 1) 
+
+date_range[!date_range %in% date(df_merged$VIOLATION_DATE)] 
+
+length(unique(date(df_merged$VIOLATION_DATE)))
+
+max(date(df_merged$VIOLATION_DATE))-min(date(df_merged$VIOLATION_DATE))
+
+
+
+
+```
 
 ## Rider Count Data
 
@@ -247,19 +242,35 @@ df_counts<-df_counts %>%
   mutate(day_total = sum(counts)) %>% 
   ungroup %>%
   group_by(yearweek(date)) %>% 
-  mutate(week_sum = sum(counts)) %>% 
+  mutate(week_total = sum(counts)) %>% 
   ungroup %>% 
   arrange(date) %>% 
   select(-c('date(date)', 'yearweek(date)'))
 
+str(df_counts)
+
 ```
 
 
-## Merge total rider data with df_all
+## Merge total rider data with df_merged
 
 ```{r}
-df_all %>% 
-  left_join(x=df, y=violations_no_dupes, by='VIOLATION_CODE') 
+str(df_counts)
+
+# convert to tsibble before merging?
+
+
+ts_merged<-df_merged %>% 
+  as_tsibble(index=VIOLATION_DATE, key = EVNT_KEY)
+
+
+str(ts_merged)
+
+ts_merged %>% 
+  autoplot(CITY_NM)
+
+df_merged %>% 
+  left_join(x=df_merged, y=df_counts, by='VIOLATION_DATE') 
 
 
 ```
