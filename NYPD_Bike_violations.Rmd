@@ -196,8 +196,8 @@ max(date(df_merged$VIOLATION_DATE))-min(date(df_merged$VIOLATION_DATE))
 
 ```
 
-## Rider Count Data
 
+## Count Data
 ### Import total rider counts
 ```{r}
 #https://data.cityofnewyork.us/Transportation/Bicycle-Counts/uczf-rk3c
@@ -252,26 +252,29 @@ str(df_counts)
 ```
 
 
-## Merge total rider data with df_merged
 
+## Merge summons data with total rider data
 ```{r}
 str(df_counts)
-
-# convert to tsibble before merging?
-
-
-ts_merged<-df_merged %>% 
-  as_tsibble(index=VIOLATION_DATE, key = EVNT_KEY)
+str(df_merged)
 
 
-str(ts_merged)
+# create 'date' column of just ymd (no hms) in df_counts to merge on
+df_counts<-df_counts %>% 
+  mutate(date=date(date)) %>% 
+  select(-c(countid, id, status))
+  
 
-ts_merged %>% 
-  autoplot(CITY_NM)
+# match date column with equal one in df_merged.  Just choose bikes, as the count data is just for bikes.  Also makes merging go quicker.
+df_bike_summons <- df_merged %>%
+  filter(VEH_CATEGORY=='BIKE' | VEH_CATEGORY=='EBIKE' | VEH_CATEGORY=='ESCOOTER') %>% 
+  mutate(date=date(VIOLATION_DATE)) %>% 
+  left_join(y=df_counts, by='date', multiple='first') %>% 
+  select(-c('counts', 'date')) %>% 
+  arrange(VIOLATION_DATE)
 
-df_merged %>% 
-  left_join(x=df_merged, y=df_counts, by='VIOLATION_DATE') 
 
+str(df_bike_summons )
 
 ```
 
