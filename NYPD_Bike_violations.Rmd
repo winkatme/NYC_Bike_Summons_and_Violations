@@ -168,8 +168,6 @@ str(df_merged)
 tail(df_merged)
 ```
 
-
-
 ### Clean merged data
 ```{r}
 # convert to tsibble
@@ -197,6 +195,7 @@ max(date(df_merged$VIOLATION_DATE))-min(date(df_merged$VIOLATION_DATE))
 ```
 
 
+
 ## Count Data
 ### Import total rider counts
 ```{r}
@@ -214,7 +213,7 @@ str(df_counts)
 ```
 
 
-### create daily and weekly rider columns
+### Create daily and weekly rider total columns
 ```{r}
 # graph per-day counts
 df_counts %>% 
@@ -253,6 +252,7 @@ str(df_counts)
 
 
 
+
 ## Merge summons data with total rider data
 ```{r}
 str(df_counts)
@@ -273,8 +273,42 @@ df_bike_summons <- df_merged %>%
   select(-c('counts', 'date')) %>% 
   arrange(VIOLATION_DATE)
 
+# optional: write to csv
+install.packages("glue")
+library(glue)
 
-str(df_bike_summons )
+todays_date <- Sys.Date()
+path_name<-glue('/Users/dovwinkleman/Desktop/df_bike_summons_{todays_date}.csv')
+write.csv(df_bike_summons, path_name, row.names=FALSE)
+
+
+
+
+
+head(df_bike_summons)
+
+
+?as.irts
+
+# to ts?
+
+?as_tsibble
+
+ts_summons <- df_bike_summons %>%
+  mutate(VIOLATION_DATE=date(VIOLATION_DATE)) %>% 
+  as_tsibble(index=VIOLATION_DATE, key=EVNT_KEY)
+
+str(ts_summons)
+interval(ts_summons)
+
+ts_summons %>% 
+  filter_index("2023") %>% 
+  autoplot(day_total, period='week')
+
+
+df_bike_summons %>% 
+  ggplot(aes(x=VIOLATION_DATE, y=day_total))+
+  geom_line()
 
 ```
 
