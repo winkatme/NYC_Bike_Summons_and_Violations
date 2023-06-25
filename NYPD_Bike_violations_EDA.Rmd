@@ -22,10 +22,8 @@ df<-df %>%
   mutate(VEH_CATEGORY = as.factor(VEH_CATEGORY)) %>% 
   mutate(CITY_NM = as.factor(CITY_NM)) %>% 
   mutate(RPT_OWNING_CMD = as.factor(RPT_OWNING_CMD)) %>% 
-  mutate(VIOLATION_DATE = as.POSIXct(VIOLATION_DATE)) %>% 
-  rename('daily_total_cyclists' = 'day_total') %>% 
-  rename('weekly_total_cyclists' = 'week_total')
-  
+  mutate(VIOLATION_DATE = as.POSIXct(VIOLATION_DATE)) 
+
 head(df)
 str(df)
 ```

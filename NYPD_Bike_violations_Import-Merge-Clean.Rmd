@@ -313,7 +313,24 @@ df_bike_summons$DESCRIPTION[df_bike_summons$VIOLATION_CODE=='22651M'] <- 'MISCEL
 
 # check for na's
 df_bike_summons %>% 
-  filter(is.na(DESCRIPTION))
+  filter(is.na(daily_total_cyclists))
+
+# check factors for na's
+df_bike_summons %>% 
+  distinct(CITY_NM)
+
+# CITY_NM has empty values that don't say NA.  Let's make them say NA
+df_bike_summons$CITY_NM <- as.character(df_bike_summons$CITY_NM)
+df_bike_summons$CITY_NM[df_bike_summons$CITY_NM==""] <- NA
+df_bike_summons$CITY_NM <- as.factor(df_bike_summons$CITY_NM)
+
+# how many na values now?
+df_bike_summons %>% 
+  group_by(CITY_NM) %>% 
+  summarize(sum = sum(n()))
+
+# To do:  figure out what to do with NA values
+# To do: figure out if 'New York' values can be merged with 'Manhattan'
 
 ```
 
@@ -324,9 +341,9 @@ df_bike_summons %>%
 # optional: write to csv
 # file is approx 25mb. That exceeds limit for uploading via browser, but it is able to upload to git via push
 #install.packages("glue")
-todays_date <- Sys.Date()
-path_name<-glue('df_bike_summons_{todays_date}.csv')
-write.csv(df_bike_summons, path_name, row.names=FALSE)
+#todays_date <- Sys.Date()
+#path_name<-glue('df_bike_summons_{todays_date}.csv')
+#write.csv(df_bike_summons, path_name, row.names=FALSE)
 ```
 
 
