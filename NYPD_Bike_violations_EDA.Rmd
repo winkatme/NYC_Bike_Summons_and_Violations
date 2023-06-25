@@ -35,11 +35,34 @@ str(df)
 ### What's the Date range for the data?
 ```{r}
 date(range(df$VIOLATION_DATE))
-```
-### 
-```{r}
 
 ```
+### Which dates had the highest number of riders, and how many?
+```{r}
+df %>% 
+  mutate(VIOLATION_DATE = date(VIOLATION_DATE)) %>% 
+  arrange(desc(day_total)) %>%
+  distinct(VIOLATION_DATE, day_total) %>% 
+  slice(1:10)
+
+# takeaway: varied seasons.  Looks like mostly late summer / early autumn.  4 from September 2022.
+View(df)
+```
+
+### Which dates had the highest number of violations, and how many violations?
+```{r}
+df %>% 
+  mutate(VIOLATION_DATE = date(VIOLATION_DATE)) %>% 
+  group_by(VIOLATION_DATE) %>% 
+  summarize(daily_total_violations = sum(n())) %>% 
+  arrange(desc(daily_total_violations)) %>% 
+  slice(1:10)
+
+
+# mostly warmer days in 2018 and 2019
+```
+
+
 
 
 
