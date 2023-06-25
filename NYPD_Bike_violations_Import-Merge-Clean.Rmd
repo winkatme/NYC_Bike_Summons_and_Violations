@@ -309,22 +309,33 @@ df_bike_summons$DESCRIPTION[df_bike_summons$VIOLATION_CODE=='37524AB'] <- 'OPER 
 df_bike_summons$DESCRIPTION[df_bike_summons$VIOLATION_CODE=='4014B'] <- 'COMMERCIAL VEHICLE ON PARKWAY- NYC'
 df_bike_summons$DESCRIPTION[df_bike_summons$VIOLATION_CODE=='4021A'] <- 'NO LICENSE PLATE OR SINGLE LICENSE PLATE'
 df_bike_summons$DESCRIPTION[df_bike_summons$VIOLATION_CODE=='22651M'] <- 'MISCELLANEOUS EQUIPMENT VIOLATION - LIMITED USE MOTORCYCLE'
+```
 
-
+### Check for NAs
+```{r}
 # check for na's
+
+head(df_bike_summons)
+
 df_bike_summons %>% 
   filter(is.na(daily_total_cyclists))
 
 # check factors for na's
 df_bike_summons %>% 
-  distinct(CITY_NM)
+  distinct(VIOLATION_CODE)
 
+```
+
+#### Clean CITY_NM NAs
+```{r}
 # CITY_NM has empty values that don't say NA.  Let's make them say NA
 df_bike_summons$CITY_NM <- as.character(df_bike_summons$CITY_NM)
 df_bike_summons$CITY_NM[df_bike_summons$CITY_NM==""] <- NA
 df_bike_summons$CITY_NM <- as.factor(df_bike_summons$CITY_NM)
 
-# how many na values now?
+# Can try to check this for cleaner way to change to NAs in dplyr:  https://stackoverflow.com/questions/24172111/change-the-blank-cells-to-na
+
+# how many na values now?  #ans: 92
 df_bike_summons %>% 
   group_by(CITY_NM) %>% 
   summarize(sum = sum(n()))
@@ -336,7 +347,7 @@ df_bike_summons %>%
 
 
 
-### Optional - save csv
+## Optional - save csv
 ```{r}
 # optional: write to csv
 # file is approx 25mb. That exceeds limit for uploading via browser, but it is able to upload to git via push
@@ -347,32 +358,4 @@ df_bike_summons %>%
 ```
 
 
-
-# EDA
-```{r}
-# EDA
-
-# distinct vehicle categories (8 total)
-df %>% 
-  distinct(VEH_CATEGORY)
-
-
-
-# how many separate violations, and their counts? (ans: 82)
-df_bike %>% 
-  group_by(VIOLATION_CODE) %>% 
-  count %>% 
-  arrange(desc(n)) %>% 
-  ungroup() %>% 
-  head()
-
-
-
-# date range
-#ts_bike<-df_bike %>% 
-#  mutate(VIOLATION_DATE = mdy(VIOLATION_DATE)) %>% 
-#  as_tsibble(key = EVNT_KEY)
-
-#str(ts_bike)
-```
 
