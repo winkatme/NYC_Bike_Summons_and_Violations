@@ -12,21 +12,63 @@ library(httr)
 library(glue)
 ```
 
-
-# EDA
-
-## Daily data EDA
-
 ```{r}
 df<-read.csv('df_bike_summons_2023-06-25.csv')
 
-
-dim(df)
-
+df<-df %>% 
+  mutate(VIOLATION_CODE = as.factor(VIOLATION_CODE)) %>%
+  mutate(VEH_CATEGORY = as.factor(VEH_CATEGORY)) %>% 
+  mutate(CITY_NM = as.factor(CITY_NM)) %>% 
+  mutate(RPT_OWNING_CMD = as.factor(RPT_OWNING_CMD)) %>% 
+  mutate(VIOLATION_DATE = as.POSIXct(VIOLATION_DATE))
+  
+head(df)
+str(df)
 
 
 ```
 
+
+# EDA
+
+## General EDA
+### What's the Date range for the data?
+```{r}
+date(range(df$VIOLATION_DATE))
+```
+### 
+```{r}
+
+```
+
+
+
+
+## Daily data EDA
+
+```{r}
+
+# convert to tsibble for ts analysis
+ts_daily_total <- df %>% 
+  mutate(VIOLATION_DATE = date(VIOLATION_DATE)) %>% 
+  group_by(VIOLATION_DATE, day_total) %>% 
+  summarize(daily_total_summons = sum(n())) %>% 
+  as_tsibble(index = VIOLATION_DATE)
+
+head(ts_daily_total)
+
+
+```
+
+### plot daily total summonses over time
+```{r}
+
+ts_daily_total %>% 
+  autoplot(daily_total_summons)
+
+# takeaway:  There were more summonses handed out before the pandemic.  During lockdown, very few were handed out.
+
+```
 
 
 
