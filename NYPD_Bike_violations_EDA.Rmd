@@ -10,6 +10,8 @@ library(fpp3)
 library(readxl)
 library(httr)
 library(glue)
+#install.packages("corrr")
+library(corrr)
 ```
 
 ```{r}
@@ -20,10 +22,18 @@ df<-df %>%
   mutate(VEH_CATEGORY = as.factor(VEH_CATEGORY)) %>% 
   mutate(CITY_NM = as.factor(CITY_NM)) %>% 
   mutate(RPT_OWNING_CMD = as.factor(RPT_OWNING_CMD)) %>% 
-  mutate(VIOLATION_DATE = as.POSIXct(VIOLATION_DATE))
+  mutate(VIOLATION_DATE = as.POSIXct(VIOLATION_DATE)) %>% 
+  rename('daily_total_cyclists' = 'day_total') %>% 
+  rename('weekly_total_cyclists' = 'week_total')
   
 head(df)
 str(df)
+
+
+
+
+
+
 
 
 ```
@@ -32,7 +42,35 @@ str(df)
 # EDA
 
 ## General EDA
-### What's the Date range for the data?
+
+### Plot: daily total riders over time
+```{r}
+# convert to tsibble and add daily totaly violations for easier gpaphing and ts analysis
+ts_daily_total <- df %>% 
+  mutate(VIOLATION_DATE = date(VIOLATION_DATE)) %>% 
+  group_by(VIOLATION_DATE, daily_total_cyclists) %>% 
+  summarize(daily_total_violations = sum(n())) %>% 
+  as_tsibble(index = VIOLATION_DATE)
+
+head(ts_daily_total)
+
+ts_daily_total %>% 
+  autoplot(daily_total_cyclists)
+
+# takeaway: ridership did not change much pre or post pandemic. not even during lockdown, although possible hickup.
+```
+### Plot: daily total violations over time
+```{r}
+
+ts_daily_total %>% 
+  autoplot(daily_total_violations)
+
+# takeaway:  There were more violations before the pandemic.  During lockdown, very few.t.
+
+```
+
+
+### What's the date range for the data? 
 ```{r}
 date(range(df$VIOLATION_DATE))
 
@@ -41,12 +79,11 @@ date(range(df$VIOLATION_DATE))
 ```{r}
 df %>% 
   mutate(VIOLATION_DATE = date(VIOLATION_DATE)) %>% 
-  arrange(desc(day_total)) %>%
-  distinct(VIOLATION_DATE, day_total) %>% 
+  arrange(desc(daily_total_cyclists)) %>%
+  distinct(VIOLATION_DATE, daily_total_cyclists) %>% 
   slice(1:10)
 
 # takeaway: varied seasons.  Looks like mostly late summer / early autumn.  4 from September 2022.
-View(df)
 ```
 
 ### Which dates had the highest number of violations, and how many violations?
@@ -59,45 +96,74 @@ df %>%
   slice(1:10)
 
 
-# mostly warmer days in 2018 and 2019
+# mostly warmer days in 2018 and 2019, pre-pandemic
 ```
-
-
-
-
-
-
-## Daily data EDA
-
+### As the number of riders increases, does the number of violations also increase?
 ```{r}
 
-# convert to tsibble for ts analysis
-ts_daily_total <- df %>% 
+# utilizes corrr library
+
+df %>% 
   mutate(VIOLATION_DATE = date(VIOLATION_DATE)) %>% 
-  group_by(VIOLATION_DATE, day_total) %>% 
-  summarize(daily_total_summons = sum(n())) %>% 
-  as_tsibble(index = VIOLATION_DATE)
+  group_by(VIOLATION_DATE) %>% 
+  mutate(daily_total_violations = sum(n())) %>% 
+  select(daily_total_cyclists, daily_total_violations) %>% 
+  correlate()
 
-head(ts_daily_total)
-
+# takeaawy cor: 0.2159162 So no, as the number of riders increases, the number of violations does not. 
 
 ```
-
-### plot daily total summonses over time
+### Plot: daily violations vs. daily cylists
 ```{r}
+df %>% 
+  mutate(VIOLATION_DATE = date(VIOLATION_DATE)) %>% 
+  group_by(VIOLATION_DATE) %>% 
+  mutate(daily_total_violations = sum(n())) %>% 
+  ggplot(aes(x=daily_total_violations, y=daily_total_cyclists))+
+  geom_point()
 
-ts_daily_total %>% 
-  autoplot(daily_total_summons)
 
-# takeaway:  There were more summonses handed out before the pandemic.  During lockdown, very few were handed out.
 
 ```
 
 
 
-Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Cmd+Option+I*.
 
-When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Cmd+Shift+K* to preview the HTML file). 
+## Violation codes EDA
 
-The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
+### How many different violations were handed out to cyclist?
+```{r}
+df %>% 
+  distinct(VIOLATION_CODE)
+  
+# ans: 187
+```
+### How many total violations were handed out to cyclists?
+```{r}
+length(df$VIOLATION_CODE)
+
+# there were zero nas.  
+#sum(is.na(df$VIOLATION_CODE))
+
+df %>% 
+  filter(is.na(DESCRIPTION))
+
+# ans: 122620
+```
+
+
+### What were the most popular violations?
+
+```{r}
+df %>% 
+  group_by(VIOLATION_CODE, DESCRIPTION) %>% 
+  summarize(sum = sum(n())) %>% 
+  arrange(desc(sum)) %>% 
+  ungroup() %>% 
+  slice(1:10)
+
+str(df)
+?summarize
+```
+
 

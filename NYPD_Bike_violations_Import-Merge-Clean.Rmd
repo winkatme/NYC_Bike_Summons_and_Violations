@@ -84,6 +84,7 @@ violations_no_dupes<-violations %>%
 
 
 dim(violations_no_dupes)
+View(violations_no_dupes)
 ```
 
 
@@ -274,51 +275,25 @@ df_bike_summons <- df_merged %>%
   select(-c('counts', 'date')) %>% 
   arrange(VIOLATION_DATE)
 
+head(df_bike_summons)
+```
+### Clean n/a values in description
+```{r}
+
+```
+
+
+
+### Optional - save csv
+```{r}
 # optional: write to csv
 # file is approx 25mb. That exceeds limit for uploading via browser, but it is able to upload to git via push
 #install.packages("glue")
-todays_date <- Sys.Date()
-path_name<-glue('df_bike_summons_{todays_date}.csv')
-write.csv(df_bike_summons, path_name, row.names=FALSE)
-
-path_name
-
-
-
-head(df_bike_summons)
-
-df_daily_total_summons <-df_bike_summons %>% 
-  group_by(date(VIOLATION_DATE)) %>% 
-  summarize(daily_total = sum(n()))
-
-
-df_daily_total_summons %>% 
-  as_tsibble() %>% 
-  autoplot()
-
-?as.irts
-
-# to ts?
-
-?as_tsibble
-
-ts_summons <- df_bike_summons %>%
-  mutate(VIOLATION_DATE=date(VIOLATION_DATE)) %>% 
-  as_tsibble(index=VIOLATION_DATE, key=EVNT_KEY)
-
-str(ts_summons)
-interval(ts_summons)
-
-ts_summons %>% 
-  filter_index("2023") %>% 
-  autoplot(day_total, period='week')
-
-
-df_bike_summons %>% 
-  ggplot(aes(x=VIOLATION_DATE, y=day_total))+
-  geom_line()
-
+#todays_date <- Sys.Date()
+#path_name<-glue('df_bike_summons_{todays_date}.csv')
+#write.csv(df_bike_summons, path_name, row.names=FALSE)
 ```
+
 
 
 # EDA
