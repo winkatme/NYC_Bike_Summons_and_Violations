@@ -218,7 +218,6 @@ df_counts_raw %>%
 
 ```
 
-
 ### Create daily and weekly rider total columns
 ```{r}
 # graph per-day counts
@@ -255,8 +254,19 @@ df_counts<-df_counts %>%
 str(df_counts)
 
 ```
+### Create borough df
+```{r}
+df_bicycle_counters <- read.csv('Bicycle_Counters.csv')
 
+head(df_bicycle_counters)
 
+install.packages('sf')
+library(sf)
+install.packages('Rcpp')
+library(Rcpp)
+install.packages('mapview')
+library(mapview)
+```
 
 
 ## Merge summons data with total rider data
@@ -348,6 +358,7 @@ df_bike_summons %>%
 # To do: figure out if 'New York' values can be merged with 'Manhattan'
 
 ```
+
 
 
 
