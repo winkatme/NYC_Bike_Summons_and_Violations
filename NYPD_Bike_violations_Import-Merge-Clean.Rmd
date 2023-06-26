@@ -12,6 +12,14 @@ library(fpp3)
 library(readxl)
 library(httr)
 library(glue)
+#install.packages('sf')
+library(sf)
+#install.packages('Rcpp')
+library(Rcpp)
+#install.packages('mapview')
+library(mapview)
+#install.packages('tidygeocoder')
+library(tidygeocoder)
 ```
 
 
@@ -258,14 +266,54 @@ str(df_counts)
 ```{r}
 df_bicycle_counters <- read.csv('Bicycle_Counters.csv')
 
-head(df_bicycle_counters)
 
-install.packages('sf')
-library(sf)
-install.packages('Rcpp')
-library(Rcpp)
-install.packages('mapview')
-library(mapview)
+# remove 0 longitude rows
+df_bicycle_counters <- df_bicycle_counters %>% 
+  filter(latitude!=0)
+
+# map the stations
+# Source: https://map-rfun.library.duke.edu/01_georeference.html
+
+#install.packages('sf')
+#library(sf)
+#install.packages('Rcpp')
+#library(Rcpp)
+#install.packages('mapview')
+#library(mapview)
+
+mapview(df_bicycle_counters, xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)
+
+
+```
+
+### label boroughs by hand
+```{r}
+df_bicycle_counters
+
+# reverse look up by latitude and longitude
+# source: https://cran.r-project.org/web/packages/tidygeocoder/readme/README.html
+
+#install.packages('tidygeocoder')
+library(tidygeocoder)
+df_bicycle_counters_boroughs<-df_bicycle_counters %>%
+  reverse_geocode(lat = latitude, long = longitude, method = 'osm',
+                  address = address_found, full_results = TRUE)
+
+
+df_bicycle_counters_boroughs
+
+df_bicycle_counters_boroughs<-df_bicycle_counters_boroughs %>% 
+  select(id, name, latitude, longitude, suburb)
+
+# since the only na's are in the Bronx, replace_na was easiest
+df_bicycle_counters_boroughs <- df_bicycle_counters_boroughs %>% 
+  mutate(suburb = replace_na(suburb, 'Bronx'))
+
+df_bicycle_counters_boroughs %>% 
+  rename('Borough' = 'suburb') %>% 
+  mutate(Borough = gsub('Richmond County', 'Staten Island', Borough)) %>% 
+  mutate(Borough = gsub('Queens County', 'Queens', Borough))
+
 ```
 
 
