@@ -12,8 +12,11 @@ library(httr)
 library(glue)
 #install.packages("corrr")
 library(corrr)
+library(slider)
 ```
 
+
+## Import Data
 ```{r}
 df<-readr::read_csv('df_bike_summons_2023-06-25.csv')
 
@@ -45,7 +48,7 @@ df %>%
 
 ts_daily_total
 ```
-### Clean tsibble
+## Clean tsibble
 ```{r}
 # there are 29 missing days
 ts_daily_total %>% 
@@ -82,24 +85,35 @@ ts_daily_total %>%
 
 ### Daily total cyclists decomposition
 ```{r}
+
+# classical decomp doesnt handle multi seasonality too well
 ts_daily_total %>% 
-  scan_gaps()
+  model(classical_decomposition(daily_total_cyclists, type = "additive"))%>%
+	components() %>%
+  autoplot()
 
 
+# STL - best so far
+ts_daily_total 	%>%
+	model(
+    STL(daily_total_cyclists ~ trend(window = 61) +
+                   season(window = 13),
+    )) %>%
+  components() %>% 
+  autoplot()
+
+# what about moving average for trend?  it ok.  I think stl is best.
 ts_daily_total %>% 
-  filter(is.na(VIOLATION_DATE))
+    mutate(`5-MA` = slider::slide_dbl(daily_total_cyclists, mean, .before = 90, .after = 90, .complete = TRUE)) %>%
+    autoplot(daily_total_cyclists)+
+    geom_line(aes(y = `5-MA`), colour = "#D55E00")
 
-interval(ts_daily_total)
+# what about just a regular regression line
+ts_daily_total %>% 
+  autoplot(daily_total_cyclists)+
+  stat_smooth(method = "lm")
 
-dcmp <- ts_daily_total %>%
-  fill_gaps(.full = FALSE) %>% 
-  model(stl = STL(daily_total_cyclists))
-
-components(dcmp)
-
-components(dcmp) %>%
-  as_tsibble() %>%
-  autoplot(daily_total_cyclists, colour = "gray")
+str(ts_daily_total)
 ```
 
 
@@ -184,7 +198,7 @@ ts_daily_total %>%
   ggplot(aes(x=daily_total_violations, y=daily_total_cyclists))+
   geom_point()
 
-# correlation:  0.4916185
+# correlation:  0.501744
 ts_daily_total %>% 
   filter_index(~"2020-04") %>% 
   select(daily_total_cyclists, daily_total_violations) %>% 
@@ -200,7 +214,7 @@ ts_daily_total %>%
   ggplot(aes(x=daily_total_violations, y=daily_total_cyclists))+
   geom_point()
 
-# correlation:  0.3672089
+# correlation:  0.3846224
 ts_daily_total %>% 
   filter_index("2020-04"~.) %>% 
   select(daily_total_cyclists, daily_total_violations) %>% 
