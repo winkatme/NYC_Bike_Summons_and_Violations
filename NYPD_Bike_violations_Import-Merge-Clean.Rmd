@@ -321,7 +321,24 @@ df_bicycle_counters_boroughs
 
 ### Merge borough data with count data
 ```{r}
+sort(unique(df_counts_raw$id))==sort(unique(df_bicycle_counters_boroughs$id))
 
+# True:
+length(unique(df_bicycle_counters_boroughs$id))==length(unique(df_counts_raw$id))
+
+sort(unique(df_counts_raw$id))
+# 100055175 is not in both
+
+df_counts_raw %>% 
+  filter(id==100055175)
+```
+```{r}
+sort(unique(df_bicycle_counters_boroughs$id))
+# 300020692 is not in both
+
+# its just a 'test' and can be removed.
+df_bicycle_counters_boroughs %>% 
+  filter(id==300020692)
 ```
 
 
