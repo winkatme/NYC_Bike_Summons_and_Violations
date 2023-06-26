@@ -286,7 +286,7 @@ mapview(df_bicycle_counters, xcol = "longitude", ycol = "latitude", crs = 4269, 
 
 ```
 
-### label boroughs by hand
+### Add column with boroughs labels
 ```{r}
 df_bicycle_counters
 
@@ -309,12 +309,22 @@ df_bicycle_counters_boroughs<-df_bicycle_counters_boroughs %>%
 df_bicycle_counters_boroughs <- df_bicycle_counters_boroughs %>% 
   mutate(suburb = replace_na(suburb, 'Bronx'))
 
-df_bicycle_counters_boroughs %>% 
+df_bicycle_counters_boroughs <- df_bicycle_counters_boroughs %>% 
   rename('Borough' = 'suburb') %>% 
   mutate(Borough = gsub('Richmond County', 'Staten Island', Borough)) %>% 
   mutate(Borough = gsub('Queens County', 'Queens', Borough))
 
+df_bicycle_counters_boroughs
+
 ```
+
+
+### Merge borough data with count data
+```{r}
+
+```
+
+
 
 
 ## Merge summons data with total rider data

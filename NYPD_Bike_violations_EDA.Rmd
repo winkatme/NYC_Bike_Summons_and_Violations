@@ -13,6 +13,7 @@ library(glue)
 #install.packages("corrr")
 library(corrr)
 library(slider)
+library(forcats)
 ```
 
 
@@ -289,6 +290,14 @@ df %>%
   summarize(total_violations =  sum(n())) %>% 
   ggplot(aes(x=year, y=total_violations, col=CITY_NM))+
   geom_line()
-  
+
+
+# which boroughs have the most cyclist counters:
+#library(forcats)
+
+df_bicycle_counters_boroughs %>% 
+  ggplot(aes(x=fct_infreq(Borough))) +
+  geom_bar()+
+  labs(x = "Borough", y="Cyclist Counters")
 ```
 
