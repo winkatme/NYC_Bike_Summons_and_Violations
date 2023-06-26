@@ -96,8 +96,8 @@ ts_daily_total %>%
 # STL - best so far
 ts_daily_total 	%>%
 	model(
-    STL(daily_total_cyclists ~ trend(window = 61) +
-                   season(window = 13),
+    STL(daily_total_cyclists ~ trend(window = 31) +
+                   season(period = 'week')+season(period='year'),
     )) %>%
   components() %>% 
   autoplot()
@@ -260,4 +260,35 @@ str(df)
 ?summarize
 ```
 
+
+#### scratchpad
+```{r}
+str(df)
+
+# plot shows that ebikes and escooters didnt have their own categories until sometime in mid 2022
+df %>% 
+  ggplot(aes(x=VIOLATION_DATE, y=CITY_NM, col=VEH_CATEGORY))+
+  geom_jitter()
+
+#nuthin
+df %>% 
+  ggplot(aes(x=VIOLATION_DATE, y=CITY_NM, col=VIOLATION_CODE))+
+  geom_jitter()
+
+# violations per month
+df %>% 
+  group_by(yearmonth=yearmonth(VIOLATION_DATE)) %>% 
+  summarize(total_violations =  sum(n())) %>% 
+  ggplot(aes(x=yearmonth, y=total_violations))+
+  geom_line()
+
+
+# violations per borough per year
+df %>% 
+  group_by(year=yearmonth(VIOLATION_DATE), CITY_NM) %>% 
+  summarize(total_violations =  sum(n())) %>% 
+  ggplot(aes(x=year, y=total_violations, col=CITY_NM))+
+  geom_line()
+  
+```
 
