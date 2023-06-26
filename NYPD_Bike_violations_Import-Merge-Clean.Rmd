@@ -204,13 +204,17 @@ max(date(df_merged$VIOLATION_DATE))-min(date(df_merged$VIOLATION_DATE))
 #https://data.cityofnewyork.us/Transportation/Bicycle-Counts/uczf-rk3c
 
 path2 = 'https://www.dropbox.com/s/oaklaldm8td9wem/Bicycle_Counts.csv?dl=1'
-df_counts <- read.csv(path2)
+df_counts_raw <- read.csv(path2)
  
-df_counts<-df_counts %>% 
+df_counts<-df_counts_raw %>% 
   mutate(date = mdy_hms(date))
 
 head(df_counts)
 str(df_counts)
+
+df_counts_raw %>% 
+  distinct(id) %>% 
+  arrange(id)
 
 ```
 

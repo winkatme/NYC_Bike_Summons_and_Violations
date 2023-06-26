@@ -265,7 +265,7 @@ str(df)
 ```{r}
 str(df)
 
-# plot shows that ebikes and escooters didnt have their own categories until sometime in mid 2022
+# plot shows that ebikes and escooters didnt have their own categories until sometime in mid 2022. before that, everything was under 'bikes'
 df %>% 
   ggplot(aes(x=VIOLATION_DATE, y=CITY_NM, col=VEH_CATEGORY))+
   geom_jitter()
