@@ -36,12 +36,11 @@ library(tidygeocoder)
 path = 'https://dmv.ny.gov/e-data/violationcodes.xlsx'
 
 GET(path, write_disk(tf <- tempfile(fileext = ".xlsx")))
-violations <- read_xlsx(tf, sheet=1)
+df_violation_codes <- read_xlsx(tf, sheet=1)
 
-violations <- violations %>% 
+df_violation_codes <- df_violation_codes %>% 
   rename('VIOLATION_CODE'='ADJ Code') %>% 
   select(c('VIOLATION_CODE', 'DESCRIPTION'))
-
 
 ```
 
@@ -53,19 +52,19 @@ violations <- violations %>%
 # IOLATION_CODE duplicates found: (1110A and 1151A)
 # This step proved to be necessary, as merging the two documents would duplicate the number of rows of any violation code in df to match any duplicates in violations.  This caused the # of rows of df to be over 200,000, when it should have remained the same (184770)
 
-violations %>% 
+df_violation_codes %>% 
   count(VIOLATION_CODE) %>% 
   arrange(desc(n))
 
 # view descriptions for 1110A
-violations %>% 
+df_violation_codes %>% 
   filter(VIOLATION_CODE=='1110A')
 # DISOBEYED TRAFFIC DEVICE
 # DISOBEYED TRAFFIC DEVICE - PAVEMENT MARKINGS
 # we will change all to the second, longer description
 
 # view descriptions for 1151A
-violations %>% 
+df_violation_codes %>% 
   filter(VIOLATION_CODE=='1151A')
 # FAILED TO YIELD RIGHT-OF-WAY TO PEDESTRIAN IN CROSSWALK
 # FAILED TO YIELD RIGHT-OF-WAY TO PEDESTRIAN ON SIDEWALK
@@ -76,35 +75,35 @@ violations %>%
 # Remove duplicates of violation codes
 # and manually merge descriptions for duplicate violation_Codes
 
-violations_no_dupes<-violations %>% 
+df_violation_codes_no_dupes<-df_violation_codes %>% 
   distinct(VIOLATION_CODE, .keep_all=TRUE) %>% 
   mutate(DESCRIPTION = case_when(VIOLATION_CODE=='1151A' ~ "FAILED TO YIELD RIGHT-OF-WAY TO PEDESTRIAN ON SIDEWALK OR CROSSWALK", TRUE ~ DESCRIPTION)) %>% 
   mutate(DESCRIPTION = case_when(VIOLATION_CODE=='1110A' ~ "DISOBEYED TRAFFIC DEVICE - PAVEMENT MARKINGS", TRUE ~ DESCRIPTION))
   
 # OPTIONAL double-check no dupes
-# violations_no_dupes %>%   
+# df_violation_codes_no_dupes %>%   
 #   count(VIOLATION_CODE) %>% 
 #   distinct(n)
 
 # OPTIONAL double-check that 1110A and 1151A read what they are supposed to
-# violations_no_dupes %>% 
+# df_violation_codes_no_dupes %>% 
 #   filter(VIOLATION_CODE=='1151A'|VIOLATION_CODE=='1110A')
 
 
-dim(violations_no_dupes)
-View(violations_no_dupes)
+dim(df_violation_codes_no_dupes)
+#View(violations_no_dupes)
 ```
 
 
-## NYPD Summons data
-### Import Year to Date NYPD Summons csv  
+## NYPD Violations data
+### Import current violations data 
 ```{r}
 # only run once
 
 # import NYPD Summons csv
 # source: https://data.cityofnewyork.us/Public-Safety/NYPD-B-Summons-Year-to-Date-/57p3-pdcj
 
-df <- read.csv('NYPD_B_Summons__Year_to_Date_.csv')
+df_current_violations <- read.csv('NYPD_B_Summons__Year_to_Date_.csv')
 
 # Remove unneeded columns.  update column types as needed
 # CHG_LAW_CD - can be removed.  Just determines if it was ny state or local nyc law
@@ -113,7 +112,7 @@ df <- read.csv('NYPD_B_Summons__Year_to_Date_.csv')
 ### to delete ### LAW_CODE_ON_TICKET - can probably be removed.  most likely redundant with VIOLATION_CODE
 ### to delete ### RPT_OWNING_CMD - precinct where reported. change this from integer to factor, since it acts similar to a zip code.
 
-df<-df %>% 
+df_current_violations<-df_current_violations %>% 
   mutate(VIOLATION_CODE = as.factor(VIOLATION_CODE)) %>%
   mutate(VEH_CATEGORY = as.factor(VEH_CATEGORY)) %>% 
   mutate(CITY_NM = as.factor(CITY_NM)) %>% 
@@ -122,11 +121,11 @@ df<-df %>%
   select(-c(CHG_LAW_CD, VIOLATION_TIME, JURIS_CD)) %>% 
   rename('Location' = 'Location.Point')
 
-#View(df)
-str(df)
+#View(df_current_violations)
+str(df_current_violations)
 ```
 
-### Import historic summons data
+### Import historic violations data
 ```{r}
 # https://data.cityofnewyork.us/Public-Safety/NYPD-B-Summons-Historic-/bme5-7ty4
 
@@ -146,9 +145,9 @@ str(df_historic)
 ```
 
 
-### Merge historic data with year to date data
+### Merge historic violations data with current violations data
 ```{r}
-df_merged<-merge(df_historic, df, all.x = TRUE, all.y = TRUE)
+df_merged<-merge(df_historic, df_current_violations, all.x = TRUE, all.y = TRUE)
 
 # for whatever reason, violation_code was not saved as a factor when merged
 df_merged<-df_merged %>% 
@@ -159,12 +158,12 @@ str(df_merged)
 
 ```
 
-### Merge Summons data with with Violations data by violation code
+### Merge violations data with with Violations code data by violation code
 ```{r}
 # matches violation description with violation code
 
 df_merged<-df_merged %>% 
-  left_join(x=df_merged, y=violations_no_dupes, by='VIOLATION_CODE') 
+  left_join(x=df_merged, y=df_violation_codes_no_dupes, by='VIOLATION_CODE') 
 
 df_merged<-df_merged %>% 
   mutate(VIOLATION_CODE = as.factor(VIOLATION_CODE)) 
@@ -180,10 +179,6 @@ tail(df_merged)
 
 ### Clean merged data
 ```{r}
-# convert to tsibble
-
-
-
 
 
 # attempt to find missing dates
@@ -237,7 +232,6 @@ df_counts %>%
   as_tsibble(index=date) %>% 
   autoplot()
 
-date(df_counts$date[1])
 
 # graph per-week counts
 df_counts %>% 
@@ -251,10 +245,10 @@ df_counts %>%
 # create new columns for daily and weekly totals
 df_counts<-df_counts %>% 
   group_by(date(date)) %>% 
-  mutate(day_total = sum(counts)) %>% 
+  mutate(daily_total = sum(counts)) %>% 
   ungroup %>%
   group_by(yearweek(date)) %>% 
-  mutate(week_total = sum(counts)) %>% 
+  mutate(weekly_total = sum(counts)) %>% 
   ungroup %>% 
   arrange(date) %>% 
   select(-c('date(date)', 'yearweek(date)'))
@@ -266,11 +260,13 @@ str(df_counts)
 ```{r}
 df_bicycle_counters <- read.csv('Bicycle_Counters.csv')
 
+str(df_bicycle_counters)
 
-# remove 0 longitude rows
-df_bicycle_counters <- df_bicycle_counters %>% 
-  filter(latitude!=0)
+# change 0s to na
+df_bicycle_counters<-df_bicycle_counters %>% 
+  mutate_at(c('longitude', 'latitude'), ~na_if(., 0))
 
+df_bicycle_counters
 # map the stations
 # Source: https://map-rfun.library.duke.edu/01_georeference.html
 
@@ -281,9 +277,7 @@ df_bicycle_counters <- df_bicycle_counters %>%
 #install.packages('mapview')
 #library(mapview)
 
-mapview(df_bicycle_counters, xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)
-
-
+mapview(na.omit(df_bicycle_counters), xcol = "longitude", ycol = "latitude",crs = 4269, grid=FALSE)
 ```
 
 ### Add column with boroughs labels
@@ -293,14 +287,16 @@ df_bicycle_counters
 # reverse look up by latitude and longitude
 # source: https://cran.r-project.org/web/packages/tidygeocoder/readme/README.html
 
-#install.packages('tidygeocoder')
+# TO DO - run code below on better wifi
+
+install.packages('tidygeocoder')
 library(tidygeocoder)
 df_bicycle_counters_boroughs<-df_bicycle_counters %>%
   reverse_geocode(lat = latitude, long = longitude, method = 'osm',
                   address = address_found, full_results = TRUE)
 
 
-df_bicycle_counters_boroughs
+
 
 df_bicycle_counters_boroughs<-df_bicycle_counters_boroughs %>% 
   select(id, name, latitude, longitude, suburb)
