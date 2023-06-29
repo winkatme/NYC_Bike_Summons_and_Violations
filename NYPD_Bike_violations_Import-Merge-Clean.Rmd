@@ -287,29 +287,27 @@ df_bicycle_counters
 # reverse look up by latitude and longitude
 # source: https://cran.r-project.org/web/packages/tidygeocoder/readme/README.html
 
-# TO DO - run code below on better wifi
+# sometimes this doesn't work.  When it does work, not all are filled in.
 
-install.packages('tidygeocoder')
-library(tidygeocoder)
+#install.packages('tidygeocoder')
+#library(tidygeocoder)
+
 df_bicycle_counters_boroughs<-df_bicycle_counters %>%
   reverse_geocode(lat = latitude, long = longitude, method = 'osm',
-                  address = address_found, full_results = TRUE)
+                  address = address_found, full_results = TRUE) %>% 
+  select(id, name, latitude, longitude, suburb) %>% 
+  rename('borough' = 'suburb') %>% 
+  mutate(borough = gsub('Richmond County', 'Staten Island', borough)) %>% 
+  mutate(borough = gsub('Queens County', 'Queens', borough))
+
+# replace willis ave borough na's with 'Bronx', and give manhattan bridge interference corresponding borough name
+df_bicycle_counters_boroughs$borough[grepl("Willis", df_bicycle_counters_boroughs$name)]<-'Bronx'
+df_bicycle_counters_boroughs$borough[grepl("Manhattan Bridge Interference", df_bicycle_counters_boroughs$name)]<-'Manhattan'
 
 
-
-
-df_bicycle_counters_boroughs<-df_bicycle_counters_boroughs %>% 
-  select(id, name, latitude, longitude, suburb)
-
-# since the only na's are in the Bronx, replace_na was easiest
-df_bicycle_counters_boroughs <- df_bicycle_counters_boroughs %>% 
-  mutate(suburb = replace_na(suburb, 'Bronx'))
-
-df_bicycle_counters_boroughs <- df_bicycle_counters_boroughs %>% 
-  rename('Borough' = 'suburb') %>% 
-  mutate(Borough = gsub('Richmond County', 'Staten Island', Borough)) %>% 
-  mutate(Borough = gsub('Queens County', 'Queens', Borough))
-
+# Optional:  Save to csv
+path_name<-'df_bicycle_counters_boroughs.csv'
+write.csv(df_bicycle_counters_boroughs, path_name, row.names=FALSE)
 df_bicycle_counters_boroughs
 
 ```
@@ -319,7 +317,7 @@ df_bicycle_counters_boroughs
 ```{r}
 sort(unique(df_counts_raw$id))==sort(unique(df_bicycle_counters_boroughs$id))
 
-# True:
+# False:
 length(unique(df_bicycle_counters_boroughs$id))==length(unique(df_counts_raw$id))
 
 sort(unique(df_counts_raw$id))

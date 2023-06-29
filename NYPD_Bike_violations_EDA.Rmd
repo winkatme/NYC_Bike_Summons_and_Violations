@@ -53,16 +53,20 @@ ts_daily_total
 ```{r}
 # there are 29 missing days
 ts_daily_total %>% 
-  scan_gaps()
+  str()
+
+df_counts
 
 # fill gaps re-join with df_counts data, so that gapped dates now have total cyclsits. Fill na violation data with 0s.
-ts_daily_total<-ts_daily_total %>%
+ts_daily_total <- ts_daily_total %>%
   fill_gaps() %>%
   mutate(date = VIOLATION_DATE) %>% 
   left_join(y=df_counts, by='date', multiple='first') %>% 
-  select(-c('counts', 'date', 'daily_total_cyclists', 'week_total')) %>% 
-  rename('daily_total_cyclists' = 'day_total') %>% 
+  select(-c('counts', 'date', 'daily_total', 'weekly_total')) %>% 
+  #rename('daily_total_cyclists' = 'daily_total') %>% 
   mutate_at('daily_total_violations', ~replace_na(., 0)) 
+
+ts_daily_total
 ```
 
 
