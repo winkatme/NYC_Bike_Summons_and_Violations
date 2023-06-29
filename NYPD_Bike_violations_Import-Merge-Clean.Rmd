@@ -428,13 +428,11 @@ df_bike_violations %>%
   group_by(CITY_NM) %>% 
   summarize(sum = sum(n()))
 
-# To do:  figure out what to do with NA values
-# To do: figure out if 'New York' values can be merged with 'Manhattan'
 
 ```
 
 
-#### To do:  figure out what to do with NA values
+### To do:  figure out what to do with NA values
 ```{r}
 
 
@@ -442,11 +440,69 @@ df_bike_violations %>%
 ```
 
 
-#### To do: figure out if 'New York' values can be merged with 'Manhattan'
+### To do: figure out if 3956 'New York' values can be merged with 'Manhattan'
 ```{r}
 
+head(df_bike_violations)
+
+df_bike_violations %>% 
+  filter(CITY_NM == 'NEW YORK') %>% 
+  # three rows were missing latitude/longitude values.  mapview needs no na's.
+  filter(!is.na(Latitude)|!is.na(Longitude))  %>% 
+  mapview(xcol = "Longitude", ycol = "Latitude",crs = 4269, grid=FALSE)
+
+# takeaway from graph:  The large majority are in Manhattan, but there are still a few in Queens/Brooklyn
+
+# Can we use reverse geo lookup to get the boroughs?
+df_bike_violations %>% 
+  filter(CITY_NM == 'NEW YORK') %>% 
+  # three rows were missing latitude/longitude values.  mapview needs no na's.
+  filter(!is.na(Latitude)|!is.na(Longitude))  %>% 
+  reverse_geocode(lat = Latitude, long = Longitude, method = 'osm',
+                  address = address_found, full_results = TRUE)
+  #select(id, name, latitude, longitude, suburb)
+  #rename('borough' = 'suburb') %>% 
+  #mutate(borough = gsub('Richmond County', 'Staten Island', borough)) %>% 
+  #mutate(borough = gsub('Queens County', 'Queens', borough))
 
 
+df_tmp<-df_bike_violations %>% 
+  filter(CITY_NM == 'NEW YORK') %>% 
+  filter(!is.na(Latitude)|!is.na(Longitude))  %>% 
+  #slice(1:100) %>% 
+  reverse_geocode(lat = Latitude, long = Longitude, method = 'osm',
+                  address = address_found, full_results = TRUE) %>% 
+  select('EVNT_KEY', 'suburb')
+
+
+
+df_bike_violations %>% 
+  slice(1:100)
+
+df_bike_violations <-df_bike_violations %>%
+  left_join(df_tmp, by='EVNT_KEY') %>% 
+  mutate(CITY_NM = case_when((CITY_NM=='NEW YORK' & !is.na(suburb)) ~ suburb, .default=CITY_NM)) %>%
+  mutate(CITY_NM = case_when(CITY_NM=='Manhattan'~'MANHATTAN', .default=CITY_NM)) %>% 
+  mutate(CITY_NM = case_when(CITY_NM=='Kings County'~'BROOKLYN', .default=CITY_NM)) %>% 
+  mutate(CITY_NM = case_when(CITY_NM=='Queens County'~'QUEENS', .default=CITY_NM)) %>% 
+  mutate(CITY_NM = case_when(CITY_NM=='Brooklyn'~'BROOKLYN', .default=CITY_NM)) %>% 
+  mutate(CITY_NM = case_when(CITY_NM=='Queens'~'QUEENS', .default=CITY_NM))
+
+# clean this up if re-running df_bike_violations from scratch
+df_bike_violations<-df_bike_violations %>% 
+  select(-suburb)
+
+df_bike_violations  %>% 
+  group_by(CITY_NM) %>% 
+  summarize(sum = sum(n()))
+# takeaway: this is better: now only 3 NEW YORK and 92 na. 
+
+df_bike_violations %>% 
+  filter(CITY_NM=='NEW YORK')
+# takeaway:  these dont have longitudinal or latitudinal info.  Since there are 3, we can ignore or leave them in.
+
+
+head(df_bike_violations)
 ```
 
 
