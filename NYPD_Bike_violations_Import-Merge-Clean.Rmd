@@ -306,15 +306,18 @@ df_bicycle_counters_boroughs$borough[grepl("Manhattan Bridge Interference", df_b
 
 
 # Optional:  Save to csv
-path_name<-'df_bicycle_counters_boroughs.csv'
-write.csv(df_bicycle_counters_boroughs, path_name, row.names=FALSE)
-df_bicycle_counters_boroughs
+#path_name<-'df_bicycle_counters_boroughs.csv'
+#write.csv(df_bicycle_counters_boroughs, path_name, row.names=FALSE)
+#df_bicycle_counters_boroughs
 
 ```
 
 
-### Merge borough data with count data
+### Incomplete - Merge borough data with count data
 ```{r}
+# I'm doubtful that this step is necessary, since the counter locations are so heavily skewed for Manhattan
+
+
 sort(unique(df_counts_raw$id))==sort(unique(df_bicycle_counters_boroughs$id))
 
 # False:
@@ -325,20 +328,21 @@ sort(unique(df_counts_raw$id))
 
 df_counts_raw %>% 
   filter(id==100055175)
-```
-```{r}
+
+
 sort(unique(df_bicycle_counters_boroughs$id))
 # 300020692 is not in both
 
 # its just a 'test' and can be removed.
 df_bicycle_counters_boroughs %>% 
   filter(id==300020692)
+
+# left off - trying to find out which id's match, in order to merge on id.
 ```
 
 
 
-
-## Merge summons data with total rider data
+## Merge violations data with rider count data
 ```{r}
 str(df_counts)
 str(df_merged)
@@ -351,22 +355,23 @@ df_counts<-df_counts %>%
   
 
 # match date column with equal one in df_merged.  Just choose bikes, as the count data is just for bikes.  Also makes merging go quicker.
-df_bike_summons <- df_merged %>%
+df_bike_violations <- df_merged %>%
   filter(VEH_CATEGORY=='BIKE' | VEH_CATEGORY=='EBIKE' | VEH_CATEGORY=='ESCOOTER') %>% 
   mutate(date=date(VIOLATION_DATE)) %>% 
   left_join(y=df_counts, by='date', multiple='first') %>% 
   select(-c('counts', 'date')) %>% 
-  rename('daily_total_cyclists' = 'day_total') %>% 
-  rename('weekly_total_cyclists' = 'week_total') %>% 
+  rename('daily_total_cyclists' = 'daily_total') %>% 
+  rename('weekly_total_cyclists' = 'weekly_total') %>% 
   arrange(VIOLATION_DATE)
 
-head(df_bike_summons)
+head(df_bike_violations)
 ```
+
 ### Clean n/a values in description
 ```{r}
 # check to see which Violation codes correspond to empty description cells
 
-df_bike_summons %>% 
+df_bike_violations %>% 
   filter(is.na(DESCRIPTION)) %>% 
   distinct(VIOLATION_CODE)
 
@@ -376,35 +381,35 @@ df_bike_summons %>%
 # 4021 is associated with 4 different violation codes:  4021A - NO LICENSE PLATE OR SINGLE LICENSE PLATE, 4021B1 - DIRTY PLATE OR PLATE COVERED BY GLASS OR PLASTIC, 4021B2 - PLATE KNOWINGLY COVERED WITH INTENT TO OBSCURE, 4021B3 - PLATE OBSCURED BY VEHICLE OR ANYTHING CARRIED THERON.  Since these are all related to license plates, I will change these all to 4021A
 # 22653 - this was closest to two values, 22651 - EQUIPMENT VIOLATION LIMITED USE VEHICLE and 22651M - MISCELLANEOUS EQUIPMENT VIOLATION - LIMITED USE MOTORCYCLE.  Since all 18 of the 22653 violations were either e-bike or escooter, I will change all of these to 22651M
 
-#df_bike_summons %>% 
+#df_bike_violations %>% 
 #  filter(VIOLATION_CODE=='22653')
 
 
 # change all violation codes to decided on values
-df_bike_summons<-df_bike_summons %>% 
+df_bike_violations<-df_bike_violations %>% 
   mutate(VIOLATION_CODE = replace(VIOLATION_CODE, VIOLATION_CODE == '37524A', '37524AB')) %>%
   mutate(VIOLATION_CODE = replace(VIOLATION_CODE, VIOLATION_CODE == '4014', '4014B')) %>%
   mutate(VIOLATION_CODE = replace(VIOLATION_CODE, VIOLATION_CODE == '4021', '4021A')) %>%
   mutate(VIOLATION_CODE = replace(VIOLATION_CODE, VIOLATION_CODE == '22653', '22651M')) 
 
 # change all descriptions baseed on new violation code values
-df_bike_summons$DESCRIPTION[df_bike_summons$VIOLATION_CODE=='37524AB'] <- 'OPER BICYCLE WITH MORE 1 EARPHONE'
-df_bike_summons$DESCRIPTION[df_bike_summons$VIOLATION_CODE=='4014B'] <- 'COMMERCIAL VEHICLE ON PARKWAY- NYC'
-df_bike_summons$DESCRIPTION[df_bike_summons$VIOLATION_CODE=='4021A'] <- 'NO LICENSE PLATE OR SINGLE LICENSE PLATE'
-df_bike_summons$DESCRIPTION[df_bike_summons$VIOLATION_CODE=='22651M'] <- 'MISCELLANEOUS EQUIPMENT VIOLATION - LIMITED USE MOTORCYCLE'
+df_bike_violations$DESCRIPTION[df_bike_violations$VIOLATION_CODE=='37524AB'] <- 'OPER BICYCLE WITH MORE 1 EARPHONE'
+df_bike_violations$DESCRIPTION[df_bike_violations$VIOLATION_CODE=='4014B'] <- 'COMMERCIAL VEHICLE ON PARKWAY- NYC'
+df_bike_violations$DESCRIPTION[df_bike_violations$VIOLATION_CODE=='4021A'] <- 'NO LICENSE PLATE OR SINGLE LICENSE PLATE'
+df_bike_violations$DESCRIPTION[df_bike_violations$VIOLATION_CODE=='22651M'] <- 'MISCELLANEOUS EQUIPMENT VIOLATION - LIMITED USE MOTORCYCLE'
 ```
 
 ### Check for NAs
 ```{r}
 # check for na's
 
-head(df_bike_summons)
+head(df_bike_violations)
 
-df_bike_summons %>% 
+df_bike_violations %>% 
   filter(is.na(daily_total_cyclists))
 
 # check factors for na's
-df_bike_summons %>% 
+df_bike_violations %>% 
   distinct(VIOLATION_CODE)
 
 ```
@@ -412,14 +417,14 @@ df_bike_summons %>%
 #### Clean CITY_NM NAs
 ```{r}
 # CITY_NM has empty values that don't say NA.  Let's make them say NA
-df_bike_summons$CITY_NM <- as.character(df_bike_summons$CITY_NM)
-df_bike_summons$CITY_NM[df_bike_summons$CITY_NM==""] <- NA
-df_bike_summons$CITY_NM <- as.factor(df_bike_summons$CITY_NM)
+df_bike_violations$CITY_NM <- as.character(df_bike_violations$CITY_NM)
+df_bike_violations$CITY_NM[df_bike_violations$CITY_NM==""] <- NA
+df_bike_violations$CITY_NM <- as.factor(df_bike_violations$CITY_NM)
 
 # Can try to check this for cleaner way to change to NAs in dplyr:  https://stackoverflow.com/questions/24172111/change-the-blank-cells-to-na
 
 # how many na values now?  #ans: 92
-df_bike_summons %>% 
+df_bike_violations %>% 
   group_by(CITY_NM) %>% 
   summarize(sum = sum(n()))
 
@@ -429,6 +434,21 @@ df_bike_summons %>%
 ```
 
 
+#### To do:  figure out what to do with NA values
+```{r}
+
+
+
+```
+
+
+#### To do: figure out if 'New York' values can be merged with 'Manhattan'
+```{r}
+
+
+
+```
+
 
 
 ## Optional - save csv
@@ -436,9 +456,9 @@ df_bike_summons %>%
 # optional: write to csv
 # file is approx 25mb. That exceeds limit for uploading via browser, but it is able to upload to git via push
 #install.packages("glue")
-#todays_date <- Sys.Date()
-#path_name<-glue('df_bike_summons_{todays_date}.csv')
-#write.csv(df_bike_summons, path_name, row.names=FALSE)
+todays_date <- Sys.Date()
+path_name<-glue('df_bike_violations_{todays_date}.csv')
+write.csv(df_bike_violations, path_name, row.names=FALSE)
 ```
 
 
