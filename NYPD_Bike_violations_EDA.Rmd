@@ -19,7 +19,7 @@ library(forcats)
 
 ## Import Data
 ```{r}
-df<-readr::read_csv('df_bike_summons_2023-06-25.csv')
+df<-readr::read_csv('df_bike_violations_2023-06-29.csv')
 
 df<-df %>% 
   mutate(VIOLATION_CODE = as.factor(VIOLATION_CODE)) %>%
@@ -39,15 +39,13 @@ ts_daily_total <- df %>%
   ungroup() %>% 
   as_tsibble(index = VIOLATION_DATE)
 
-# test
-df %>% 
-  mutate(VIOLATION_DATE = as_date(VIOLATION_DATE)) %>% 
-  group_by(VIOLATION_DATE, daily_total_cyclists) %>% 
-  summarize(daily_total_violations = sum(n())) %>% 
-  ungroup() %>% 
-  as_tsibble(index = VIOLATION_DATE)
 
-ts_daily_total
+# check for missing dates  # ans: 24
+ts_daily_total %>% 
+  count_gaps()
+
+
+
 ```
 ## Clean tsibble
 ```{r}
@@ -55,18 +53,34 @@ ts_daily_total
 ts_daily_total %>% 
   str()
 
-df_counts
+# are the days missing from df_counts?
+df_counts %>% 
+  filter(is.na(daily_total))
+
+ts_daily_total %>% 
+  #filter(is.na(daily_total_cyclists)) %>% 
+  count_gaps()
 
 # fill gaps re-join with df_counts data, so that gapped dates now have total cyclsits. Fill na violation data with 0s.
-ts_daily_total <- ts_daily_total %>%
+ts_daily_total<-ts_daily_total %>%
   fill_gaps() %>%
+  select(-daily_total_cyclists) %>% 
   mutate(date = VIOLATION_DATE) %>% 
-  left_join(y=df_counts, by='date', multiple='first') %>% 
-  select(-c('counts', 'date', 'daily_total', 'weekly_total')) %>% 
-  #rename('daily_total_cyclists' = 'daily_total') %>% 
-  mutate_at('daily_total_violations', ~replace_na(., 0)) 
+  left_join(y=df_counts, by='date', multiple='any') %>% 
+  rename(daily_total_cyclists = daily_total) %>% 
+  select(-c('date', 'counts', 'weekly_total')) %>% 
+  mutate_at('daily_total_violations', ~replace_na(., 0))
+  #mutate_at('daily_total_cyclists', ~replace_na(., 0))
+
+
+ts_daily_total %>% 
+  filter(is.na(daily_total_cyclists))
+
+ts_daily_total %>% 
+  count_gaps()
 
 ts_daily_total
+  
 ```
 
 
@@ -93,7 +107,9 @@ ts_daily_total %>%
 
 # classical decomp doesnt handle multi seasonality too well
 ts_daily_total %>% 
-  model(classical_decomposition(daily_total_cyclists, type = "additive"))%>%
+#  filter(!is.na(daily_total_cyclists)) %>% 
+#  fill_gaps() %>% 
+  model(classical_decomposition(daily_total_cyclists, type = "additive")) %>% 
 	components() %>%
   autoplot()
 
@@ -118,7 +134,7 @@ ts_daily_total %>%
   autoplot(daily_total_cyclists)+
   stat_smooth(method = "lm")
 
-str(ts_daily_total)
+
 ```
 
 
@@ -137,7 +153,7 @@ ts_daily_total %>%
 ```{r}
 ts_daily_total %>% 
   ggplot(aes(x=daily_total_violations))+
-  geom_histogram()
+  geom_histogram(bins=80)
 ```
 
 

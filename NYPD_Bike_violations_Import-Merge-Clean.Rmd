@@ -428,19 +428,15 @@ df_bike_violations %>%
   group_by(CITY_NM) %>% 
   summarize(sum = sum(n()))
 
+# View the 92 na's
+df_bike_violations %>% 
+  filter(is.na(CITY_NM))
+
+# Takeaway: none of the 92 have longitude or latitiude info either.  Can leave out if need be.
 
 ```
 
-
-### To do:  figure out what to do with NA values
-```{r}
-
-
-
-```
-
-
-### To do: figure out if 3956 'New York' values can be merged with 'Manhattan'
+#### Clean: CITY_NM=='New York' values changed to their boroughs.
 ```{r}
 
 head(df_bike_violations)
@@ -503,6 +499,7 @@ df_bike_violations %>%
 
 
 head(df_bike_violations)
+
 ```
 
 
