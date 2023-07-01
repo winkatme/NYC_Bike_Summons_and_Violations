@@ -17,7 +17,7 @@ library(forcats)
 ```
 
 
-## Import Data
+## Import Data & Create tsibble
 ```{r}
 df<-readr::read_csv('df_bike_violations_2023-06-29.csv')
 
@@ -28,8 +28,6 @@ df<-df %>%
   mutate(RPT_OWNING_CMD = as.factor(RPT_OWNING_CMD)) %>% 
   mutate(VIOLATION_DATE = as.POSIXct(VIOLATION_DATE)) 
 
-head(df)
-str(df)
 
 # convert to tsibble and add daily totaly violations for easier gpaphing and ts analysis
 ts_daily_total <- df %>% 
@@ -39,29 +37,21 @@ ts_daily_total <- df %>%
   ungroup() %>% 
   as_tsibble(index = VIOLATION_DATE)
 
-
-# check for missing dates  # ans: 24
-ts_daily_total %>% 
-  count_gaps()
-
-
-
 ```
-## Clean tsibble
+### Clean tsibble
 ```{r}
-# there are 29 missing days
-ts_daily_total %>% 
-  str()
-
-# are the days missing from df_counts?
-df_counts %>% 
-  filter(is.na(daily_total))
-
+# check for missing dates  # ans: 24
 ts_daily_total %>% 
   #filter(is.na(daily_total_cyclists)) %>% 
   count_gaps()
 
-# fill gaps re-join with df_counts data, so that gapped dates now have total cyclsits. Fill na violation data with 0s.
+# are the days missing from df_counts?  # ans: no.
+df_counts %>%  
+  filter(is.na(daily_total))
+
+
+
+# fill gaps dates and re-join with df_counts data, so that gapped dates now have total cyclsits. Replace violation na's with 0s.
 ts_daily_total<-ts_daily_total %>%
   fill_gaps() %>%
   select(-daily_total_cyclists) %>% 
@@ -70,17 +60,16 @@ ts_daily_total<-ts_daily_total %>%
   rename(daily_total_cyclists = daily_total) %>% 
   select(-c('date', 'counts', 'weekly_total')) %>% 
   mutate_at('daily_total_violations', ~replace_na(., 0))
-  #mutate_at('daily_total_cyclists', ~replace_na(., 0))
 
 
+# double check for na's:  
 ts_daily_total %>% 
   filter(is.na(daily_total_cyclists))
 
+# double check for date gaps:
 ts_daily_total %>% 
   count_gaps()
 
-ts_daily_total
-  
 ```
 
 
@@ -91,9 +80,11 @@ ts_daily_total
 ### Plot: daily total cyclists over time
 ```{r}
 ts_daily_total %>% 
-  autoplot(daily_total_cyclists)
+  autoplot(daily_total_cyclists)+
+  stat_smooth(method = "lm")
 
 # takeaway: ridership did not change much pre or post pandemic. not even during lockdown, although possible hickup.
+# However, ridership seems to be increaseing in the colder months while remaining level in the warmer months.
 ```
 ### Plot: daily total cyclists histogram
 ```{r}
@@ -138,6 +129,46 @@ ts_daily_total %>%
 ```
 
 
+### To explore: the change in ridership overtime by month/season
+```{r}
+# yearl seasonal plot
+ts_daily_total %>% 
+  gg_season(daily_total_cyclists)
+
+
+
+# takeaway - it's roughly the same yearly cycle per year.  increase in ridership from May-Oct, decrease Nov-Apr
+
+
+# looking at it by month:
+ts_monthly_total %>% 
+  gg_subseries(monthly_total_cyclists)
+
+
+
+ts_daily_total %>%
+  gg_subseries(daily_total_violations, period='month')
+
+
+#Left off: trying to get monthly totals for 
+ts_daily_total %>% 
+  index_by(yearmonth(VIOLATION_DATE)) %>% 
+  summarize(monthly_rider_total = sum(daily_total_cyclists)) %>% 
+  gg_season()
+
+# convert to monthly ts: success
+ts_monthly_total<-ts_daily_total %>% 
+  index_by(yearmonth(VIOLATION_DATE)) %>% 
+  summarize(across(c('daily_total_violations', 'daily_total_cyclists'),  ~sum(.x, na.rm = TRUE))) %>% 
+  rename(monthly_total_cyclists = daily_total_cyclists) %>% 
+  rename(monthly_total_violations = daily_total_violations) %>% 
+  rename(VIOLATION_DATE='yearmonth(VIOLATION_DATE)')
+
+
+
+
+```
+
 
 ### Plot: daily total violations over time
 ```{r}
@@ -145,7 +176,7 @@ ts_daily_total %>%
 ts_daily_total %>% 
   autoplot(daily_total_violations)
 
-# takeaway:  There were more violations before the pandemic.  During lockdown, very few.t.
+# takeaway:  There were more violations before the pandemic.  During lockdown, very few.
 
 ```
 
@@ -213,27 +244,45 @@ ts_daily_total %>%
 #### Plot: Pre-covid
 ```{r}
 
+# correlation:  0.501744
+cor<-ts_daily_total %>% 
+  filter_index(~"2020-04") %>% 
+  select(daily_total_cyclists, daily_total_violations) %>% 
+  correlate() %>% 
+  slice(1) %>% 
+  select(daily_total_violations) %>% 
+  as.numeric()
+
+
 # pre-covid
 ts_daily_total %>% 
   filter_index(~"2020-04") %>% 
   ggplot(aes(x=daily_total_violations, y=daily_total_cyclists))+
-  geom_point()
+  geom_point()+
+  geom_smooth(method=lm)+
+  sm_statCorr(label_x = 250, label_y = 1000)
+  
 
-# correlation:  0.501744
-ts_daily_total %>% 
-  filter_index(~"2020-04") %>% 
-  select(daily_total_cyclists, daily_total_violations) %>% 
-  correlate()
+?sm_statCorr
+
+
+
+cor<-as.character(cor)
 
 ```
 
 #### Plot: Post-covid
 ```{r}
+devtools::install_github('smin95/smplot2', force = TRUE)
+library(smplot2)
+
 # post-covid
 ts_daily_total %>% 
   filter_index("2020-04"~.) %>% 
   ggplot(aes(x=daily_total_violations, y=daily_total_cyclists))+
-  geom_point()
+  geom_point()+
+  geom_smooth(method=lm)+
+  sm_statCorr(label_x = 120, label_y = 1000)
 
 # correlation:  0.3846224
 ts_daily_total %>% 
