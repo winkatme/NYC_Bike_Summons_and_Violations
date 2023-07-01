@@ -88,7 +88,79 @@ ts_monthly_total<-ts_daily_total %>%
 
 # EDA
 
-## General EDA
+## EDA: General
+
+### What's the date range for the data? 
+```{r}
+date(range(df$VIOLATION_DATE))
+```
+### Which dates had the highest number of riders, and how many?
+```{r}
+df %>% 
+  mutate(VIOLATION_DATE = date(VIOLATION_DATE)) %>% 
+  arrange(desc(daily_total_cyclists)) %>%
+  distinct(VIOLATION_DATE, daily_total_cyclists) %>% 
+  slice(1:10)
+
+# takeaway: no particular trends, but mostly late summer / early autumn.  4 from September 2022.
+```
+
+### Which dates had the highest number of violations, and how many violations?
+```{r}
+df %>% 
+  mutate(VIOLATION_DATE = date(VIOLATION_DATE)) %>% 
+  group_by(VIOLATION_DATE) %>% 
+  summarize(daily_total_violations = sum(n())) %>% 
+  arrange(desc(daily_total_violations)) %>% 
+  slice(1:10)
+
+
+# mostly warmer days in 2018 and 2019, pre-pandemic
+```
+## EDA: Violation Codes
+
+### How many different violations were handed out to cyclist?
+```{r}
+df %>% 
+  distinct(VIOLATION_CODE)
+  
+# ans: 184
+```
+### How many total violations were handed out to cyclists?
+```{r}
+length(df$VIOLATION_CODE)
+
+# there were zero nas.  
+#sum(is.na(df$VIOLATION_CODE))
+
+
+# ans: 122620
+```
+
+
+### What were the most popular violations?
+
+```{r}
+df %>% 
+  group_by(VIOLATION_CODE, DESCRIPTION) %>% 
+  summarize(sum = sum(n())) %>% 
+  arrange(desc(sum)) %>% 
+  ungroup() %>% 
+  mutate(percent = 100*round(sum/sum(sum), 3))
+
+  
+  # takewaways:  44% were for failing to stop at red light.
+
+# note:  12332:ATTACHING SELF TO MOVING MOTOR VEHICLE a/k/a, the Marty McFly rule
+
+```
+
+
+
+
+
+
+## EDA: daily cyclists
 
 ### Plot: daily total cyclists over time
 ```{r}
@@ -190,7 +262,7 @@ ts_daily_total %>%
 
 ```
 
-
+## EDA: daily violations
 
 ### Plot: daily total violations over time
 ```{r}
@@ -254,34 +326,7 @@ ts_monthly_total %>%
 
 
 
-### What's the date range for the data? 
-```{r}
-date(range(df$VIOLATION_DATE))
 
-```
-### Which dates had the highest number of riders, and how many?
-```{r}
-df %>% 
-  mutate(VIOLATION_DATE = date(VIOLATION_DATE)) %>% 
-  arrange(desc(daily_total_cyclists)) %>%
-  distinct(VIOLATION_DATE, daily_total_cyclists) %>% 
-  slice(1:10)
-
-# takeaway: varied seasons.  Looks like mostly late summer / early autumn.  4 from September 2022.
-```
-
-### Which dates had the highest number of violations, and how many violations?
-```{r}
-df %>% 
-  mutate(VIOLATION_DATE = date(VIOLATION_DATE)) %>% 
-  group_by(VIOLATION_DATE) %>% 
-  summarize(daily_total_violations = sum(n())) %>% 
-  arrange(desc(daily_total_violations)) %>% 
-  slice(1:10)
-
-
-# mostly warmer days in 2018 and 2019, pre-pandemic
-```
 ### As the number of riders increases, does the number of violations also increase?
 ```{r}
 
@@ -360,39 +405,16 @@ ts_daily_total %>%
 
 
 
-## Violation codes EDA
 
-### How many different violations were handed out to cyclist?
+### To do: Can we predict ridership?
 ```{r}
-df %>% 
-  distinct(VIOLATION_CODE)
-  
-# ans: 184
-```
-### How many total violations were handed out to cyclists?
-```{r}
-length(df$VIOLATION_CODE)
 
-# there were zero nas.  
-#sum(is.na(df$VIOLATION_CODE))
-
-
-# ans: 122620
 ```
 
 
-### What were the most popular violations?
-
+### To do: Can we predict daily violations?
 ```{r}
-df %>% 
-  group_by(VIOLATION_CODE, DESCRIPTION) %>% 
-  summarize(sum = sum(n())) %>% 
-  arrange(desc(sum)) %>% 
-  ungroup() %>% 
-  slice(1:10)
 
-str(df)
-?summarize
 ```
 
 
