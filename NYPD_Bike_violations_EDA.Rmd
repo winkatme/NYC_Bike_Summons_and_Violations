@@ -437,47 +437,31 @@ df %>%
 ```
 
 
-### To do: Geocode violations.  See where most of them occur. 
+### Geocode: Violations location clusters
 ```{r}
 
-
+# view geomap of violations, post-covid 
+# wasnt able to use dplyr due to missing values. 
 df_fct_lump_post_covid <- df %>% 
   mutate(fct_lump = fct_lump(f=df$VIOLATION_CODE, n=9)) %>% 
   mutate(date=date(VIOLATION_DATE)) %>% 
   filter(date>='2020-04-01')
 
 
-df %>% 
-  #mutate(fct_lump = fct_lump(f=df$VIOLATION_CODE, n=9)) %>% 
-  mutate(date=date(VIOLATION_DATE)) %>% 
-  select(-VIOLATION_DATE) %>% 
-  filter(date>='2020-04-01') %>% 
-  mapview(na.omit(df), xcol = "Longitude", ycol = "Latitude",crs = 4269, grid=FALSE, alpha.regions = 0.2)
-
-
 mapview(na.omit(df_fct_lump_post_covid), xcol = "Longitude", ycol = "Latitude",zcol='fct_lump', crs = 4269, grid=FALSE, alpha.regions = 0.1)
 
-# map is too full,  let's just view 2022-04 through 2023-03
+# takeaway: map is too full,  let's just view  since 2022-04
 
-df_fct_lump_prev_year<-df %>% 
+df %>% 
   mutate(fct_lump = fct_lump(f=df$VIOLATION_CODE, n=9)) %>% 
   mutate(date=date(VIOLATION_DATE)) %>% 
-  filter(date>='2022-04-01')
+  filter(date>='2022-04-01') %>% 
+  mapview(xcol = "Longitude", ycol = "Latitude", zcol='fct_lump',crs = 4269, grid=FALSE, alpha.regions = 0.2)
 
-df_fct_lump_prev_year %>% 
-  count(fct_lump) %>% 
-  arrange(desc(n))
-
-mapview(na.omit(df_fct_lump_prev_year), xcol = "Longitude", ycol = "Latitude",zcol='fct_lump', crs = 4269, grid=FALSE, alpha.regions = 0.8)
 # takeaway: better, but still not as clear as I'd like.  
 
 
 # Let's just view fct_lump==1111D1C for the previous year:
-df_fct_lump_prev_year %>% 
-  filter(fct_lump=='1111D1C') %>% 
-  mapview(xcol = "Longitude", ycol = "Latitude",crs = 4269, grid=FALSE, alpha.regions = 0.2)
-
-
 df %>% 
   mutate(fct_lump = fct_lump(f=df$VIOLATION_CODE, n=9)) %>% 
   mutate(date=date(VIOLATION_DATE)) %>% 
@@ -485,7 +469,7 @@ df %>%
   filter(fct_lump=='1111D1C') %>% 
   mapview(xcol = "Longitude", ycol = "Latitude",crs = 4269, grid=FALSE, alpha.regions = 0.2)
 
-# takeaway: we have a better view of the major ticketing areas for 1111D1C: uws, ues (and their corresponding avenues up through Harlem), up and down 1st and 2nd ave, especialy in the east village, over the Wburg Bridge, up and down 4th and 5th aves in Brooklyn, Liberty Ave in Ozone park/ Richmond Hill, East side of prospect park on Bedford Ave, and bensonhurst, bk.
+# takeaway: we have a better view of the major ticketing areas for 1111D1C: uws, ues (and their corresponding avenues up through Harlem), up and down 1st and 2nd ave, especialy in the east village, over the Wburg Bridge, up and down 4th and 5th aves in Brooklyn, Liberty Ave in Ozone park/ Richmond Hill, East side of prospect park on Bedford Ave, and Bensonhurst, bk.
 ```
 
 
