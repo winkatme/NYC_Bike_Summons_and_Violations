@@ -405,33 +405,32 @@ ts_daily_total %>%
 # ans: they differ a little more than all together.  pre-covid was a better indicator.
 ```
 
-### To do: Do largest violations (summed per day) change over time?
+### Do largest violations (summed per day) change over time?
 ```{r}
-df %>% 
-  count(VIOLATION_CODE) %>% 
-  arrange(desc(n))
-
-
+# code test to lump all except 10 highest factors into 'other' category
 df %>% 
   mutate(fct_lump = fct_lump(f=df$VIOLATION_CODE, n=9)) %>% 
   count(fct_lump) %>% 
   arrange(desc(n))
 
-
+# plot: daily biggest violation over time, post covid
 df %>% 
   mutate(fct_lump = fct_lump(f=df$VIOLATION_CODE, n=9)) %>% 
-  filter(fct_lump=='1110AB') %>% 
+  filter(fct_lump=='1111D1C') %>% 
   mutate(date = date(VIOLATION_DATE)) %>% 
+  filter(date>='2020-04-01') %>% 
   group_by(date, fct_lump) %>% 
   summarize(sum=sum(n())) %>% 
   ggplot(aes(x=date, y=sum))+
   geom_line()
 
 
+# takeaway:  No.  not much different than general daily violations plot.  lower amount around Dec/Jan, otherwise fairly steady. 
+
 ```
 
 
-### To Do:Did the type of violations change after covid?
+### To Do: Did the type of violations change after covid?
 
 ```{r}
 
@@ -440,21 +439,53 @@ df %>%
 
 ### To do: Geocode violations.  See where most of them occur. 
 ```{r}
-# just 2023
-df_2023<-df[as.Date(df$VIOLATION_DATE)>="2023-01-01",]
-
-# can we 'bin' the bottom violations so that we can color code them?
-
-mapview(na.omit(df_2023), xcol = "Longitude", ycol = "Latitude",crs = 4269, grid=FALSE, alpha.regions = 0.1)
 
 
-df_2023 %>% 
-  rename('longitude' = 'Longitude') %>% 
-  rename('latitude' = 'Latitude') %>% 
-  mapview()
+df_fct_lump_post_covid <- df %>% 
+  mutate(fct_lump = fct_lump(f=df$VIOLATION_CODE, n=9)) %>% 
+  mutate(date=date(VIOLATION_DATE)) %>% 
+  filter(date>='2020-04-01')
 
-df_2023 %>% 
-  mutate(fct_lump = fct_lump(f=df_2023$VIOLATION_CODE, n=9))
+
+df %>% 
+  #mutate(fct_lump = fct_lump(f=df$VIOLATION_CODE, n=9)) %>% 
+  mutate(date=date(VIOLATION_DATE)) %>% 
+  select(-VIOLATION_DATE) %>% 
+  filter(date>='2020-04-01') %>% 
+  mapview(na.omit(df), xcol = "Longitude", ycol = "Latitude",crs = 4269, grid=FALSE, alpha.regions = 0.2)
+
+
+mapview(na.omit(df_fct_lump_post_covid), xcol = "Longitude", ycol = "Latitude",zcol='fct_lump', crs = 4269, grid=FALSE, alpha.regions = 0.1)
+
+# map is too full,  let's just view 2022-04 through 2023-03
+
+df_fct_lump_prev_year<-df %>% 
+  mutate(fct_lump = fct_lump(f=df$VIOLATION_CODE, n=9)) %>% 
+  mutate(date=date(VIOLATION_DATE)) %>% 
+  filter(date>='2022-04-01')
+
+df_fct_lump_prev_year %>% 
+  count(fct_lump) %>% 
+  arrange(desc(n))
+
+mapview(na.omit(df_fct_lump_prev_year), xcol = "Longitude", ycol = "Latitude",zcol='fct_lump', crs = 4269, grid=FALSE, alpha.regions = 0.8)
+# takeaway: better, but still not as clear as I'd like.  
+
+
+# Let's just view fct_lump==1111D1C for the previous year:
+df_fct_lump_prev_year %>% 
+  filter(fct_lump=='1111D1C') %>% 
+  mapview(xcol = "Longitude", ycol = "Latitude",crs = 4269, grid=FALSE, alpha.regions = 0.2)
+
+
+df %>% 
+  mutate(fct_lump = fct_lump(f=df$VIOLATION_CODE, n=9)) %>% 
+  mutate(date=date(VIOLATION_DATE)) %>% 
+  filter(date>='2022-04-01') %>% 
+  filter(fct_lump=='1111D1C') %>% 
+  mapview(xcol = "Longitude", ycol = "Latitude",crs = 4269, grid=FALSE, alpha.regions = 0.2)
+
+# takeaway: we have a better view of the major ticketing areas for 1111D1C: uws, ues (and their corresponding avenues up through Harlem), up and down 1st and 2nd ave, especialy in the east village, over the Wburg Bridge, up and down 4th and 5th aves in Brooklyn, Liberty Ave in Ozone park/ Richmond Hill, East side of prospect park on Bedford Ave, and bensonhurst, bk.
 ```
 
 
