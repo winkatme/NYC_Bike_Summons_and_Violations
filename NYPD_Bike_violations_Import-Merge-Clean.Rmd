@@ -179,7 +179,7 @@ tail(df_merged)
 
 ### Clean merged data
 ```{r}
-
+# ignore this cell
 
 # attempt to find missing dates
 
@@ -223,24 +223,7 @@ df_counts_raw %>%
 
 ### Create daily and weekly rider total columns
 ```{r}
-# graph per-day counts
-df_counts %>% 
-  mutate(date = date(date)) %>% 
-  group_by(date) %>% 
-  summarize(per_day_counts = sum(counts)) %>% 
-  #View()
-  as_tsibble(index=date) %>% 
-  autoplot()
 
-
-# graph per-week counts
-df_counts %>% 
-  mutate(date = yearweek(date)) %>% 
-  group_by(date) %>% 
-  summarize(per_week_counts = sum(counts)) %>% 
-  #View()
-  as_tsibble(index=date) %>% 
-  autoplot()
 
 # create new columns for daily and weekly totals
 df_counts<-df_counts %>% 
@@ -509,9 +492,9 @@ head(df_bike_violations)
 # optional: write to csv
 # file is approx 25mb. That exceeds limit for uploading via browser, but it is able to upload to git via push
 #install.packages("glue")
-todays_date <- Sys.Date()
-path_name<-glue('df_bike_violations_{todays_date}.csv')
-write.csv(df_bike_violations, path_name, row.names=FALSE)
+#todays_date <- Sys.Date()
+#path_name<-glue('df_bike_violations_{todays_date}.csv')
+#write.csv(df_bike_violations, path_name, row.names=FALSE)
 ```
 
 

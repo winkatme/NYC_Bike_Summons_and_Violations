@@ -14,6 +14,14 @@ library(glue)
 library(corrr)
 library(slider)
 library(forcats)
+#devtools::install_github('smin95/smplot2', force = TRUE)
+library(smplot2)
+#install.packages('sf')
+library(sf)
+#install.packages('Rcpp')
+library(Rcpp)
+#install.packages('mapview')
+library(mapview)
 ```
 
 
@@ -46,8 +54,8 @@ ts_daily_total %>%
   count_gaps()
 
 # are the days missing from df_counts?  # ans: no.
-df_counts %>%  
-  filter(is.na(daily_total))
+#df_counts %>%  
+#  filter(is.na(daily_total))
 
 
 
@@ -146,7 +154,8 @@ df %>%
   summarize(sum = sum(n())) %>% 
   arrange(desc(sum)) %>% 
   ungroup() %>% 
-  mutate(percent = 100*round(sum/sum(sum), 3))
+  mutate(percent = 100*round(sum/sum(sum), 3)) %>% 
+  slice(1:10)
 
   
   # takewaways:  44% were for failing to stop at red light.
@@ -372,19 +381,12 @@ ts_daily_total %>%
   geom_smooth(method=lm)+
   sm_statCorr(label_x = 250, label_y = 1000)
   
-
-?sm_statCorr
-
-
-
-cor<-as.character(cor)
-
 ```
 
 #### Plot: Post-covid
 ```{r}
 #devtools::install_github('smin95/smplot2', force = TRUE)
-library(smplot2)
+#library(smplot2)
 
 # post-covid
 ts_daily_total %>% 
@@ -403,6 +405,57 @@ ts_daily_total %>%
 # ans: they differ a little more than all together.  pre-covid was a better indicator.
 ```
 
+### To do: Do largest violations (summed per day) change over time?
+```{r}
+df %>% 
+  count(VIOLATION_CODE) %>% 
+  arrange(desc(n))
+
+
+df %>% 
+  mutate(fct_lump = fct_lump(f=df$VIOLATION_CODE, n=9)) %>% 
+  count(fct_lump) %>% 
+  arrange(desc(n))
+
+
+df %>% 
+  mutate(fct_lump = fct_lump(f=df$VIOLATION_CODE, n=9)) %>% 
+  filter(fct_lump=='1110AB') %>% 
+  mutate(date = date(VIOLATION_DATE)) %>% 
+  group_by(date, fct_lump) %>% 
+  summarize(sum=sum(n())) %>% 
+  ggplot(aes(x=date, y=sum))+
+  geom_line()
+
+
+```
+
+
+### To Do:Did the type of violations change after covid?
+
+```{r}
+
+```
+
+
+### To do: Geocode violations.  See where most of them occur. 
+```{r}
+# just 2023
+df_2023<-df[as.Date(df$VIOLATION_DATE)>="2023-01-01",]
+
+# can we 'bin' the bottom violations so that we can color code them?
+
+mapview(na.omit(df_2023), xcol = "Longitude", ycol = "Latitude",crs = 4269, grid=FALSE, alpha.regions = 0.1)
+
+
+df_2023 %>% 
+  rename('longitude' = 'Longitude') %>% 
+  rename('latitude' = 'Latitude') %>% 
+  mapview()
+
+df_2023 %>% 
+  mutate(fct_lump = fct_lump(f=df_2023$VIOLATION_CODE, n=9))
+```
 
 
 
