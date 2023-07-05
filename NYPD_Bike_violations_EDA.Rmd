@@ -3,9 +3,9 @@ title: "R Notebook"
 output: html_notebook
 ---
 
-
 ```{r message=FALSE}
 library(knitr)
+knitr::opts_chunk$set(message = FALSE)
 library(rmarkdown)
 library(fpp3)
 library(readxl)
@@ -25,8 +25,8 @@ library(Rcpp)
 library(mapview)
 ```
 
-
 ## Import Data & Create tsibble
+
 ```{r}
 df<-readr::read_csv('df_bike_violations_2023-06-29.csv')
 
@@ -47,7 +47,9 @@ ts_daily_total <- df %>%
   as_tsibble(index = VIOLATION_DATE)
 
 ```
+
 ### Clean daily tsibble
+
 ```{r}
 # check for missing dates  # ans: 24
 ts_daily_total %>% 
@@ -94,48 +96,57 @@ ts_monthly_total<-ts_daily_total %>%
 
 ```
 
-
 # EDA
 
 ## EDA: General
 
-### What's the date range for the data? 
+### What's the date range for the data?
+
 ```{r}
 date(range(df$VIOLATION_DATE))
 ```
+
 ### Which dates had the highest number of riders, and how many?
+
 ```{r}
 df %>% 
   mutate(VIOLATION_DATE = date(VIOLATION_DATE)) %>% 
   arrange(desc(daily_total_cyclists)) %>%
   distinct(VIOLATION_DATE, daily_total_cyclists) %>% 
-  slice(1:10)
+  slice(1:10) %>% 
+  kable()
 
 # takeaway: no particular trends, but mostly late summer / early autumn.  4 from September 2022.
 ```
 
 ### Which dates had the highest number of violations, and how many violations?
+
 ```{r}
 df %>% 
   mutate(VIOLATION_DATE = date(VIOLATION_DATE)) %>% 
   group_by(VIOLATION_DATE) %>% 
   summarize(daily_total_violations = sum(n())) %>% 
   arrange(desc(daily_total_violations)) %>% 
-  slice(1:10)
+  slice(1:10) %>% 
+  kable()
 
 
 # mostly warmer days in 2018 and 2019, pre-pandemic
 ```
+
 ## EDA: Violation Codes
 
 ### How many different violations were handed out to cyclist?
+
 ```{r}
 df %>% 
   distinct(VIOLATION_CODE)
   
 # ans: 184
 ```
+
 ### How many total violations were handed out to cyclists?
+
 ```{r}
 length(df$VIOLATION_CODE)
 
@@ -146,17 +157,17 @@ length(df$VIOLATION_CODE)
 # ans: 122620
 ```
 
-
 ### What were the most popular violations?
 
-```{r}
+```{r message=FALSE}
 df %>% 
   group_by(VIOLATION_CODE, DESCRIPTION) %>% 
   summarize(sum = sum(n())) %>% 
   arrange(desc(sum)) %>% 
   ungroup() %>% 
   mutate(percent = 100*round(sum/sum(sum), 3)) %>% 
-  slice(1:10)
+  slice(1:10) %>% 
+  kable()
 
   
   # takewaways:  44% were for failing to stop at red light.
@@ -165,15 +176,11 @@ df %>%
 
 ```
 
-
-
-
-
-
 ## EDA: daily cyclists
 
 ### Plot: daily total cyclists over time
-```{r}
+
+```{r message=FALSE }
 ts_daily_total %>% 
   autoplot(daily_total_cyclists)+
   stat_smooth(method = "lm")
@@ -181,17 +188,17 @@ ts_daily_total %>%
 # takeaway: ridership did not change much pre or post pandemic. not even during lockdown, although possible hickup.
 # However, ridership seems to be increaseing in the colder months while remaining level in the warmer months.
 ```
+
 ### Plot: daily total cyclists histogram
+
 ```{r}
 ts_daily_total %>% 
   ggplot(aes(x=daily_total_cyclists))+
   geom_histogram(bins=80)
 ```
 
-
-
-
 ### Does ridership increase or decrease yearly?
+
 ```{r}
 # leave out 2023 since we only have up to March
 
@@ -208,8 +215,8 @@ ts_daily_total %>%
 
 ```
 
-
 ### Does ridership change throughout the year (seasonality)?
+
 ```{r}
 # yearly seasonal plot
 ts_daily_total %>% 
@@ -238,7 +245,8 @@ ts_monthly_total %>%
 ```
 
 ### Daily total cyclists decomposition
-```{r}
+
+```{r message=FALSE, warning=FALSE }
 
 # classical decomp doesnt handle multi seasonality too well
 ts_daily_total %>% 
@@ -275,6 +283,7 @@ ts_daily_total %>%
 ## EDA: daily violations
 
 ### Plot: daily total violations over time
+
 ```{r}
 
 ts_daily_total %>% 
@@ -285,12 +294,15 @@ ts_daily_total %>%
 ```
 
 ### Plot: daily total violations historgram
+
 ```{r}
 ts_daily_total %>% 
   ggplot(aes(x=daily_total_violations))+
   geom_histogram(bins=80)
 ```
+
 ### Are the yearly number of violations trending up or down?
+
 ```{r}
 ts_daily_total %>% 
   #filter_index('2020'~.) %>% 
@@ -311,9 +323,8 @@ ts_monthly_total %>%
 
 ```
 
-
-
 ### Do number of violations change throughout the year (seasonal)?
+
 ```{r}
 # just post-covid
 ts_daily_total %>% 
@@ -334,11 +345,9 @@ ts_monthly_total %>%
 # takeaway - Hard to see any trends, but fewer violations in Nov/Dec/Jan.  Most in Sept Oct.  2021 was a steady year.
 ```
 
-
-
-
 ### As the number of riders increases, does the number of violations also increase?
-```{r}
+
+```{r message=FALSE}
 
 # utilizes corrr library
 
@@ -347,12 +356,15 @@ df %>%
   group_by(VIOLATION_DATE) %>% 
   mutate(daily_total_violations = sum(n())) %>% 
   select(daily_total_cyclists, daily_total_violations) %>% 
-  correlate()
+  correlate() %>% 
+  kable()
 
 # takeaawy cor: 0.2159162 So no, as the number of riders increases, the number of violations does not. 
 
 ```
+
 ### Plot: daily violations vs. daily cylists
+
 ```{r}
 ts_daily_total %>% 
   ggplot(aes(x=daily_total_violations, y=daily_total_cyclists))+
@@ -361,8 +373,10 @@ ts_daily_total %>%
 ```
 
 ### Does this differ for pre-covid and post-lockdown?
+
 #### Plot: Pre-covid
-```{r}
+
+```{r message = FALSE, warning=FALSE}
 
 # correlation:  0.501744
 cor<-ts_daily_total %>% 
@@ -385,7 +399,8 @@ ts_daily_total %>%
 ```
 
 #### Plot: Post-covid
-```{r}
+
+```{r message=FALSE}
 #devtools::install_github('smin95/smplot2', force = TRUE)
 #library(smplot2)
 
@@ -401,13 +416,15 @@ ts_daily_total %>%
 ts_daily_total %>% 
   filter_index("2020-04"~.) %>% 
   select(daily_total_cyclists, daily_total_violations) %>% 
-  correlate()
+  correlate() %>% 
+  kable()
 
 # ans: they differ a little more than all together.  pre-covid was a better indicator.
 ```
 
 ### Do largest violations (summed per day) change over time?
-```{r}
+
+```{r message = FALSE}
 # code test to lump all except 10 highest factors into 'other' category
 df %>% 
   mutate(fct_lump = fct_lump(f=df$VIOLATION_CODE, n=9)) %>% 
@@ -430,15 +447,14 @@ df %>%
 
 ```
 
-
 ### To Do: Did the type of violations change after covid?
 
 ```{r}
 
 ```
 
-
 ### Geocode: Violations location clusters
+
 ```{r}
 
 # view geomap of violations, post-covid 
@@ -473,22 +489,21 @@ df %>%
 # takeaway: we have a better view of the major ticketing areas for 1111D1C: uws, ues (and their corresponding avenues up through Harlem), up and down 1st and 2nd ave, especialy in the east village, over the Wburg Bridge, up and down 4th and 5th aves in Brooklyn, Liberty Ave in Ozone park/ Richmond Hill, East side of prospect park on Bedford Ave, and Bensonhurst, bk.
 ```
 
-
-
 ### To do: Can we predict ridership?
+
 ```{r}
 
 ```
-
 
 ### To do: Can we predict daily violations?
+
 ```{r}
 
 ```
 
-
 #### scratchpad
-```{r}
+
+```{r include=FALSE}
 str(df)
 
 # plot shows that ebikes and escooters didnt have their own categories until sometime in mid 2022. before that, everything was under 'bikes'
@@ -524,4 +539,3 @@ df_bicycle_counters_boroughs %>%
   geom_bar()+
   labs(x = "Borough", y="Cyclist Counters")
 ```
-

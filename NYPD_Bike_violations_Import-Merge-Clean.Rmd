@@ -8,6 +8,7 @@ output:
 
 ```{r message=FALSE}
 library(knitr)
+library(rmarkdown)
 library(fpp3)
 library(readxl)
 library(httr)
