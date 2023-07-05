@@ -131,6 +131,7 @@ str(df_current_violations)
 # https://data.cityofnewyork.us/Public-Safety/NYPD-B-Summons-Historic-/bme5-7ty4
 
 path = 'https://www.dropbox.com/s/9pikbkygm7ywq2h/NYPD_B_Summons__Historic_.csv?dl=1'
+
 df_historic <- read.csv(path)
 
 df_historic<-df_historic %>% 
@@ -238,6 +239,9 @@ df_counts<-df_counts %>%
   select(-c('date(date)', 'yearweek(date)'))
 
 str(df_counts)
+
+# optional: save csv
+write.csv(df_counts, '/Users/dovwinkleman/Desktop/df_counts.csv', row.names=FALSE)
 
 ```
 ### Create borough df

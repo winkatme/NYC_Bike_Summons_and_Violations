@@ -27,7 +27,7 @@ library(mapview)
 
 ## Import Data & Create tsibble
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 df<-readr::read_csv('df_bike_violations_2023-06-29.csv')
 
 df<-df %>% 
@@ -63,13 +63,31 @@ ts_daily_total %>%
 
 
 # fill gaps dates and re-join with df_counts data, so that gapped dates now have total cyclsits. Replace violation na's with 0s.
+
+# import df_counts:
+path2 = 'https://www.dropbox.com/s/oaklaldm8td9wem/Bicycle_Counts.csv?dl=1'
+df_counts <- read.csv(path2)
+
+df_counts<-df_counts %>% 
+  mutate(date = mdy_hms(date)) %>% 
+  group_by(date(date)) %>% 
+  mutate(daily_total = sum(counts)) %>% 
+  ungroup %>%
+  group_by(yearweek(date)) %>% 
+  mutate(weekly_total = sum(counts)) %>% 
+  ungroup %>% 
+  arrange(date) %>% 
+  select(-c('date(date)', 'yearweek(date)')) %>% 
+  mutate(date=date(date)) %>% 
+  select(-c(countid, id, status))
+
 ts_daily_total<-ts_daily_total %>%
   fill_gaps() %>%
   select(-daily_total_cyclists) %>% 
   mutate(date = VIOLATION_DATE) %>% 
   left_join(y=df_counts, by='date', multiple='any') %>% 
   rename(daily_total_cyclists = daily_total) %>% 
-  select(-c('date', 'counts', 'weekly_total')) %>% 
+  select(-c('date', 'counts', 'weekly_total', 'countid', 'id', 'status')) %>% 
   mutate_at('daily_total_violations', ~replace_na(., 0))
 
 
@@ -81,6 +99,8 @@ ts_daily_total %>%
 ts_daily_total %>% 
   count_gaps()
 
+
+ts_daily_total
 ```
 
 ### Create monthly data tsibble
