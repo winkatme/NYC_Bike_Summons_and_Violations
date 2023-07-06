@@ -1,6 +1,10 @@
 ---
 title: "R Notebook"
-output: html_notebook
+output: 
+  github_document:
+    html_preview: false
+    toc: true
+
 ---
 
 ```{r message=FALSE}
@@ -499,12 +503,12 @@ df %>%
 ### To do: Can we predict daily violations?
 
 ```{r}
-install.packages("janitor")
-install.packages("styler")
-library(styler)
-library(janitor)
-df %>%
-  clean_names()
+#install.packages("janitor")
+#install.packages("styler")
+#library(styler)
+#library(janitor)
+#df %>%
+#  clean_names()
 ```
 
 #### scratchpad
@@ -540,8 +544,8 @@ df %>%
 
 # cyclist counters per borough:
 # library(forcats)
-df_bicycle_counters_boroughs %>%
-  ggplot(aes(x = fct_infreq(Borough))) +
-  geom_bar() +
-  labs(x = "Borough", y = "Cyclist Counters")
+#df_bicycle_counters_boroughs %>%
+#  ggplot(aes(x = fct_infreq(Borough))) +
+#  geom_bar() +
+#  labs(x = "Borough", y = "Cyclist Counters")
 ```
