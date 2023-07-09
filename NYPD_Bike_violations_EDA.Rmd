@@ -167,7 +167,7 @@ df |>
 df |>
   distinct(violation_code)
 
-# ans: 184
+# ans: 183
 ```
 
 ### How many total violations were handed out to cyclists?
@@ -175,12 +175,7 @@ df |>
 ```{r}
 length(df$violation_code)
 
-# 16 na's
-sum(is.na(df$violation_code))
-
-df |> 
-  filter(is.na(violation_code))
-# ans: 122525
+# ans: 122509
 ```
 
 ### What were the most popular violations?
@@ -376,7 +371,7 @@ df |>
   correlate() |>
   kable()
 
-# takeaawy cor: 0.2159162 So no, as the number of riders increases, the number of violations does not.
+# takeaawy cor: 0.2167395 So no, as the number of riders increases, the number of violations does not.
 ```
 
 ### Plot: daily violations vs. daily cylists
@@ -392,7 +387,7 @@ ts_daily_total |>
 #### Plot: Pre-covid
 
 ```{r message = FALSE, warning=FALSE}
-# correlation:  0.501744
+# correlation:  0.5026907
 cor <- ts_daily_total |>
   filter_index(~"2020-04") |>
   select(daily_total_cyclists, daily_total_violations) |>
@@ -400,7 +395,6 @@ cor <- ts_daily_total |>
   slice(1) |>
   select(daily_total_violations) |>
   as.numeric()
-
 
 # pre-covid
 ts_daily_total |>
@@ -425,7 +419,7 @@ ts_daily_total |>
   geom_smooth(method = lm) +
   sm_statCorr(label_x = 120, label_y = 1000)
 
-# correlation:  0.3846224
+# correlation:  ~0.38
 ts_daily_total |>
   filter_index("2020-04" ~ .) |>
   select(daily_total_cyclists, daily_total_violations) |>
