@@ -33,10 +33,9 @@ library(janitor)
 ## Import Data & Create tsibble
 
 ```{r import-and-tsibble, include=FALSE}
-df <- readr::read_csv("df_bike_violations_2023-06-29.csv")
+df <- readr::read_csv("df_bike_violations_2023-07-09.csv")
 
 df <- df |>
-  clean_names() |>
   mutate(violation_code = as.factor(violation_code)) |>
   mutate(veh_category = as.factor(veh_category)) |>
   mutate(city_nm = as.factor(city_nm)) |>
@@ -166,7 +165,7 @@ df |>
 
 ```{r}
 df |>
-  distinct(violation_date)
+  distinct(violation_code)
 
 # ans: 184
 ```
@@ -174,13 +173,14 @@ df |>
 ### How many total violations were handed out to cyclists?
 
 ```{r}
-length(df$violation_date)
+length(df$violation_code)
 
-# there were zero nas.
-# sum(is.na(df$VIOLATION_CODE))
+# 16 na's
+sum(is.na(df$violation_code))
 
-
-# ans: 122620
+df |> 
+  filter(is.na(violation_code))
+# ans: 122525
 ```
 
 ### What were the most popular violations?
@@ -509,12 +509,7 @@ df |>
 ### To do: Can we predict daily violations?
 
 ```{r}
-# install.packages("janitor")
-# install.packages("styler")
-# library(styler)
-# library(janitor)
-# df |>
-#  clean_names()
+
 ```
 
 #### scratchpad

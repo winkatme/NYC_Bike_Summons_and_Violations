@@ -383,7 +383,6 @@ df_bike_violations |>
 # remove the 16 entries with 'na' for violation_code, as they will are not useful to the report.
 df_bike_violations <- df_bike_violations |> 
   filter(!is.na(violation_code))
-
 ```
 
 
@@ -530,7 +529,7 @@ head(df_bike_violations)
 # optional: write to csv
 # file is approx 25mb. That exceeds limit for uploading via browser, but it is able to upload to git via push
 # install.packages("glue")
-# todays_date <- Sys.Date()
-# path_name<-glue('df_bike_violations_{todays_date}.csv')
-# write.csv(df_bike_violations, path_name, row.names=FALSE)
+todays_date <- Sys.Date()
+path_name<-glue('df_bike_violations_{todays_date}.csv')
+write.csv(df_bike_violations, path_name, row.names=FALSE)
 ```
