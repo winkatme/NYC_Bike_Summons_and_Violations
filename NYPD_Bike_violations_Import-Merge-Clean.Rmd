@@ -245,10 +245,10 @@ write.csv(df_counts, '/Users/dovwinkleman/Desktop/df_counts.csv', row.names=FALS
 
 ```
 ### Create borough df
-```{r}
+```{r geomap-bike-counters}
 df_bicycle_counters <- read.csv('Bicycle_Counters.csv')
 
-str(df_bicycle_counters)
+df_bicycle_counters
 
 # change 0s to na
 df_bicycle_counters<-df_bicycle_counters %>% 
@@ -298,6 +298,10 @@ df_bicycle_counters_boroughs$borough[grepl("Manhattan Bridge Interference", df_b
 #write.csv(df_bicycle_counters_boroughs, path_name, row.names=FALSE)
 #df_bicycle_counters_boroughs
 
+
+df_bicycle_counters_boroughs %>% 
+  select(borough) %>% 
+  table()
 ```
 
 

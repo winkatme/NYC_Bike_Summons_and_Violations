@@ -2,8 +2,7 @@
 title: "R Notebook"
 output: 
   github_document:
-    html_preview: false
-    toc: true
+    html_preview: FALSE
 
 ---
 
@@ -186,16 +185,16 @@ length(df$violation_date)
 
 ### What were the most popular violations?
 
-```{r message=FALSE}
+```{r 10-most-popular-violations-table, message=FALSE}
 df %>%
-  group_by(violation_date, description) %>%
+  mutate(violation_date=date(violation_date)) %>% 
+  group_by(violation_code, description) %>%
   summarize(sum = sum(n())) %>%
   arrange(desc(sum)) %>%
   ungroup() %>%
   mutate(percent = 100 * round(sum / sum(sum), 3)) %>%
   slice(1:10) %>%
   kable()
-
 
 # takewaways:  44% were for failing to stop at red light.
 
