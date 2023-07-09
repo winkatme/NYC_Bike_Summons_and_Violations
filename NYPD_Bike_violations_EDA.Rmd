@@ -9,7 +9,7 @@ output:
 ```{r libraries, message=FALSE}
 library(knitr)
 knitr::opts_chunk$set(message = FALSE)
-#options(digits = 7)
+# options(digits = 7)
 library(rmarkdown)
 library(fpp3)
 library(readxl)
@@ -35,23 +35,23 @@ library(janitor)
 ```{r import-and-tsibble, include=FALSE}
 df <- readr::read_csv("df_bike_violations_2023-06-29.csv")
 
-df <- df %>%
-  clean_names() %>% 
-  mutate(violation_code = as.factor(violation_code)) %>%
-  mutate(veh_category = as.factor(veh_category)) %>%
-  mutate(city_nm = as.factor(city_nm)) %>%
-  mutate(rpt_owning_cmd = as.factor(rpt_owning_cmd)) %>%
+df <- df |>
+  clean_names() |>
+  mutate(violation_code = as.factor(violation_code)) |>
+  mutate(veh_category = as.factor(veh_category)) |>
+  mutate(city_nm = as.factor(city_nm)) |>
+  mutate(rpt_owning_cmd = as.factor(rpt_owning_cmd)) |>
   mutate(violation_date = as.POSIXct(violation_date))
 
 
 
 
 # create a daily data tsibble
-ts_daily_total <- df %>%
-  mutate(violation_date = as_date(violation_date)) %>%
-  group_by(violation_date, daily_total_cyclists) %>%
-  summarize(daily_total_violations = sum(n())) %>%
-  ungroup() %>%
+ts_daily_total <- df |>
+  mutate(violation_date = as_date(violation_date)) |>
+  group_by(violation_date, daily_total_cyclists) |>
+  summarize(daily_total_violations = sum(n())) |>
+  ungroup() |>
   as_tsibble(index = violation_date)
 ```
 
@@ -59,12 +59,12 @@ ts_daily_total <- df %>%
 
 ```{r clean}
 # check for missing dates  # ans: 24
-ts_daily_total %>%
-  # filter(is.na(daily_total_cyclists)) %>%
+ts_daily_total |>
+  # filter(is.na(daily_total_cyclists)) |>
   count_gaps()
 
 # are the days missing from df_counts?  # ans: no.
-# df_counts %>%
+# df_counts |>
 #  filter(is.na(daily_total))
 
 
@@ -75,35 +75,35 @@ ts_daily_total %>%
 path2 <- "https://www.dropbox.com/s/oaklaldm8td9wem/Bicycle_Counts.csv?dl=1"
 df_counts <- read.csv(path2)
 
-df_counts <- df_counts %>%
-  mutate(date = mdy_hms(date)) %>%
-  group_by(date(date)) %>%
-  mutate(daily_total = sum(counts)) %>%
-  ungroup() %>%
-  group_by(yearweek(date)) %>%
-  mutate(weekly_total = sum(counts)) %>%
-  ungroup() %>%
-  arrange(date) %>%
-  select(-c("date(date)", "yearweek(date)")) %>%
-  mutate(date = date(date)) %>%
+df_counts <- df_counts |>
+  mutate(date = mdy_hms(date)) |>
+  group_by(date(date)) |>
+  mutate(daily_total = sum(counts)) |>
+  ungroup() |>
+  group_by(yearweek(date)) |>
+  mutate(weekly_total = sum(counts)) |>
+  ungroup() |>
+  arrange(date) |>
+  select(-c("date(date)", "yearweek(date)")) |>
+  mutate(date = date(date)) |>
   select(-c(countid, id, status))
 
-ts_daily_total <- ts_daily_total %>%
-  fill_gaps() %>%
-  select(-daily_total_cyclists) %>%
-  mutate(date = violation_date) %>%
-  left_join(y = df_counts, by = "date", multiple = "any") %>%
-  rename(daily_total_cyclists = daily_total) %>%
-  select(-c("date", "counts", "weekly_total")) %>%
+ts_daily_total <- ts_daily_total |>
+  fill_gaps() |>
+  select(-daily_total_cyclists) |>
+  mutate(date = violation_date) |>
+  left_join(y = df_counts, by = "date", multiple = "any") |>
+  rename(daily_total_cyclists = daily_total) |>
+  select(-c("date", "counts", "weekly_total")) |>
   mutate_at("daily_total_violations", ~ replace_na(., 0))
 
 
 # double check for na's:
-ts_daily_total %>%
+ts_daily_total |>
   filter(is.na(daily_total_cyclists))
 
 # double check for date gaps:
-ts_daily_total %>%
+ts_daily_total |>
   count_gaps()
 
 
@@ -114,11 +114,11 @@ ts_daily_total
 
 ```{r monthly-tsibble}
 # create a monthly data tsibble from cleaned daily tsibble
-ts_monthly_total <- ts_daily_total %>%
-  index_by(yearmonth(violation_date)) %>%
-  summarize(across(c("daily_total_violations", "daily_total_cyclists"), ~ sum(.x, na.rm = TRUE))) %>%
-  rename(monthly_total_cyclists = daily_total_cyclists) %>%
-  rename(monthly_total_violations = daily_total_violations) %>%
+ts_monthly_total <- ts_daily_total |>
+  index_by(yearmonth(violation_date)) |>
+  summarize(across(c("daily_total_violations", "daily_total_cyclists"), ~ sum(.x, na.rm = TRUE))) |>
+  rename(monthly_total_cyclists = daily_total_cyclists) |>
+  rename(monthly_total_violations = daily_total_violations) |>
   rename(violation_date = "yearmonth(violation_date)")
 ```
 
@@ -135,12 +135,12 @@ date(range(df$violation_date))
 ### Which dates had the highest number of riders, and how many?
 
 ```{r top-10-daily-total-cyclist-days}
-df %>%
-  mutate(violation_date = date(violation_date)) %>%
-  arrange(desc(daily_total_cyclists)) %>%
-  distinct(violation_date, daily_total_cyclists) %>%
-  slice(1:10) %>%
-  kable(caption = 'Top 10 busiest cyclist days', align='c')
+df |>
+  mutate(violation_date = date(violation_date)) |>
+  arrange(desc(daily_total_cyclists)) |>
+  distinct(violation_date, daily_total_cyclists) |>
+  slice(1:10) |>
+  kable(caption = "Top 10 busiest cyclist days", align = "c")
 
 # takeaway: no particular trends, but mostly late summer / early autumn.  4 from September 2022.
 ```
@@ -148,13 +148,15 @@ df %>%
 ### Which dates had the highest number of violations, and how many violations?
 
 ```{r}
-df %>%
-  mutate(violation_date = date(violation_date)) %>%
-  group_by(violation_date) %>%
-  summarize(daily_total_violations = sum(n())) %>%
-  arrange(desc(daily_total_violations)) %>%
-  slice(1:10) %>%
-  kable(caption = 'Top 10 busiest violatin days', align='c')
+df |>
+  mutate(violation_date = date(violation_date)) |>
+  summarize(
+    daily_total_violations = sum(n()),
+    .by = violation_date
+  ) |>
+  arrange(desc(daily_total_violations)) |>
+  slice(1:10) |>
+  kable(caption = "Top 10 busiest violation days", align = "c")
 
 
 # mostly warmer days in 2018 and 2019, pre-pandemic
@@ -165,7 +167,7 @@ df %>%
 ### How many different violations were handed out to cyclist?
 
 ```{r}
-df %>%
+df |>
   distinct(violation_date)
 
 # ans: 184
@@ -186,14 +188,15 @@ length(df$violation_date)
 ### What were the most popular violations?
 
 ```{r 10-most-popular-violations-table, message=FALSE}
-df %>%
-  mutate(violation_date=date(violation_date)) %>% 
-  group_by(violation_code, description) %>%
-  summarize(sum = sum(n())) %>%
-  arrange(desc(sum)) %>%
-  ungroup() %>%
-  mutate(percent = 100 * round(sum / sum(sum), 3)) %>%
-  slice(1:10) %>%
+df |>
+  mutate(violation_date = date(violation_date)) |>
+  summarize(
+    sum = sum(n()),
+    .by = c(violation_code, description)
+  ) |>
+  arrange(desc(sum)) |>
+  mutate(percent = 100 * round(sum / sum(sum), 3)) |>
+  slice(1:10) |>
   kable()
 
 # takewaways:  44% were for failing to stop at red light.
@@ -206,9 +209,9 @@ df %>%
 ### Plot: daily total cyclists over time
 
 ```{r message=FALSE }
-ts_daily_total %>%
+ts_daily_total |>
   autoplot(daily_total_cyclists) +
-  stat_smooth(method = "lm")
+  geom_smooth(method = "lm")
 
 # takeaway: ridership did not change much pre or post pandemic. not even during lockdown, although possible hickup.
 # However, ridership seems to be increaseing in the colder months while remaining level in the warmer months.
@@ -217,7 +220,7 @@ ts_daily_total %>%
 ### Plot: daily total cyclists histogram
 
 ```{r}
-ts_daily_total %>%
+ts_daily_total |>
   ggplot(aes(x = daily_total_cyclists)) +
   geom_histogram(bins = 80)
 ```
@@ -227,13 +230,13 @@ ts_daily_total %>%
 ```{r}
 # leave out 2023 since we only have up to March
 
-ts_daily_total %>%
-  index_by(year(violation_date)) %>%
-  summarize(across(c("daily_total_violations", "daily_total_cyclists"), ~ sum(.x, na.rm = TRUE))) %>%
-  rename(yearly_total_cyclists = daily_total_cyclists) %>%
-  rename(yearly_total_violations = daily_total_violations) %>%
-  rename(violation_date = "year(violation_date)") %>%
-  filter_index(. ~ "2022") %>%
+ts_daily_total |>
+  index_by(year(violation_date)) |>
+  summarize(across(c("daily_total_violations", "daily_total_cyclists"), ~ sum(.x, na.rm = TRUE))) |>
+  rename(yearly_total_cyclists = daily_total_cyclists) |>
+  rename(yearly_total_violations = daily_total_violations) |>
+  rename(violation_date = "year(violation_date)") |>
+  filter_index(. ~ "2022") |>
   autoplot(yearly_total_cyclists)
 
 # Takeaway: Yes, it increases. slight dip in 2019 but clearly increasing
@@ -243,18 +246,18 @@ ts_daily_total %>%
 
 ```{r}
 # yearly seasonal plot
-ts_daily_total %>%
+ts_daily_total |>
   gg_season(daily_total_cyclists)
 # takeaway - it's roughly the same yearly cycle per year.  increase in ridership from May-Oct, decrease Nov-Apr
 
 # same as above but monthly totals, looks cleaner:
-ts_monthly_total %>%
+ts_monthly_total |>
   gg_season(monthly_total_cyclists)
 # takeaway - dip in April 2020 during covid lockdown, but not much less than before.
 
 
 # looking at it by month:
-ts_monthly_total %>%
+ts_monthly_total |>
   gg_subseries(monthly_total_cyclists)
 # takeaways:
 ## seasonality is a little clearer.  monthly difference is clearer.
@@ -271,31 +274,31 @@ ts_monthly_total %>%
 
 ```{r daily-total-cyclists-decomp, message=FALSE, warning=FALSE }
 # classical decomp doesnt handle multi seasonality too well
-ts_daily_total %>%
-  #  filter(!is.na(daily_total_cyclists)) %>%
-  #  fill_gaps() %>%
-  model(classical_decomposition(daily_total_cyclists, type = "additive")) %>%
-  components() %>%
+ts_daily_total |>
+  #  filter(!is.na(daily_total_cyclists)) |>
+  #  fill_gaps() |>
+  model(classical_decomposition(daily_total_cyclists, type = "additive")) |>
+  components() |>
   autoplot()
 
 
 # STL - best so far
-ts_daily_total %>%
+ts_daily_total |>
   model(
     STL(daily_total_cyclists ~ trend(window = 365) +
       season(period = "year") + season(period = "1 month"), )
-  ) %>%
-  components() %>%
+  ) |>
+  components() |>
   autoplot()
 
 # what about moving average for trend?  it ok.  I think stl is best.
-ts_daily_total %>%
-  mutate(`5-MA` = slider::slide_dbl(daily_total_cyclists, mean, .before = 90, .after = 90, .complete = TRUE)) %>%
+ts_daily_total |>
+  mutate(`5-MA` = slider::slide_dbl(daily_total_cyclists, mean, .before = 90, .after = 90, .complete = TRUE)) |>
   autoplot(daily_total_cyclists) +
   geom_line(aes(y = `5-MA`), colour = "#D55E00")
 
 # what about just a regular regression line
-ts_daily_total %>%
+ts_daily_total |>
   autoplot(daily_total_cyclists) +
   stat_smooth(method = "lm")
 ```
@@ -305,7 +308,7 @@ ts_daily_total %>%
 ### Plot: daily total violations over time
 
 ```{r}
-ts_daily_total %>%
+ts_daily_total |>
   autoplot(daily_total_violations)
 
 # takeaway:  There were more violations before the pandemic.  During lockdown, very few.
@@ -314,7 +317,7 @@ ts_daily_total %>%
 ### Plot: daily total violations historgram
 
 ```{r}
-ts_daily_total %>%
+ts_daily_total |>
   ggplot(aes(x = daily_total_violations)) +
   geom_histogram(bins = 80)
 ```
@@ -322,21 +325,21 @@ ts_daily_total %>%
 ### Are the yearly number of violations trending up or down?
 
 ```{r}
-ts_daily_total %>%
-  # filter_index('2020'~.) %>%
-  index_by(year(violation_date)) %>%
-  summarize(across(c("daily_total_violations", "daily_total_cyclists"), ~ sum(.x, na.rm = TRUE))) %>%
-  rename(yearly_total_cyclists = daily_total_cyclists) %>%
-  rename(yearly_total_violations = daily_total_violations) %>%
-  rename(violation_date = "year(violation_date)") %>%
-  filter_index(. ~ "2022") %>%
+ts_daily_total |>
+  # filter_index('2020'~.) |>
+  index_by(year(violation_date)) |>
+  summarize(across(c("daily_total_violations", "daily_total_cyclists"), ~ sum(.x, na.rm = TRUE))) |>
+  rename(yearly_total_cyclists = daily_total_cyclists) |>
+  rename(yearly_total_violations = daily_total_violations) |>
+  rename(violation_date = "year(violation_date)") |>
+  filter_index(. ~ "2022") |>
   autoplot(yearly_total_violations)
 
 
 # takeaway: not reall, post-covid. It looks steady.  2020, even with lockdown, had more violations than 2021 and 2022, but less than 2019.
 
 # monthly:  just cleaner graph of daily violations over time.  Post-covid looks steady.
-ts_monthly_total %>%
+ts_monthly_total |>
   autoplot(monthly_total_violations)
 ```
 
@@ -344,19 +347,19 @@ ts_monthly_total %>%
 
 ```{r}
 # just post-covid
-ts_daily_total %>%
-  filter_index("2020-03" ~ .) %>%
+ts_daily_total |>
+  filter_index("2020-03" ~ .) |>
   gg_season(daily_total_violations)
 
 
 # is it easier to see monthly?
-ts_monthly_total %>%
-  filter_index("2020-03" ~ .) %>%
+ts_monthly_total |>
+  filter_index("2020-03" ~ .) |>
   gg_season(monthly_total_violations)
 
 # subseries plot
-ts_monthly_total %>%
-  filter_index("2020-03" ~ .) %>%
+ts_monthly_total |>
+  filter_index("2020-03" ~ .) |>
   gg_subseries(monthly_total_violations)
 
 # takeaway - Hard to see any trends, but fewer violations in Nov/Dec/Jan.  Most in Sept Oct.  2021 was a steady year.
@@ -367,12 +370,12 @@ ts_monthly_total %>%
 ```{r message=FALSE}
 # utilizes corrr library
 
-df %>%
-  mutate(violation_date = date(violation_date)) %>%
-  group_by(violation_date) %>%
-  mutate(daily_total_violations = sum(n())) %>%
-  select(daily_total_cyclists, daily_total_violations) %>%
-  correlate() %>%
+df |>
+  mutate(violation_date = date(violation_date)) |>
+  group_by(violation_date) |>
+  mutate(daily_total_violations = sum(n())) |>
+  select(daily_total_cyclists, daily_total_violations) |>
+  correlate() |>
   kable()
 
 # takeaawy cor: 0.2159162 So no, as the number of riders increases, the number of violations does not.
@@ -381,7 +384,7 @@ df %>%
 ### Plot: daily violations vs. daily cylists
 
 ```{r}
-ts_daily_total %>%
+ts_daily_total |>
   ggplot(aes(x = daily_total_violations, y = daily_total_cyclists)) +
   geom_point()
 ```
@@ -392,18 +395,18 @@ ts_daily_total %>%
 
 ```{r message = FALSE, warning=FALSE}
 # correlation:  0.501744
-cor <- ts_daily_total %>%
-  filter_index(~"2020-04") %>%
-  select(daily_total_cyclists, daily_total_violations) %>%
-  correlate() %>%
-  slice(1) %>%
-  select(daily_total_violations) %>%
+cor <- ts_daily_total |>
+  filter_index(~"2020-04") |>
+  select(daily_total_cyclists, daily_total_violations) |>
+  correlate() |>
+  slice(1) |>
+  select(daily_total_violations) |>
   as.numeric()
 
 
 # pre-covid
-ts_daily_total %>%
-  filter_index(~"2020-04") %>%
+ts_daily_total |>
+  filter_index(~"2020-04") |>
   ggplot(aes(x = daily_total_violations, y = daily_total_cyclists)) +
   geom_point() +
   geom_smooth(method = lm) +
@@ -417,18 +420,18 @@ ts_daily_total %>%
 # library(smplot2)
 
 # post-covid
-ts_daily_total %>%
-  filter_index("2020-04" ~ .) %>%
+ts_daily_total |>
+  filter_index("2020-04" ~ .) |>
   ggplot(aes(x = daily_total_violations, y = daily_total_cyclists)) +
   geom_point() +
   geom_smooth(method = lm) +
   sm_statCorr(label_x = 120, label_y = 1000)
 
 # correlation:  0.3846224
-ts_daily_total %>%
-  filter_index("2020-04" ~ .) %>%
-  select(daily_total_cyclists, daily_total_violations) %>%
-  correlate() %>%
+ts_daily_total |>
+  filter_index("2020-04" ~ .) |>
+  select(daily_total_cyclists, daily_total_violations) |>
+  correlate() |>
   kable()
 
 # ans: they differ a little more than all together.  pre-covid was a better indicator.
@@ -438,19 +441,21 @@ ts_daily_total %>%
 
 ```{r message = FALSE}
 # code test to lump all except 10 highest factors into 'other' category
-df %>%
-  mutate(fct_lump = fct_lump(f = df$violation_code, n = 9)) %>%
-  count(fct_lump) %>%
+df |>
+  mutate(fct_lump = fct_lump(f = df$violation_code, n = 9)) |>
+  count(fct_lump) |>
   arrange(desc(n))
 
 # plot: daily biggest violation over time, post covid
-df %>%
-  mutate(fct_lump = fct_lump(f = df$violation_code, n = 9)) %>%
-  filter(fct_lump == "1111D1C") %>%
-  mutate(date = date(violation_date)) %>%
-  filter(date >= "2020-04-01") %>%
-  group_by(date, fct_lump) %>%
-  summarize(sum = sum(n())) %>%
+df |>
+  mutate(fct_lump = fct_lump(f = df$violation_code, n = 9)) |>
+  filter(fct_lump == "1111D1C") |>
+  mutate(date = date(violation_date)) |>
+  filter(date >= "2020-04-01") |>
+  summarize(
+    sum = sum(n()),
+    .by = c(date, fct_lump)
+  ) |>
   ggplot(aes(x = date, y = sum)) +
   geom_line()
 
@@ -468,9 +473,9 @@ df %>%
 ```{r}
 # view geomap of violations, post-covid
 # wasnt able to use dplyr due to missing values.
-df_fct_lump_post_covid <- df %>%
-  mutate(fct_lump = fct_lump(f = df$violation_code, n = 9)) %>%
-  mutate(date = date(violation_date)) %>%
+df_fct_lump_post_covid <- df |>
+  mutate(fct_lump = fct_lump(f = df$violation_code, n = 9)) |>
+  mutate(date = date(violation_date)) |>
   filter(date >= "2020-04-01")
 
 
@@ -478,21 +483,21 @@ mapview(na.omit(df_fct_lump_post_covid), xcol = "longitude", ycol = "latitude", 
 
 # takeaway: map is too full,  let's just view  since 2022-04
 
-df %>%
-  mutate(fct_lump = fct_lump(f = df$violation_code, n = 9)) %>%
-  mutate(date = date(violation_date)) %>%
-  filter(date >= "2022-04-01") %>%
+df |>
+  mutate(fct_lump = fct_lump(f = df$violation_code, n = 9)) |>
+  mutate(date = date(violation_date)) |>
+  filter(date >= "2022-04-01") |>
   mapview(xcol = "longitude", ycol = "latitude", zcol = "fct_lump", crs = 4269, grid = FALSE, alpha.regions = 0.2)
 
 # takeaway: better, but still not as clear as I'd like.
 
 
 # Let's just view fct_lump==1111D1C for the previous year:
-df %>%
-  mutate(fct_lump = fct_lump(f = df$violation_code, n = 9)) %>%
-  mutate(date = date(violation_date)) %>%
-  filter(date >= "2022-04-01") %>%
-  filter(fct_lump == "1111D1C") %>%
+df |>
+  mutate(fct_lump = fct_lump(f = df$violation_code, n = 9)) |>
+  mutate(date = date(violation_date)) |>
+  filter(date >= "2022-04-01") |>
+  filter(fct_lump == "1111D1C") |>
   mapview(xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE, alpha.regions = 0.2)
 
 # takeaway: we have a better view of the major ticketing areas for 1111D1C: uws, ues (and their corresponding avenues up through Harlem), up and down 1st and 2nd ave, especialy in the east village, over the Wburg Bridge, up and down 4th and 5th aves in Brooklyn, Liberty Ave in Ozone park/ Richmond Hill, East side of prospect park on Bedford Ave, and Bensonhurst, bk.
@@ -506,11 +511,11 @@ df %>%
 ### To do: Can we predict daily violations?
 
 ```{r}
-#install.packages("janitor")
-#install.packages("styler")
-#library(styler)
-#library(janitor)
-#df %>%
+# install.packages("janitor")
+# install.packages("styler")
+# library(styler)
+# library(janitor)
+# df |>
 #  clean_names()
 ```
 
@@ -520,34 +525,34 @@ df %>%
 str(df)
 
 # plot shows that ebikes and escooters didnt have their own categories until sometime in mid 2022. before that, everything was under 'bikes'
-df %>%
+df |>
   ggplot(aes(x = violation_date, y = city_nm, col = veh_category)) +
   geom_jitter()
 
 # nuthin
-df %>%
+df |>
   ggplot(aes(x = violation_date, y = city_nm, col = violation_code)) +
   geom_jitter()
 
 # violations per month
-df %>%
-  group_by(yearmonth = yearmonth(violation_date)) %>%
-  summarize(total_violations = sum(n())) %>%
+df |>
+  group_by(yearmonth = yearmonth(violation_date)) |>
+  summarize(total_violations = sum(n())) |>
   ggplot(aes(x = yearmonth, y = total_violations)) +
   geom_line()
 
 
 # violations per borough per year
-df %>%
-  group_by(year = yearmonth(violation_date), city_nm) %>%
-  summarize(total_violations = sum(n())) %>%
+df |>
+  group_by(year = yearmonth(violation_date), city_nm) |>
+  summarize(total_violations = sum(n())) |>
   ggplot(aes(x = year, y = total_violations, col = city_nm)) +
   geom_line()
 
 
 # cyclist counters per borough:
 # library(forcats)
-#df_bicycle_counters_boroughs %>%
+# df_bicycle_counters_boroughs |>
 #  ggplot(aes(x = fct_infreq(Borough))) +
 #  geom_bar() +
 #  labs(x = "Borough", y = "Cyclist Counters")

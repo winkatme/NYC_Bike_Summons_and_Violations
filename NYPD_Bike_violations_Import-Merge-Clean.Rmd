@@ -1,33 +1,36 @@
 ---
 title: "R Notebook"
 output:
-  html_document: 
-    toc: yes
+  github_document:
+    html_preview: FALSE 
+    
 ---
 
-
-```{r message=FALSE}
+```{r libraries, message=FALSE}
 library(knitr)
 library(rmarkdown)
 library(fpp3)
 library(readxl)
 library(httr)
 library(glue)
-#install.packages('sf')
+# install.packages('sf')
 library(sf)
-#install.packages('Rcpp')
+# install.packages('Rcpp')
 library(Rcpp)
-#install.packages('mapview')
+# install.packages('mapview')
 library(mapview)
-#install.packages('tidygeocoder')
+# install.packages('tidygeocoder')
 library(tidygeocoder)
+library(janitor)
+library(styler)
 ```
-
 
 # Import, Merge, and Clean Data
 
 ## Violation Codes data
+
 ### Import violations xlsx
+
 ```{r}
 # import Code Violations xlsx
 # source:  https://dmv.ny.gov/e-data/violationcodes.xlsx
@@ -39,72 +42,73 @@ path = 'https://dmv.ny.gov/e-data/violationcodes.xlsx'
 GET(path, write_disk(tf <- tempfile(fileext = ".xlsx")))
 df_violation_codes <- read_xlsx(tf, sheet=1)
 
-df_violation_codes <- df_violation_codes %>% 
-  rename('VIOLATION_CODE'='ADJ Code') %>% 
+df_violation_codes <- df_violation_codes |> 
+  rename('VIOLATION_CODE'='ADJ Code') |> 
   select(c('VIOLATION_CODE', 'DESCRIPTION'))
 
 ```
 
-
 ### Clean violations codes
+
 ```{r}
 # Remove duplicates
 
 # IOLATION_CODE duplicates found: (1110A and 1151A)
 # This step proved to be necessary, as merging the two documents would duplicate the number of rows of any violation code in df to match any duplicates in violations.  This caused the # of rows of df to be over 200,000, when it should have remained the same (184770)
 
-df_violation_codes %>% 
-  count(VIOLATION_CODE) %>% 
+df_violation_codes |>
+  count(VIOLATION_CODE) |>
   arrange(desc(n))
 
 # view descriptions for 1110A
-df_violation_codes %>% 
-  filter(VIOLATION_CODE=='1110A')
+df_violation_codes |>
+  filter(VIOLATION_CODE == "1110A")
 # DISOBEYED TRAFFIC DEVICE
 # DISOBEYED TRAFFIC DEVICE - PAVEMENT MARKINGS
 # we will change all to the second, longer description
 
 # view descriptions for 1151A
-df_violation_codes %>% 
-  filter(VIOLATION_CODE=='1151A')
+df_violation_codes |>
+  filter(VIOLATION_CODE == "1151A")
 # FAILED TO YIELD RIGHT-OF-WAY TO PEDESTRIAN IN CROSSWALK
 # FAILED TO YIELD RIGHT-OF-WAY TO PEDESTRIAN ON SIDEWALK
-# We will change all to read: 
+# We will change all to read:
 # FAILED TO YIELD RIGHT-OF-WAY TO PEDESTRIAN ON SIDEWALK OR CROSSWALK
 
 
 # Remove duplicates of violation codes
 # and manually merge descriptions for duplicate violation_Codes
 
-df_violation_codes_no_dupes<-df_violation_codes %>% 
-  distinct(VIOLATION_CODE, .keep_all=TRUE) %>% 
-  mutate(DESCRIPTION = case_when(VIOLATION_CODE=='1151A' ~ "FAILED TO YIELD RIGHT-OF-WAY TO PEDESTRIAN ON SIDEWALK OR CROSSWALK", TRUE ~ DESCRIPTION)) %>% 
-  mutate(DESCRIPTION = case_when(VIOLATION_CODE=='1110A' ~ "DISOBEYED TRAFFIC DEVICE - PAVEMENT MARKINGS", TRUE ~ DESCRIPTION))
-  
+df_violation_codes_no_dupes <- df_violation_codes |>
+  distinct(VIOLATION_CODE, .keep_all = TRUE) |>
+  mutate(DESCRIPTION = case_when(VIOLATION_CODE == "1151A" ~ "FAILED TO YIELD RIGHT-OF-WAY TO PEDESTRIAN ON SIDEWALK OR CROSSWALK", TRUE ~ DESCRIPTION)) |>
+  mutate(DESCRIPTION = case_when(VIOLATION_CODE == "1110A" ~ "DISOBEYED TRAFFIC DEVICE - PAVEMENT MARKINGS", TRUE ~ DESCRIPTION))
+
 # OPTIONAL double-check no dupes
-# df_violation_codes_no_dupes %>%   
-#   count(VIOLATION_CODE) %>% 
+# df_violation_codes_no_dupes |>
+#   count(VIOLATION_CODE) |>
 #   distinct(n)
 
 # OPTIONAL double-check that 1110A and 1151A read what they are supposed to
-# df_violation_codes_no_dupes %>% 
+# df_violation_codes_no_dupes |>
 #   filter(VIOLATION_CODE=='1151A'|VIOLATION_CODE=='1110A')
 
 
 dim(df_violation_codes_no_dupes)
-#View(violations_no_dupes)
+# View(violations_no_dupes)
 ```
 
-
 ## NYPD Violations data
-### Import current violations data 
+
+### Import current violations data
+
 ```{r}
 # only run once
 
 # import NYPD Summons csv
 # source: https://data.cityofnewyork.us/Public-Safety/NYPD-B-Summons-Year-to-Date-/57p3-pdcj
 
-df_current_violations <- read.csv('NYPD_B_Summons__Year_to_Date_.csv')
+df_current_violations <- read.csv("NYPD_B_Summons__Year_to_Date_.csv")
 
 # Remove unneeded columns.  update column types as needed
 # CHG_LAW_CD - can be removed.  Just determines if it was ny state or local nyc law
@@ -113,66 +117,68 @@ df_current_violations <- read.csv('NYPD_B_Summons__Year_to_Date_.csv')
 ### to delete ### LAW_CODE_ON_TICKET - can probably be removed.  most likely redundant with VIOLATION_CODE
 ### to delete ### RPT_OWNING_CMD - precinct where reported. change this from integer to factor, since it acts similar to a zip code.
 
-df_current_violations<-df_current_violations %>% 
-  mutate(VIOLATION_CODE = as.factor(VIOLATION_CODE)) %>%
-  mutate(VEH_CATEGORY = as.factor(VEH_CATEGORY)) %>% 
-  mutate(CITY_NM = as.factor(CITY_NM)) %>% 
-  mutate(RPT_OWNING_CMD = as.factor(RPT_OWNING_CMD)) %>% 
-  mutate(VIOLATION_DATE = mdy(VIOLATION_DATE)+hms(VIOLATION_TIME)) %>% 
-  select(-c(CHG_LAW_CD, VIOLATION_TIME, JURIS_CD)) %>% 
-  rename('Location' = 'Location.Point')
+df_current_violations <- df_current_violations |>
+  mutate(VIOLATION_CODE = as.factor(VIOLATION_CODE)) |>
+  mutate(VEH_CATEGORY = as.factor(VEH_CATEGORY)) |>
+  mutate(CITY_NM = as.factor(CITY_NM)) |>
+  mutate(RPT_OWNING_CMD = as.factor(RPT_OWNING_CMD)) |>
+  mutate(VIOLATION_DATE = mdy(VIOLATION_DATE) + hms(VIOLATION_TIME)) |>
+  select(-c(CHG_LAW_CD, VIOLATION_TIME, JURIS_CD)) |>
+  rename("Location" = "Location.Point")
 
-#View(df_current_violations)
+# View(df_current_violations)
 str(df_current_violations)
 ```
 
 ### Import historic violations data
+
 ```{r}
 # https://data.cityofnewyork.us/Public-Safety/NYPD-B-Summons-Historic-/bme5-7ty4
 
-path = 'https://www.dropbox.com/s/9pikbkygm7ywq2h/NYPD_B_Summons__Historic_.csv?dl=1'
+path <- "https://www.dropbox.com/s/9pikbkygm7ywq2h/NYPD_B_Summons__Historic_.csv?dl=1"
 
 df_historic <- read.csv(path)
 
-df_historic<-df_historic %>% 
-  mutate(VIOLATION_CODE = as.factor(VIOLATION_CODE)) %>%
-  mutate(VEH_CATEGORY = as.factor(VEH_CATEGORY)) %>% 
-  mutate(CITY_NM = as.factor(CITY_NM)) %>% 
-  mutate(RPT_OWNING_CMD = as.factor(RPT_OWNING_CMD)) %>% 
-  mutate(VIOLATION_DATE = mdy(VIOLATION_DATE)+hms(VIOLATION_TIME)) %>% 
-  select(-c(CHG_LAW_CD, VIOLATION_TIME, JURIS_CD))  %>% 
-  rename('Location' = 'location')
+df_historic <- df_historic |>
+  mutate(VIOLATION_CODE = as.factor(VIOLATION_CODE)) |>
+  mutate(VEH_CATEGORY = as.factor(VEH_CATEGORY)) |>
+  mutate(CITY_NM = as.factor(CITY_NM)) |>
+  mutate(RPT_OWNING_CMD = as.factor(RPT_OWNING_CMD)) |>
+  mutate(VIOLATION_DATE = mdy(VIOLATION_DATE) + hms(VIOLATION_TIME)) |>
+  select(-c(CHG_LAW_CD, VIOLATION_TIME, JURIS_CD)) |>
+  rename("Location" = "location")
 
 str(df_historic)
 ```
 
-
 ### Merge historic violations data with current violations data
+
 ```{r}
-df_merged<-merge(df_historic, df_current_violations, all.x = TRUE, all.y = TRUE)
+df_merged <- merge(df_historic, df_current_violations, all.x = TRUE, all.y = TRUE)
 
 # for whatever reason, violation_code was not saved as a factor when merged
-df_merged<-df_merged %>% 
+df_merged <- df_merged |>
   mutate(VIOLATION_CODE = as.factor(VIOLATION_CODE))
 
 str(df_merged)
-#length(unique(df_merged$VIOLATION_CODE))
+# length(unique(df_merged$VIOLATION_CODE))
 
 ```
 
 ### Merge violations data with with Violations code data by violation code
+
 ```{r}
 # matches violation description with violation code
 
-df_merged<-df_merged %>% 
-  left_join(x=df_merged, y=df_violation_codes_no_dupes, by='VIOLATION_CODE') 
+df_merged <- df_merged |>
+  left_join(x = df_merged, y = df_violation_codes_no_dupes, by = "VIOLATION_CODE")
 
-df_merged<-df_merged %>% 
-  mutate(VIOLATION_CODE = as.factor(VIOLATION_CODE)) 
-  
+df_merged <- df_merged |>
+  mutate(VIOLATION_CODE = as.factor(VIOLATION_CODE))
+
 
 # OPTIONAL - double check values for code 1110A
-#df %>% 
+# df |>
 #   filter(VIOLATION_CODE=='1110A')
 
 str(df_merged)
@@ -180,62 +186,58 @@ tail(df_merged)
 ```
 
 ### Clean merged data
+
 ```{r}
 # ignore this cell
 
 # attempt to find missing dates
 
-# To Double Check: possibly missing dec 31 2018 and dec 31 2019.  
+# To Double Check: possibly missing dec 31 2018 and dec 31 2019.
 
 # source: https://stackoverflow.com/questions/50724137/find-missing-days-in-r-date-sequence
-date_range <- seq(min(date(df_merged$VIOLATION_DATE)), max(date(df_merged$VIOLATION_DATE)), by = 1) 
+date_range <- seq(min(date(df_merged$VIOLATION_DATE)), max(date(df_merged$VIOLATION_DATE)), by = 1)
 
-date_range[!date_range %in% date(df_merged$VIOLATION_DATE)] 
+date_range[!date_range %in% date(df_merged$VIOLATION_DATE)]
 
 length(unique(date(df_merged$VIOLATION_DATE)))
 
-max(date(df_merged$VIOLATION_DATE))-min(date(df_merged$VIOLATION_DATE))
-
-
-
-
+max(date(df_merged$VIOLATION_DATE)) - min(date(df_merged$VIOLATION_DATE))
 ```
 
-
-
 ## Count Data
-### Import total rider counts
-```{r}
-#https://data.cityofnewyork.us/Transportation/Bicycle-Counts/uczf-rk3c
 
-path2 = 'https://www.dropbox.com/s/oaklaldm8td9wem/Bicycle_Counts.csv?dl=1'
+### Import total rider counts
+
+```{r}
+# https://data.cityofnewyork.us/Transportation/Bicycle-Counts/uczf-rk3c
+
+path2 <- "https://www.dropbox.com/s/oaklaldm8td9wem/Bicycle_Counts.csv?dl=1"
 df_counts_raw <- read.csv(path2)
- 
-df_counts<-df_counts_raw %>% 
+
+df_counts <- df_counts_raw |>
   mutate(date = mdy_hms(date))
 
 head(df_counts)
 str(df_counts)
 
-df_counts_raw %>% 
-  distinct(id) %>% 
+df_counts_raw |>
+  distinct(id) |>
   arrange(id)
 
 ```
 
 ### Create daily and weekly rider total columns
+
 ```{r}
-
-
 # create new columns for daily and weekly totals
-df_counts<-df_counts %>% 
-  group_by(date(date)) %>% 
-  mutate(daily_total = sum(counts)) %>% 
-  ungroup %>%
-  group_by(yearweek(date)) %>% 
-  mutate(weekly_total = sum(counts)) %>% 
-  ungroup %>% 
-  arrange(date) %>% 
+df_counts<-df_counts |> 
+  group_by(date(date)) |> 
+  mutate(daily_total = sum(counts)) |> 
+  ungroup |>
+  group_by(yearweek(date)) |> 
+  mutate(weekly_total = sum(counts)) |> 
+  ungroup |> 
+  arrange(date) |> 
   select(-c('date(date)', 'yearweek(date)'))
 
 str(df_counts)
@@ -244,31 +246,34 @@ str(df_counts)
 write.csv(df_counts, '/Users/dovwinkleman/Desktop/df_counts.csv', row.names=FALSE)
 
 ```
+
 ### Create borough df
+
 ```{r geomap-bike-counters}
-df_bicycle_counters <- read.csv('Bicycle_Counters.csv')
+df_bicycle_counters <- read.csv("Bicycle_Counters.csv")
 
 df_bicycle_counters
 
 # change 0s to na
-df_bicycle_counters<-df_bicycle_counters %>% 
-  mutate_at(c('longitude', 'latitude'), ~na_if(., 0))
+df_bicycle_counters <- df_bicycle_counters |>
+  mutate_at(c("longitude", "latitude"), ~ na_if(., 0))
 
 df_bicycle_counters
 # map the stations
 # Source: https://map-rfun.library.duke.edu/01_georeference.html
 
-#install.packages('sf')
-#library(sf)
-#install.packages('Rcpp')
-#library(Rcpp)
-#install.packages('mapview')
-#library(mapview)
+# install.packages('sf')
+# library(sf)
+# install.packages('Rcpp')
+# library(Rcpp)
+# install.packages('mapview')
+# library(mapview)
 
-mapview(na.omit(df_bicycle_counters), xcol = "longitude", ycol = "latitude",crs = 4269, grid=FALSE)
+mapview(na.omit(df_bicycle_counters), xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)
 ```
 
 ### Add column with boroughs labels
+
 ```{r}
 df_bicycle_counters
 
@@ -277,94 +282,98 @@ df_bicycle_counters
 
 # sometimes this doesn't work.  When it does work, not all are filled in.
 
-#install.packages('tidygeocoder')
-#library(tidygeocoder)
+# install.packages('tidygeocoder')
+# library(tidygeocoder)
 
-df_bicycle_counters_boroughs<-df_bicycle_counters %>%
-  reverse_geocode(lat = latitude, long = longitude, method = 'osm',
-                  address = address_found, full_results = TRUE) %>% 
-  select(id, name, latitude, longitude, suburb) %>% 
-  rename('borough' = 'suburb') %>% 
-  mutate(borough = gsub('Richmond County', 'Staten Island', borough)) %>% 
-  mutate(borough = gsub('Queens County', 'Queens', borough))
+df_bicycle_counters_boroughs <- df_bicycle_counters |>
+  reverse_geocode(
+    lat = latitude, long = longitude, method = "osm",
+    address = address_found, full_results = TRUE
+  ) |>
+  select(id, name, latitude, longitude, suburb) |>
+  rename("borough" = "suburb") |>
+  mutate(borough = gsub("Richmond County", "Staten Island", borough)) |>
+  mutate(borough = gsub("Queens County", "Queens", borough))
 
 # replace willis ave borough na's with 'Bronx', and give manhattan bridge interference corresponding borough name
-df_bicycle_counters_boroughs$borough[grepl("Willis", df_bicycle_counters_boroughs$name)]<-'Bronx'
-df_bicycle_counters_boroughs$borough[grepl("Manhattan Bridge Interference", df_bicycle_counters_boroughs$name)]<-'Manhattan'
+df_bicycle_counters_boroughs$borough[grepl("Willis", df_bicycle_counters_boroughs$name)] <- "Bronx"
+df_bicycle_counters_boroughs$borough[grepl("Manhattan Bridge Interference", df_bicycle_counters_boroughs$name)] <- "Manhattan"
 
 
 # Optional:  Save to csv
-#path_name<-'df_bicycle_counters_boroughs.csv'
-#write.csv(df_bicycle_counters_boroughs, path_name, row.names=FALSE)
-#df_bicycle_counters_boroughs
+# path_name<-'df_bicycle_counters_boroughs.csv'
+# write.csv(df_bicycle_counters_boroughs, path_name, row.names=FALSE)
+# df_bicycle_counters_boroughs
 
 
-df_bicycle_counters_boroughs %>% 
-  select(borough) %>% 
-  table()
+df_bicycle_counters_boroughs |>
+  filter(!is.na(latitude)) |>
+  tabyl(borough) |>
+  adorn_pct_formatting() |>
+  adorn_totals()
 ```
 
-
 ### Incomplete - Merge borough data with count data
+
 ```{r}
 # I'm doubtful that this step is necessary, since the counter locations are so heavily skewed for Manhattan
 
 
-sort(unique(df_counts_raw$id))==sort(unique(df_bicycle_counters_boroughs$id))
+sort(unique(df_counts_raw$id)) == sort(unique(df_bicycle_counters_boroughs$id))
 
 # False:
-length(unique(df_bicycle_counters_boroughs$id))==length(unique(df_counts_raw$id))
+length(unique(df_bicycle_counters_boroughs$id)) == length(unique(df_counts_raw$id))
 
 sort(unique(df_counts_raw$id))
 # 100055175 is not in both
 
-df_counts_raw %>% 
-  filter(id==100055175)
+df_counts_raw |>
+  filter(id == 100055175)
 
 
 sort(unique(df_bicycle_counters_boroughs$id))
 # 300020692 is not in both
 
 # its just a 'test' and can be removed.
-df_bicycle_counters_boroughs %>% 
-  filter(id==300020692)
+df_bicycle_counters_boroughs |>
+  filter(id == 300020692)
 
 # left off - trying to find out which id's match, in order to merge on id.
 ```
 
-
-
 ## Merge violations data with rider count data
+
 ```{r}
 str(df_counts)
 str(df_merged)
 
 
 # create 'date' column of just ymd (no hms) in df_counts to merge on
-df_counts<-df_counts %>% 
-  mutate(date=date(date)) %>% 
+df_counts <- df_counts |>
+  mutate(date = date(date)) |>
   select(-c(countid, id, status))
-  
+
 
 # match date column with equal one in df_merged.  Just choose bikes, as the count data is just for bikes.  Also makes merging go quicker.
-df_bike_violations <- df_merged %>%
-  filter(VEH_CATEGORY=='BIKE' | VEH_CATEGORY=='EBIKE' | VEH_CATEGORY=='ESCOOTER') %>% 
-  mutate(date=date(VIOLATION_DATE)) %>% 
-  left_join(y=df_counts, by='date', multiple='first') %>% 
-  select(-c('counts', 'date')) %>% 
-  rename('daily_total_cyclists' = 'daily_total') %>% 
-  rename('weekly_total_cyclists' = 'weekly_total') %>% 
+df_bike_violations <- df_merged |>
+  filter(VEH_CATEGORY == "BIKE" | VEH_CATEGORY == "EBIKE" | VEH_CATEGORY == "ESCOOTER") |>
+  mutate(date = date(VIOLATION_DATE)) |>
+  left_join(y = df_counts, by = "date", multiple = "first") |>
+  select(-c("counts", "date")) |>
+  rename("daily_total_cyclists" = "daily_total") |>
+  rename("weekly_total_cyclists" = "weekly_total") |>
   arrange(VIOLATION_DATE)
 
 head(df_bike_violations)
 ```
 
 ### Clean n/a values in description
+
 ```{r}
 # check to see which Violation codes correspond to empty description cells
 
-df_bike_violations %>% 
-  filter(is.na(DESCRIPTION)) %>% 
+df_bike_violations |>
+  filter(is.na(DESCRIPTION)) |>
   distinct(VIOLATION_CODE)
 
 # There were 4 distinct Violation codes with no description:
@@ -373,55 +382,57 @@ df_bike_violations %>%
 # 4021 is associated with 4 different violation codes:  4021A - NO LICENSE PLATE OR SINGLE LICENSE PLATE, 4021B1 - DIRTY PLATE OR PLATE COVERED BY GLASS OR PLASTIC, 4021B2 - PLATE KNOWINGLY COVERED WITH INTENT TO OBSCURE, 4021B3 - PLATE OBSCURED BY VEHICLE OR ANYTHING CARRIED THERON.  Since these are all related to license plates, I will change these all to 4021A
 # 22653 - this was closest to two values, 22651 - EQUIPMENT VIOLATION LIMITED USE VEHICLE and 22651M - MISCELLANEOUS EQUIPMENT VIOLATION - LIMITED USE MOTORCYCLE.  Since all 18 of the 22653 violations were either e-bike or escooter, I will change all of these to 22651M
 
-#df_bike_violations %>% 
+# df_bike_violations |>
 #  filter(VIOLATION_CODE=='22653')
 
 
 # change all violation codes to decided on values
-df_bike_violations<-df_bike_violations %>% 
-  mutate(VIOLATION_CODE = replace(VIOLATION_CODE, VIOLATION_CODE == '37524A', '37524AB')) %>%
-  mutate(VIOLATION_CODE = replace(VIOLATION_CODE, VIOLATION_CODE == '4014', '4014B')) %>%
-  mutate(VIOLATION_CODE = replace(VIOLATION_CODE, VIOLATION_CODE == '4021', '4021A')) %>%
-  mutate(VIOLATION_CODE = replace(VIOLATION_CODE, VIOLATION_CODE == '22653', '22651M')) 
+df_bike_violations <- df_bike_violations |>
+  mutate(VIOLATION_CODE = replace(VIOLATION_CODE, VIOLATION_CODE == "37524A", "37524AB")) |>
+  mutate(VIOLATION_CODE = replace(VIOLATION_CODE, VIOLATION_CODE == "4014", "4014B")) |>
+  mutate(VIOLATION_CODE = replace(VIOLATION_CODE, VIOLATION_CODE == "4021", "4021A")) |>
+  mutate(VIOLATION_CODE = replace(VIOLATION_CODE, VIOLATION_CODE == "22653", "22651M"))
 
 # change all descriptions baseed on new violation code values
-df_bike_violations$DESCRIPTION[df_bike_violations$VIOLATION_CODE=='37524AB'] <- 'OPER BICYCLE WITH MORE 1 EARPHONE'
-df_bike_violations$DESCRIPTION[df_bike_violations$VIOLATION_CODE=='4014B'] <- 'COMMERCIAL VEHICLE ON PARKWAY- NYC'
-df_bike_violations$DESCRIPTION[df_bike_violations$VIOLATION_CODE=='4021A'] <- 'NO LICENSE PLATE OR SINGLE LICENSE PLATE'
-df_bike_violations$DESCRIPTION[df_bike_violations$VIOLATION_CODE=='22651M'] <- 'MISCELLANEOUS EQUIPMENT VIOLATION - LIMITED USE MOTORCYCLE'
+df_bike_violations$DESCRIPTION[df_bike_violations$VIOLATION_CODE == "37524AB"] <- "OPER BICYCLE WITH MORE 1 EARPHONE"
+df_bike_violations$DESCRIPTION[df_bike_violations$VIOLATION_CODE == "4014B"] <- "COMMERCIAL VEHICLE ON PARKWAY- NYC"
+df_bike_violations$DESCRIPTION[df_bike_violations$VIOLATION_CODE == "4021A"] <- "NO LICENSE PLATE OR SINGLE LICENSE PLATE"
+df_bike_violations$DESCRIPTION[df_bike_violations$VIOLATION_CODE == "22651M"] <- "MISCELLANEOUS EQUIPMENT VIOLATION - LIMITED USE MOTORCYCLE"
 ```
 
 ### Check for NAs
+
 ```{r}
 # check for na's
 
 head(df_bike_violations)
 
-df_bike_violations %>% 
+df_bike_violations |>
   filter(is.na(daily_total_cyclists))
 
 # check factors for na's
-df_bike_violations %>% 
+df_bike_violations |>
   distinct(VIOLATION_CODE)
 
 ```
 
 #### Clean CITY_NM NAs
+
 ```{r}
 # CITY_NM has empty values that don't say NA.  Let's make them say NA
 df_bike_violations$CITY_NM <- as.character(df_bike_violations$CITY_NM)
-df_bike_violations$CITY_NM[df_bike_violations$CITY_NM==""] <- NA
+df_bike_violations$CITY_NM[df_bike_violations$CITY_NM == ""] <- NA
 df_bike_violations$CITY_NM <- as.factor(df_bike_violations$CITY_NM)
 
 # Can try to check this for cleaner way to change to NAs in dplyr:  https://stackoverflow.com/questions/24172111/change-the-blank-cells-to-na
 
 # how many na values now?  #ans: 92
-df_bike_violations %>% 
-  group_by(CITY_NM) %>% 
+df_bike_violations |>
+  group_by(CITY_NM) |>
   summarize(sum = sum(n()))
 
 # View the 92 na's
-df_bike_violations %>% 
+df_bike_violations |>
   filter(is.na(CITY_NM))
 
 # Takeaway: none of the 92 have longitude or latitiude info either.  Can leave out if need be.
@@ -429,64 +440,69 @@ df_bike_violations %>%
 ```
 
 #### Clean: CITY_NM=='New York' values changed to their boroughs.
+
 ```{r}
 
 head(df_bike_violations)
 
-df_bike_violations %>% 
-  filter(CITY_NM == 'NEW YORK') %>% 
+df_bike_violations |>
+  filter(CITY_NM == "NEW YORK") |>
   # three rows were missing latitude/longitude values.  mapview needs no na's.
-  filter(!is.na(Latitude)|!is.na(Longitude))  %>% 
-  mapview(xcol = "Longitude", ycol = "Latitude",crs = 4269, grid=FALSE)
+  filter(!is.na(Latitude) | !is.na(Longitude)) |>
+  mapview(xcol = "Longitude", ycol = "Latitude", crs = 4269, grid = FALSE)
 
 # takeaway from graph:  The large majority are in Manhattan, but there are still a few in Queens/Brooklyn
 
 # Can we use reverse geo lookup to get the boroughs?
-df_bike_violations %>% 
-  filter(CITY_NM == 'NEW YORK') %>% 
+df_bike_violations |>
+  filter(CITY_NM == "NEW YORK") |>
   # three rows were missing latitude/longitude values.  mapview needs no na's.
-  filter(!is.na(Latitude)|!is.na(Longitude))  %>% 
-  reverse_geocode(lat = Latitude, long = Longitude, method = 'osm',
-                  address = address_found, full_results = TRUE)
-  #select(id, name, latitude, longitude, suburb)
-  #rename('borough' = 'suburb') %>% 
-  #mutate(borough = gsub('Richmond County', 'Staten Island', borough)) %>% 
-  #mutate(borough = gsub('Queens County', 'Queens', borough))
+  filter(!is.na(Latitude) | !is.na(Longitude)) |>
+  reverse_geocode(
+    lat = Latitude, long = Longitude, method = "osm",
+    address = address_found, full_results = TRUE
+  )
+# select(id, name, latitude, longitude, suburb)
+# rename('borough' = 'suburb') |>
+# mutate(borough = gsub('Richmond County', 'Staten Island', borough)) |>
+# mutate(borough = gsub('Queens County', 'Queens', borough))
 
 
-df_tmp<-df_bike_violations %>% 
-  filter(CITY_NM == 'NEW YORK') %>% 
-  filter(!is.na(Latitude)|!is.na(Longitude))  %>% 
-  #slice(1:100) %>% 
-  reverse_geocode(lat = Latitude, long = Longitude, method = 'osm',
-                  address = address_found, full_results = TRUE) %>% 
-  select('EVNT_KEY', 'suburb')
+df_tmp <- df_bike_violations |>
+  filter(CITY_NM == "NEW YORK") |>
+  filter(!is.na(Latitude) | !is.na(Longitude)) |>
+  # slice(1:100) |>
+  reverse_geocode(
+    lat = Latitude, long = Longitude, method = "osm",
+    address = address_found, full_results = TRUE
+  ) |>
+  select("EVNT_KEY", "suburb")
 
 
 
-df_bike_violations %>% 
+df_bike_violations |>
   slice(1:100)
 
-df_bike_violations <-df_bike_violations %>%
-  left_join(df_tmp, by='EVNT_KEY') %>% 
-  mutate(CITY_NM = case_when((CITY_NM=='NEW YORK' & !is.na(suburb)) ~ suburb, .default=CITY_NM)) %>%
-  mutate(CITY_NM = case_when(CITY_NM=='Manhattan'~'MANHATTAN', .default=CITY_NM)) %>% 
-  mutate(CITY_NM = case_when(CITY_NM=='Kings County'~'BROOKLYN', .default=CITY_NM)) %>% 
-  mutate(CITY_NM = case_when(CITY_NM=='Queens County'~'QUEENS', .default=CITY_NM)) %>% 
-  mutate(CITY_NM = case_when(CITY_NM=='Brooklyn'~'BROOKLYN', .default=CITY_NM)) %>% 
-  mutate(CITY_NM = case_when(CITY_NM=='Queens'~'QUEENS', .default=CITY_NM))
+df_bike_violations <- df_bike_violations |>
+  left_join(df_tmp, by = "EVNT_KEY") |>
+  mutate(CITY_NM = case_when((CITY_NM == "NEW YORK" & !is.na(suburb)) ~ suburb, .default = CITY_NM)) |>
+  mutate(CITY_NM = case_when(CITY_NM == "Manhattan" ~ "MANHATTAN", .default = CITY_NM)) |>
+  mutate(CITY_NM = case_when(CITY_NM == "Kings County" ~ "BROOKLYN", .default = CITY_NM)) |>
+  mutate(CITY_NM = case_when(CITY_NM == "Queens County" ~ "QUEENS", .default = CITY_NM)) |>
+  mutate(CITY_NM = case_when(CITY_NM == "Brooklyn" ~ "BROOKLYN", .default = CITY_NM)) |>
+  mutate(CITY_NM = case_when(CITY_NM == "Queens" ~ "QUEENS", .default = CITY_NM))
 
 # clean this up if re-running df_bike_violations from scratch
-df_bike_violations<-df_bike_violations %>% 
+df_bike_violations <- df_bike_violations |>
   select(-suburb)
 
-df_bike_violations  %>% 
-  group_by(CITY_NM) %>% 
+df_bike_violations |>
+  group_by(CITY_NM) |>
   summarize(sum = sum(n()))
-# takeaway: this is better: now only 3 NEW YORK and 92 na. 
+# takeaway: this is better: now only 3 NEW YORK and 92 na.
 
-df_bike_violations %>% 
-  filter(CITY_NM=='NEW YORK')
+df_bike_violations |>
+  filter(CITY_NM == "NEW YORK")
 # takeaway:  these dont have longitudinal or latitudinal info.  Since there are 3, we can ignore or leave them in.
 
 
@@ -494,16 +510,15 @@ head(df_bike_violations)
 
 ```
 
-
-
 ## Optional - save csv
+
 ```{r}
 # optional: write to csv
 # file is approx 25mb. That exceeds limit for uploading via browser, but it is able to upload to git via push
-#install.packages("glue")
-#todays_date <- Sys.Date()
-#path_name<-glue('df_bike_violations_{todays_date}.csv')
-#write.csv(df_bike_violations, path_name, row.names=FALSE)
+# install.packages("glue")
+# todays_date <- Sys.Date()
+# path_name<-glue('df_bike_violations_{todays_date}.csv')
+# write.csv(df_bike_violations, path_name, row.names=FALSE)
 ```
 
 
