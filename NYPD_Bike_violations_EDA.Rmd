@@ -44,8 +44,6 @@ df <- df |>
   mutate(violation_date = as.POSIXct(violation_date))
 
 
-
-
 # create a daily data tsibble
 ts_daily_total <- df |>
   mutate(violation_date = as_date(violation_date)) |>
