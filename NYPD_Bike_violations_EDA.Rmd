@@ -3,7 +3,6 @@ title: "R Notebook"
 output: 
   github_document:
     html_preview: FALSE
-
 ---
 
 ```{r libraries, message=FALSE}
@@ -28,6 +27,8 @@ library(Rcpp)
 # install.packages('mapview')
 library(mapview)
 library(janitor)
+#install.packages('styler')
+library(styler)
 ```
 
 ## Import Data & Create tsibble
@@ -164,9 +165,7 @@ df |>
 ### How many different violations were handed out to cyclist?
 
 ```{r}
-df |>
-  distinct(violation_code)
-
+length(fct_unique(df$violation_code))
 # ans: 183
 ```
 
@@ -184,17 +183,66 @@ length(df$violation_code)
 df |>
   mutate(violation_date = date(violation_date)) |>
   summarize(
-    sum = sum(n()),
+    total = sum(n()),
     .by = c(violation_code, description)
   ) |>
-  arrange(desc(sum)) |>
-  mutate(percent = 100 * round(sum / sum(sum), 3)) |>
+  arrange(desc(total)) |>
+  mutate(percent = 100 * round(total / sum(total), 3)) |>
   slice(1:10) |>
   kable()
 
 # takewaways:  44% were for failing to stop at red light.
 
 # note:  12332:ATTACHING SELF TO MOVING MOTOR VEHICLE a/k/a, the Marty McFly rule
+```
+
+#### Unique violation: code 12332
+
+```{r}
+df |> 
+  filter(violation_code==12332) |> 
+  select(violation_code, violation_date, description)
+
+df |> 
+  filter(violation_code==12332) |> 
+  mapview(xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)
+
+
+```
+
+### Geocode: Violations location clusters
+
+```{r}
+# view geomap of violations, post-covid
+# wasnt able to use dplyr due to missing values.
+df_fct_lump_post_covid <- df |>
+  mutate(fct_lump = fct_lump(f = df$violation_code, n = 9)) |>
+  mutate(date = date(violation_date)) |>
+  filter(date >= "2020-04-01")
+
+
+mapview(na.omit(df_fct_lump_post_covid), xcol = "longitude", ycol = "latitude", zcol = "fct_lump", crs = 4269, grid = FALSE, alpha.regions = 0.1)
+
+# takeaway: map is too full,  let's just view  since 2022-04
+
+df |>
+  mutate(fct_lump = fct_lump(f = df$violation_code, n = 9)) |>
+  mutate(date = date(violation_date)) |>
+  filter(date >= "2022-04-01") |>
+  mapview(xcol = "longitude", ycol = "latitude", zcol = "fct_lump", crs = 4269, grid = FALSE, alpha.regions = 0.2)
+
+# takeaway: better, but still not as clear as I'd like.
+
+
+# Let's just view fct_lump==1111D1C for the previous year:
+df |>
+  mutate(fct_lump = fct_lump(f = df$violation_code, n = 9)) |>
+  mutate(date = date(violation_date)) |>
+  filter(date >= "2022-04-01") |>
+  filter(fct_lump == "1111D1C") |>
+  mapview(xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE, alpha.regions = 0.2)
+
+# takeaway: we have a better view of the major ticketing areas for 1111D1C: uws, ues (and their corresponding avenues up through Harlem), up and down 1st and 2nd ave, especialy in the east village, over the Wburg Bridge, up and down 4th and 5th aves in Brooklyn, Liberty Ave in Ozone park/ Richmond Hill, East side of prospect park on Bedford Ave, and Bensonhurst, bk.
 ```
 
 ## EDA: daily cyclists
@@ -206,9 +254,56 @@ ts_daily_total |>
   autoplot(daily_total_cyclists) +
   geom_smooth(method = "lm")
 
+
 # takeaway: ridership did not change much pre or post pandemic. not even during lockdown, although possible hickup.
 # However, ridership seems to be increaseing in the colder months while remaining level in the warmer months.
+# since the ridership is clearly cyclical, an average won't tell us as much as we like.  But we can still see an increase over time.
 ```
+
+#### Slope: Daily increase in number of cyclists
+```{r message=FALSE }
+lm = lm(ts_daily_total$daily_total_cyclists~ts_daily_total$violation_date)
+lm
+
+
+# 4.665 increase per day
+```
+
+
+#### plot: yearly trend in number of cyclists
+```{r message=FALSE }
+str(df_counts_raw)
+
+df_counts_raw |> 
+  mutate(date = mdy_hms(date)) |> 
+  group_by(date=year(date)) |> 
+  summarise(yearly = sum(counts)) |> 
+  ggplot(aes(x=date, y=yearly))+
+  geom_line()
+  
+# potential issues;  fewer bike counters earlier on.
+```
+
+#### Total number of bike counters per year
+```{r}
+df_counts_raw |> 
+  mutate(date = mdy_hms(date)) |> 
+  mutate(id = as.factor(id)) |> 
+  group_by(year=year(date)) |> 
+  distinct(id) |> 
+  summarise(n=n()) 
+
+  
+
+df_counts_raw |> 
+  mutate(date = mdy_hms(date)) |> 
+  group_by(year=year(date)) |> 
+  
+
+# looks like max per year is 20
+```
+
+
 
 ### Plot: daily total cyclists histogram
 
@@ -460,41 +555,6 @@ df |>
 ```{r}
 ```
 
-### Geocode: Violations location clusters
-
-```{r}
-# view geomap of violations, post-covid
-# wasnt able to use dplyr due to missing values.
-df_fct_lump_post_covid <- df |>
-  mutate(fct_lump = fct_lump(f = df$violation_code, n = 9)) |>
-  mutate(date = date(violation_date)) |>
-  filter(date >= "2020-04-01")
-
-
-mapview(na.omit(df_fct_lump_post_covid), xcol = "longitude", ycol = "latitude", zcol = "fct_lump", crs = 4269, grid = FALSE, alpha.regions = 0.1)
-
-# takeaway: map is too full,  let's just view  since 2022-04
-
-df |>
-  mutate(fct_lump = fct_lump(f = df$violation_code, n = 9)) |>
-  mutate(date = date(violation_date)) |>
-  filter(date >= "2022-04-01") |>
-  mapview(xcol = "longitude", ycol = "latitude", zcol = "fct_lump", crs = 4269, grid = FALSE, alpha.regions = 0.2)
-
-# takeaway: better, but still not as clear as I'd like.
-
-
-# Let's just view fct_lump==1111D1C for the previous year:
-df |>
-  mutate(fct_lump = fct_lump(f = df$violation_code, n = 9)) |>
-  mutate(date = date(violation_date)) |>
-  filter(date >= "2022-04-01") |>
-  filter(fct_lump == "1111D1C") |>
-  mapview(xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE, alpha.regions = 0.2)
-
-# takeaway: we have a better view of the major ticketing areas for 1111D1C: uws, ues (and their corresponding avenues up through Harlem), up and down 1st and 2nd ave, especialy in the east village, over the Wburg Bridge, up and down 4th and 5th aves in Brooklyn, Liberty Ave in Ozone park/ Richmond Hill, East side of prospect park on Bedford Ave, and Bensonhurst, bk.
-```
-
 ### To do: Can we predict ridership?
 
 ```{r}
@@ -543,4 +603,8 @@ df |>
 #  ggplot(aes(x = fct_infreq(Borough))) +
 #  geom_bar() +
 #  labs(x = "Borough", y = "Cyclist Counters")
+```
+
+```{r}
+
 ```
