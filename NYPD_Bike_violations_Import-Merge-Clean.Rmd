@@ -248,7 +248,7 @@ str(df_counts)
 
 ### Create borough df
 
-```{r geomap-bike-counters}
+```{r}
 df_bicycle_counters <- read.csv("Bicycle_Counters.csv")
 
 df_bicycle_counters
@@ -268,7 +268,7 @@ df_bicycle_counters
 # install.packages('mapview')
 # library(mapview)
 
-mapview(na.omit(df_bicycle_counters), xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)
+# mapview(na.omit(df_bicycle_counters), xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)
 ```
 
 ### Add column with boroughs labels

@@ -31,7 +31,7 @@ library(janitor)
 library(styler)
 ```
 
-## Import Data & Create tsibble
+# Import Data & Create tsibble
 
 ```{r import-and-tsibble, include=FALSE}
 df <- readr::read_csv("df_bike_violations_2023-07-09.csv")
@@ -53,7 +53,7 @@ ts_daily_total <- df |>
   as_tsibble(index = violation_date)
 ```
 
-### Clean daily tsibble
+## Clean daily tsibble
 
 ```{r clean}
 # check for missing dates  # ans: 24
@@ -108,7 +108,7 @@ ts_daily_total |>
 ts_daily_total
 ```
 
-### Create monthly data tsibble
+## Create monthly data tsibble
 
 ```{r monthly-tsibble}
 # create a monthly data tsibble from cleaned daily tsibble
@@ -120,17 +120,15 @@ ts_monthly_total <- ts_daily_total |>
   rename(violation_date = "yearmonth(violation_date)")
 ```
 
-# EDA
+# EDA: General
 
-## EDA: General
-
-### What's the date range for the data?
+## What's the date range for the data?
 
 ```{r}
 date(range(df$violation_date))
 ```
 
-### Which dates had the highest number of riders, and how many?
+## Which dates had the highest number of riders, and how many?
 
 ```{r top-10-daily-total-cyclist-days}
 df |>
@@ -143,7 +141,7 @@ df |>
 # takeaway: no particular trends, but mostly late summer / early autumn.  4 from September 2022.
 ```
 
-### Which dates had the highest number of violations, and how many violations?
+## Which dates had the highest number of violations, and how many violations?
 
 ```{r}
 df |>
@@ -160,16 +158,63 @@ df |>
 # mostly warmer days in 2018 and 2019, pre-pandemic
 ```
 
-## EDA: Violation Codes
+# EDA: Bike Counters
 
-### How many different violations were handed out to cyclist?
+## Geoplot: bike counters
+
+```{r geoplot-bike-counters}
+
+mapview(na.omit(df_bicycle_counters), xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)
+```
+
+### Bike counters used per year
+
+```{r}
+df_counts_raw |> 
+  mutate(date = mdy_hms(date)) |> 
+  mutate(id = as.factor(id)) |> 
+  group_by(year=year(date)) |> 
+  distinct(id) |> 
+  summarise(n=n()) 
+
+  
+
+df_counts_raw |> 
+  mutate(date = mdy_hms(date)) |> 
+  group_by(year=year(date)) |> 
+  
+
+# looks like max per year is 20.  so not all 29 are used at once.
+```
+
+
+## To Do: Which bike counter counted the most cyclists in 2022? 2023? during the busiest months?
+
+```{r}
+
+```
+
+## To Do: Does most common bike counter have higher violations?
+
+```{r}
+# not sure if this is possible to answer with the data.
+
+
+
+```
+
+
+
+# EDA: Violation Codes
+
+## How many different violations were handed out to cyclist?
 
 ```{r}
 length(fct_unique(df$violation_code))
 # ans: 183
 ```
 
-### How many total violations were handed out to cyclists?
+## How many total violations were handed out to cyclists?
 
 ```{r}
 length(df$violation_code)
@@ -177,7 +222,7 @@ length(df$violation_code)
 # ans: 122509
 ```
 
-### What were the most popular violations?
+## What were the most popular violations?
 
 ```{r 10-most-popular-violations-table, message=FALSE}
 df |>
@@ -193,10 +238,10 @@ df |>
 
 # takewaways:  44% were for failing to stop at red light.
 
-# note:  12332:ATTACHING SELF TO MOVING MOTOR VEHICLE a/k/a, the Marty McFly rule
+# note:  12332: ATTACHING SELF TO MOVING MOTOR VEHICLE a/k/a, the Marty McFly rule
 ```
 
-#### Unique violation: code 12332
+### Unique violation: code 12332: Marty McFly
 
 ```{r}
 df |> 
@@ -210,7 +255,7 @@ df |>
 
 ```
 
-### Geocode: Violations location clusters
+## Geocode: Violations location clusters
 
 ```{r}
 # view geomap of violations, post-covid
@@ -245,9 +290,9 @@ df |>
 # takeaway: we have a better view of the major ticketing areas for 1111D1C: uws, ues (and their corresponding avenues up through Harlem), up and down 1st and 2nd ave, especialy in the east village, over the Wburg Bridge, up and down 4th and 5th aves in Brooklyn, Liberty Ave in Ozone park/ Richmond Hill, East side of prospect park on Bedford Ave, and Bensonhurst, bk.
 ```
 
-## EDA: daily cyclists
+# EDA: Daily Cyclists
 
-### Plot: daily total cyclists over time
+## Plot: daily total cyclists over time
 
 ```{r message=FALSE }
 ts_daily_total |>
@@ -256,11 +301,12 @@ ts_daily_total |>
 
 
 # takeaway: ridership did not change much pre or post pandemic. not even during lockdown, although possible hickup.
-# However, ridership seems to be increaseing in the colder months while remaining level in the warmer months.
+# However, ridership seems to be increasing in the colder months while remaining level in the warmer months.
 # since the ridership is clearly cyclical, an average won't tell us as much as we like.  But we can still see an increase over time.
 ```
 
-#### Slope: Daily increase in number of cyclists
+### Slope: Daily increase in number of cyclists
+
 ```{r message=FALSE }
 lm = lm(ts_daily_total$daily_total_cyclists~ts_daily_total$violation_date)
 lm
@@ -270,7 +316,8 @@ lm
 ```
 
 
-#### plot: yearly trend in number of cyclists
+## Plot: yearly trend in number of cyclists
+
 ```{r message=FALSE }
 str(df_counts_raw)
 
@@ -284,28 +331,8 @@ df_counts_raw |>
 # potential issues;  fewer bike counters earlier on.
 ```
 
-#### Total number of bike counters per year
-```{r}
-df_counts_raw |> 
-  mutate(date = mdy_hms(date)) |> 
-  mutate(id = as.factor(id)) |> 
-  group_by(year=year(date)) |> 
-  distinct(id) |> 
-  summarise(n=n()) 
 
-  
-
-df_counts_raw |> 
-  mutate(date = mdy_hms(date)) |> 
-  group_by(year=year(date)) |> 
-  
-
-# looks like max per year is 20
-```
-
-
-
-### Plot: daily total cyclists histogram
+## Plot: daily total cyclists histogram
 
 ```{r}
 ts_daily_total |>
@@ -313,9 +340,9 @@ ts_daily_total |>
   geom_histogram(bins = 80)
 ```
 
-### Does ridership increase or decrease yearly?
+## Does ridership increase or decrease yearly?
 
-```{r}
+```{r ridership-increase-yearly}
 # leave out 2023 since we only have up to March
 
 ts_daily_total |>
@@ -330,7 +357,7 @@ ts_daily_total |>
 # Takeaway: Yes, it increases. slight dip in 2019 but clearly increasing
 ```
 
-### Does ridership change throughout the year (seasonality)?
+## Does ridership change throughout the year (seasonality)?
 
 ```{r}
 # yearly seasonal plot
@@ -342,8 +369,10 @@ ts_daily_total |>
 ts_monthly_total |>
   gg_season(monthly_total_cyclists)
 # takeaway - dip in April 2020 during covid lockdown, but not much less than before.
+```
 
 
+```{r yearly-ridership-trends-by-month}
 # looking at it by month:
 ts_monthly_total |>
   gg_subseries(monthly_total_cyclists)
@@ -355,10 +384,10 @@ ts_monthly_total |>
 # Ridership changes over time takeways:
 ## Ridership is increasing.
 ## Clear yearly seasonality, with May-Oct being the busiest, and Nov-Apr being less busy.
-## Not much visual difference pre- and post- lockdown/pandemic.
+## Dec, Jan, Feb have all been increaseing, especially post-pandemic
 ```
 
-### Daily total cyclists decomposition
+## Daily total cyclists decomposition
 
 ```{r daily-total-cyclists-decomp, message=FALSE, warning=FALSE }
 # classical decomp doesnt handle multi seasonality too well
@@ -391,9 +420,9 @@ ts_daily_total |>
   stat_smooth(method = "lm")
 ```
 
-## EDA: daily violations
+# EDA: Daily Violations
 
-### Plot: daily total violations over time
+## Plot: daily total violations over time
 
 ```{r}
 ts_daily_total |>
@@ -402,7 +431,7 @@ ts_daily_total |>
 # takeaway:  There were more violations before the pandemic.  During lockdown, very few.
 ```
 
-### Plot: daily total violations historgram
+## Plot: daily total violations historgram
 
 ```{r}
 ts_daily_total |>
@@ -410,7 +439,7 @@ ts_daily_total |>
   geom_histogram(bins = 80)
 ```
 
-### Are the yearly number of violations trending up or down?
+## Are the yearly number of violations trending up or down?
 
 ```{r}
 ts_daily_total |>
@@ -431,7 +460,7 @@ ts_monthly_total |>
   autoplot(monthly_total_violations)
 ```
 
-### Do number of violations change throughout the year (seasonal)?
+## Do number of violations change throughout the year (seasonal)?
 
 ```{r}
 # just post-covid
@@ -453,7 +482,14 @@ ts_monthly_total |>
 # takeaway - Hard to see any trends, but fewer violations in Nov/Dec/Jan.  Most in Sept Oct.  2021 was a steady year.
 ```
 
-### As the number of riders increases, does the number of violations also increase?
+## Which month or months have the most violations?
+
+```{r}
+# from graph above, March and September, but August is catching up.
+```
+
+
+## As the number of riders increases, does the number of violations also increase?
 
 ```{r message=FALSE}
 # utilizes corrr library
@@ -469,7 +505,7 @@ df |>
 # takeaawy cor: 0.2167395 So no, as the number of riders increases, the number of violations does not.
 ```
 
-### Plot: daily violations vs. daily cylists
+## Plot: daily violations vs. daily cylists
 
 ```{r}
 ts_daily_total |>
@@ -477,9 +513,9 @@ ts_daily_total |>
   geom_point()
 ```
 
-### Does this differ for pre-covid and post-lockdown?
+## Does this differ for pre-covid and post-lockdown?
 
-#### Plot: Pre-covid
+### Plot: Pre-covid
 
 ```{r message = FALSE, warning=FALSE}
 # correlation:  0.5026907
@@ -500,7 +536,7 @@ ts_daily_total |>
   sm_statCorr(label_x = 250, label_y = 1000)
 ```
 
-#### Plot: Post-covid
+### Plot: Post-covid
 
 ```{r message=FALSE}
 # devtools::install_github('smin95/smplot2', force = TRUE)
@@ -524,7 +560,7 @@ ts_daily_total |>
 # ans: they differ a little more than all together.  pre-covid was a better indicator.
 ```
 
-### Do largest violations (summed per day) change over time?
+## Do largest violations (summed per day) change over time?
 
 ```{r message = FALSE}
 # code test to lump all except 10 highest factors into 'other' category
@@ -533,7 +569,7 @@ df |>
   count(fct_lump) |>
   arrange(desc(n))
 
-# plot: daily biggest violation over time, post covid
+# plot: daily biggest violation (1111D1C) over time, post covid
 df |>
   mutate(fct_lump = fct_lump(f = df$violation_code, n = 9)) |>
   filter(fct_lump == "1111D1C") |>
@@ -550,17 +586,17 @@ df |>
 # takeaway:  No.  not much different than general daily violations plot.  lower amount around Dec/Jan, otherwise fairly steady.
 ```
 
-### To Do: Did the type of violations change after covid?
+## To Do: Did the type of violations change after covid?
 
 ```{r}
 ```
 
-### To do: Can we predict ridership?
+## To do: Can we predict ridership?
 
 ```{r}
 ```
 
-### To do: Can we predict daily violations?
+## To do: Can we predict daily violations?
 
 ```{r}
 
