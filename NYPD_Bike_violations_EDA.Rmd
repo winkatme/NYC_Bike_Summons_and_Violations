@@ -188,16 +188,46 @@ df_counts_raw |>
 ```
 
 
-## To Do: Which bike counter counted the most cyclists in 2022? 2023? during the busiest months?
+## Which bike counter counted the most cyclists in 2022? during the busiest months?
+
+```{r}
+df_counts_raw |> 
+  mutate(date = date(mdy_hms(date))) |> 
+  filter(year(date)==2022) |> 
+  arrange(date) |> 
+  group_by(id) |> 
+  mutate(sum = sum(counts)) |> 
+  ungroup() |> 
+  distinct(id, .keep_all=TRUE) |> 
+  arrange(desc(sum))
+
+# 1. 100009427 with 1964902 counts: wburg side of wburg bridge.
+# 2. 100009428 with 1818163 counts: Queens side of Queensboro
+# 3. 100047029 with 1584788: Manhattan side of Manhattan bridge 1584788
+# 4. 100062893, same as above
+# 5. 100010019 with 1066870: Kent ave in Wburg
+# 6. 300020241 with 1002070: Manhattan side of Brookly bridge
+
+# geoplot biggest of 2022
+df_bicycle_counters |> 
+  filter(id==300020241
+         ) |> 
+  mapview(xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)  
+
+```
+
+### To do: which bike counter counted the most bikes during the busiest month?
 
 ```{r}
 
 ```
 
+
+
 ## To Do: Does most common bike counter have higher violations?
 
 ```{r}
-# not sure if this is possible to answer with the data.
+# not sure how to answer this with the data with the data.
 
 
 

@@ -207,6 +207,7 @@ max(date(df_merged$violation_date)) - min(date(df_merged$violation_date))
 
 ## Count Data
 
+
 ### Import total rider counts
 
 ```{r}
@@ -225,6 +226,8 @@ df_counts_raw |>
   distinct(id) |>
   arrange(id)
 ```
+
+### To Do: look up duplicate counters.  SO far found 2 exact counters by manhattan side of manhattan bridge
 
 ### Create daily and weekly rider total columns
 
