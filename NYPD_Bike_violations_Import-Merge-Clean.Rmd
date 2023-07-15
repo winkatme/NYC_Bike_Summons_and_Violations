@@ -227,7 +227,7 @@ df_counts_raw |>
   arrange(id)
 ```
 
-### To Do: look up duplicate counters.  SO far found 2 exact counters by manhattan side of manhattan bridge
+
 
 ### Create daily and weekly rider total columns
 
@@ -314,6 +314,24 @@ df_bicycle_counters_boroughs |>
   adorn_pct_formatting() |>
   adorn_totals()
 ```
+
+### To Do: look up duplicate counters.  SO far found 2 exact counters by manhattan side of manhattan bridge
+
+```{r}
+# first, find counters via latitudes with more than one unique value
+
+df_bicycle_counters_boroughs |> 
+  mutate(lat_sum = sum(n()), .by=latitude) |> 
+  ungroup() |> 
+  arrange(desc(lat_sum), latitude) 
+
+# 3 for willis ave, 
+# 2 for manhattan bridge.  see if 2012 test counter continues after 2012
+# 2 more for manhattan bridge.  whats the dif between bike comprehensive and display?  
+# 2 for amsterdam/columbus.  should one be deleted?  the streets are a block away and run in different directions. Check to see if totals are equal.
+# 2 for interference calibration.  not sure what that is.  
+```
+
 
 ### Incomplete - Merge borough data with count data
 
