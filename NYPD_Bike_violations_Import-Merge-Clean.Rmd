@@ -207,7 +207,6 @@ max(date(df_merged$violation_date)) - min(date(df_merged$violation_date))
 
 ## Count Data
 
-
 ### Import total rider counts
 
 ```{r}
@@ -252,6 +251,8 @@ str(df_counts)
 ### Create borough df
 
 ```{r}
+# source: https://data.cityofnewyork.us/Transportation/Bicycle-Counters/smn3-rzf9
+
 df_bicycle_counters <- read.csv("Bicycle_Counters.csv")
 
 df_bicycle_counters
@@ -325,11 +326,70 @@ df_bicycle_counters_boroughs |>
   ungroup() |> 
   arrange(desc(lat_sum), latitude) 
 
-# 3 for willis ave, 
-# 2 for manhattan bridge.  see if 2012 test counter continues after 2012
-# 2 more for manhattan bridge.  whats the dif between bike comprehensive and display?  
-# 2 for amsterdam/columbus.  should one be deleted?  the streets are a block away and run in different directions. Check to see if totals are equal.
-# 2 for interference calibration.  not sure what that is.  
+# observations: 
+
+# 1. willis ave has 3 
+# according to metadata file (DataDictionary-BicycleCounters.xlsx on web page with original dataset), the willis ave station counts bikes (300029647), pedestrians (300029648) and has the sume of those (300028963).  Therefore, let's remove the two that are not exclusively bikes.
+
+df_bicycle_counters_boroughs |> 
+  filter(!id==300028963 & !id==300029648)
+
+# 2. amsterdam/columbus has 2 at the same lat/lon.  should one be deleted?  the streets are a block away and run in different directions. Check to see if totals are equal.
+# test to see if counts for a single day are the same:
+df_counts_raw |> 
+  filter(id==100057320 | id==100057319) |> 
+  mutate(date=mdy_hms(date)) |> 
+  mutate(date = date(date)) |> 
+  filter(date== '2020-04-14') |> 
+  group_by(id) |> 
+  summarize(sum = sum(counts))
+# the counts are different, so we can leave both in.
+
+# 3.  manhattan bridge has 2 +2+2 for 'interference' .
+# let's look at all man bridge.
+man_br_ids<-df_bicycle_counters_boroughs |> 
+  filter(grepl("Manhattan Bridge", name)) |> 
+  pull(id)
+
+man_br_ids
+
+# view all man bridge (un-hash for map)
+df_bicycle_counters |> 
+  filter(id %in% man_br_ids) # |> filter(!is.na(longitude)) |> mapview(xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)
+
+#view count sums, check for max and doubles
+df_counts_raw |> 
+  filter(id %in% man_br_ids) |> 
+  group_by(id) |> 
+  summarize(sum = sum(counts))
+# from this we can see that 100047029 and 100062893 are the biggest counters with 14012230 each. 
+
+df_bicycle_counters_boroughs |> 
+  filter(id==100047029|id==100062893)
+# 'Manhattan Bridge Display Bike Counter'	and 'Manhattan Bridge Bike Comprehensive'
+
+# double-check min and max dates
+df_counts_raw |> 
+  mutate(date = mdy_hms(date)) |> 
+  filter(id==100047029) |> 
+  slice(which.min(date),which.max(date))
+# From metadata file:  'As of May 7, 2019 the Display Manhattan Side counter is the primary source of bike counts on the bike path of the bridge'. since the range is 2012-2023, let's choose just the Manhattan Bridge Display Bike Couinter 100047029 for all man bridge data.
+
+
+# filter out all duplicate/unnecessary counters (includes 'Test' 300020692):
+df_bicycle_counters_boroughs |> 
+  filter(!id==300028963 & !id==300029648 &!id==100009426 & !id==100055175 & !id==100009429 & !id==100005020 & !id==100051865 & !id==100048744 & !id==100062893 & !id==300020692)
+
+
+# note there are some brooklyn bridge dupes, too:  
+df_counts_raw |> 
+  mutate(date = mdy_hms(date)) |> 
+  mutate(date=year(date)) |> 
+  filter(date=='2023') |> 
+  mutate(id=as.factor(id)) |> 
+  summarize(sum=sum(counts), .by=id) |> 
+  arrange(sum)
+
 ```
 
 

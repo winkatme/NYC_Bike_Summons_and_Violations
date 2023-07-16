@@ -176,15 +176,21 @@ df_counts_raw |>
   group_by(year=year(date)) |> 
   distinct(id) |> 
   summarise(n=n()) 
-
+# looks like max per year is 20.  so not all  are used at once.
   
 
+# lets look at the ones used in 2023 and their counts
 df_counts_raw |> 
   mutate(date = mdy_hms(date)) |> 
-  group_by(year=year(date)) |> 
+  mutate(date=year(date)) |> 
+  filter(date=='2023') |> 
+  mutate(id=as.factor(id)) |> 
+  summarize(sum=sum(counts), .by=id) |> 
+  arrange(sum)
   
-
-# looks like max per year is 20.  so not all 29 are used at once.
+#brooklyn bridge has some dupes.
+  
+df_counts_raw  
 ```
 
 
