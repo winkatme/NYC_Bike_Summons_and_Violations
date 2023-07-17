@@ -316,7 +316,7 @@ df_bicycle_counters_boroughs |>
   adorn_totals()
 ```
 
-### To Do: look up duplicate counters.  SO far found 2 exact counters by manhattan side of manhattan bridge
+### Remove duplicate bike counters
 
 ```{r}
 # first, find counters via latitudes with more than one unique value
@@ -368,7 +368,7 @@ df_bicycle_counters_boroughs |>
   filter(id==100047029|id==100062893)
 # 'Manhattan Bridge Display Bike Counter'	and 'Manhattan Bridge Bike Comprehensive'
 
-# double-check min and max dates
+# double-check date range (min and max)
 df_counts_raw |> 
   mutate(date = mdy_hms(date)) |> 
   filter(id==100047029) |> 
@@ -376,19 +376,28 @@ df_counts_raw |>
 # From metadata file:  'As of May 7, 2019 the Display Manhattan Side counter is the primary source of bike counts on the bike path of the bridge'. since the range is 2012-2023, let's choose just the Manhattan Bridge Display Bike Couinter 100047029 for all man bridge data.
 
 
-# filter out all duplicate/unnecessary counters (includes 'Test' 300020692):
-df_bicycle_counters_boroughs |> 
-  filter(!id==300028963 & !id==300029648 &!id==100009426 & !id==100055175 & !id==100009429 & !id==100005020 & !id==100051865 & !id==100048744 & !id==100062893 & !id==300020692)
 
-
-# note there are some brooklyn bridge dupes, too:  
+# note there are some brooklyn bridge dupes as well, in 2023 data:
 df_counts_raw |> 
   mutate(date = mdy_hms(date)) |> 
   mutate(date=year(date)) |> 
-  filter(date=='2023') |> 
+  #filter(date=='2023') |> 
   mutate(id=as.factor(id)) |> 
+  filter(id %in% c(100010022, 300020241, 300020904)) |> 
   summarize(sum=sum(counts), .by=id) |> 
   arrange(sum)
+
+
+# since 300030904 'Comprehensive Brooklyn Bridge Counter' has more total than the others, let's keep that one and discard 300020241, 100010022.  it's date range is also longer than the other two.
+  
+df_bicycle_counters_boroughs |> 
+  filter(grepl('Brooklyn', name))
+
+
+
+# filter out all duplicate/unnecessary counters (includes 'Test' 300020692):
+df_bicycle_counters_boroughs<-df_bicycle_counters_boroughs |> 
+  filter(!id==300028963 & !id==300029648 &!id==100009426 & !id==100055175 & !id==100009429 & !id==100005020 & !id==100051865 & !id==100048744 & !id==100062893 & !id==300020692 & !id==300020241 & !id==100010022)
 
 ```
 
