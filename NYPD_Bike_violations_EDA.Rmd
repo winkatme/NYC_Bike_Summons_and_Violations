@@ -74,6 +74,7 @@ path2 <- "https://www.dropbox.com/s/oaklaldm8td9wem/Bicycle_Counts.csv?dl=1"
 df_counts <- read.csv(path2)
 
 df_counts <- df_counts |>
+  filter(id %in% bike_counter_ids_no_dupes) |> 
   mutate(date = mdy_hms(date)) |>
   group_by(date(date)) |>
   mutate(daily_total = sum(counts)) |>
@@ -164,7 +165,7 @@ df |>
 
 ```{r geoplot-bike-counters}
 
-mapview(na.omit(df_bicycle_counters), xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)
+mapview(na.omit(df_bicycle_counters_boroughs), xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)
 ```
 
 ### Bike counters used per year

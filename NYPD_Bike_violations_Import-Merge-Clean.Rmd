@@ -242,7 +242,7 @@ df_counts <- df_counts |>
   arrange(date) |>
   select(-c("date(date)", "yearweek(date)"))
 
-str(df_counts)
+head(df_counts)
 
 # optional: save csv
 #write.csv(df_counts, '/Users/<username>/Desktop/df_counts.csv', row.names=FALSE)
@@ -399,7 +399,37 @@ df_bicycle_counters_boroughs |>
 df_bicycle_counters_boroughs<-df_bicycle_counters_boroughs |> 
   filter(!id==300028963 & !id==300029648 &!id==100009426 & !id==100055175 & !id==100009429 & !id==100005020 & !id==100051865 & !id==100048744 & !id==100062893 & !id==300020692 & !id==300020241 & !id==100010022)
 
+#how many counters now?
+dim(df_bicycle_counters_boroughs)
+
 ```
+
+
+### Update df_counts by removing duplicate counters
+```{r}
+
+# 29 distinct counter id's.  need to be reduced to 19
+df_counts |> 
+  distinct(id)
+
+bike_counter_ids_no_dupes<-df_bicycle_counters_boroughs |> 
+  pull(id)
+
+
+df_counts <- df_counts |> 
+  filter(id %in% bike_counter_ids_no_dupes) |> 
+  #distinct(id) |> 
+  group_by(date(date)) |>
+  mutate(daily_total = sum(counts)) |>
+  ungroup() |>
+  group_by(yearweek(date)) |>
+  mutate(weekly_total = sum(counts)) |>
+  ungroup() |>
+  arrange(date) |>
+  select(-c("date(date)", "yearweek(date)"))
+
+```
+
 
 
 ### Incomplete - Merge borough data with count data
@@ -441,7 +471,6 @@ str(df_merged)
 df_counts <- df_counts |>
   mutate(date = date(date)) |>
   select(-c(countid, id, status))
-
 
 # match date column with equal one in df_merged.  Just choose bikes, as the count data is just for bikes.  Also makes merging go quicker.
 df_bike_violations <- df_merged |>
@@ -508,7 +537,7 @@ df_bike_violations$description[df_bike_violations$violation_code == "4014B"] <- 
 df_bike_violations$description[df_bike_violations$violation_code == "4021A"] <- "NO LICENSE PLATE OR SINGLE LICENSE PLATE"
 df_bike_violations$description[df_bike_violations$violation_code == "22651M"] <- "MISCELLANEOUS EQUIPMENT VIOLATION - LIMITED USE MOTORCYCLE"
 
-# double-check that there are no violatin codes with na's in the description
+# double-check that there are no violatinn codes with na's in the description
 df_bike_violations |>
   filter(is.na(description)) |>
   distinct(violation_code)
