@@ -7,6 +7,8 @@ output:
 
 ```{r libraries, message=FALSE}
 library(knitr)
+library(tidyverse)
+library(lubridate)
 knitr::opts_chunk$set(message = FALSE)
 # options(digits = 7)
 library(rmarkdown)
@@ -34,7 +36,7 @@ library(styler)
 # Import Data & Create tsibble
 
 ```{r import-and-tsibble, include=FALSE}
-df <- readr::read_csv("df_bike_violations_2023-07-17.csv")
+df <- readr::read_csv("df_bike_violations_2023-07-18.csv")
 
 df <- df |>
   mutate(violation_code = as.factor(violation_code)) |>
@@ -73,6 +75,9 @@ ts_daily_total |>
 path2 <- "https://www.dropbox.com/s/oaklaldm8td9wem/Bicycle_Counts.csv?dl=1"
 df_counts <- read.csv(path2)
 
+
+
+
 df_counts <- df_counts |>
   filter(id %in% bike_counter_ids_no_dupes) |> 
   mutate(date = mdy_hms(date)) |>
@@ -86,6 +91,11 @@ df_counts <- df_counts |>
   select(-c("date(date)", "yearweek(date)")) |>
   mutate(date = date(date)) |>
   select(-c(countid, id, status))
+
+path3 <- "https://www.dropbox.com/s/nffkpwuz1u6kd5t/df_counts.csv?dl=1"
+df_counts <- readr::read_csv(path3)
+
+
 
 ts_daily_total <- ts_daily_total |>
   fill_gaps() |>
@@ -164,7 +174,6 @@ df |>
 ## Geoplot: bike counters
 
 ```{r geoplot-bike-counters}
-
 mapview(na.omit(df_bicycle_counters_boroughs), xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)
 ```
 

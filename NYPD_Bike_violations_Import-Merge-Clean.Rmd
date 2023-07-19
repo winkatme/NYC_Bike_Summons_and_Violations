@@ -317,8 +317,8 @@ df_bicycle_counters_boroughs |>
 ### Remove duplicate bike counters
 
 ```{r}
-# first, find counters via latitudes with more than one unique value
 
+# first, find counters that share a latitude value
 df_bicycle_counters_boroughs |> 
   mutate(lat_sum = sum(n()), .by=latitude) |> 
   ungroup() |> 
@@ -326,13 +326,10 @@ df_bicycle_counters_boroughs |>
 
 # observations: 
 
-# 1. willis ave has 3 
-# according to metadata file (DataDictionary-BicycleCounters.xlsx on web page with original dataset), the willis ave station counts bikes (300029647), pedestrians (300029648) and has the sume of those (300028963).  Therefore, let's remove the two that are not exclusively bikes.
+## 1. willis ave has 3 
+# according to metadata file (DataDictionary-BicycleCounters.xlsx on web page with original dataset), the willis ave station counts bikes (300029647), pedestrians (300029648) and has the sume of those (300028963).  Therefore, let's remove the two that are not exclusively bikes (removed below).
 
-df_bicycle_counters_boroughs |> 
-  filter(!id==300028963 & !id==300029648)
-
-# 2. amsterdam/columbus has 2 at the same lat/lon.  should one be deleted?  the streets are a block away and run in different directions. Check to see if totals are equal.
+## 2. amsterdam/columbus has 2 at the same lat/lon.  should one be deleted?  the streets are a block away and run in different directions. Check to see if totals are equal.
 # test to see if counts for a single day are the same:
 df_counts_raw |> 
   filter(id==100057320 | id==100057319) |> 
@@ -343,7 +340,7 @@ df_counts_raw |>
   summarize(sum = sum(counts))
 # the counts are different, so we can leave both in.
 
-# 3.  manhattan bridge has 2 +2+2 for 'interference' .
+## 3.  manhattan bridge has 2+2+2 for 'interference' + forsythe plaza.
 # let's look at all man bridge.
 man_br_ids<-df_bicycle_counters_boroughs |> 
   filter(grepl("Manhattan Bridge", name)) |> 
@@ -400,6 +397,9 @@ df_bicycle_counters_boroughs<-df_bicycle_counters_boroughs |>
 #how many counters now?
 dim(df_bicycle_counters_boroughs)
 
+# what about Forsythe plaza 100039064?  It's right next to brooklyn bridge on a map
+df_bicycle_counters_boroughs
+
 # Optional:  Save to csv
 # path_name<-'df_bicycle_counters_boroughs.csv'
 # write.csv(df_bicycle_counters_boroughs, path_name, row.names=FALSE)
@@ -431,8 +431,10 @@ df_counts <- df_counts |>
   arrange(date) |>
   select(-c("date(date)", "yearweek(date)"))
 
+head(df_counts)
+
 # optional: save csv to desktop, to upload to dropbox.  It is too large for github
-# write.csv(df_counts, '/Users/<username>/Desktop/df_counts.csv', row.names=FALSE)
+#write.csv(df_counts, '/Users/<username>/Desktop/df_counts.csv', row.names=FALSE)
 
 ```
 
