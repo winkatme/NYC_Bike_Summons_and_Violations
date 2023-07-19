@@ -342,8 +342,8 @@ df_counts_raw |>
 
 ## 3.  manhattan bridge has 2+2+2 for 'interference' + forsythe plaza.
 # let's look at all man bridge.
-man_br_ids<-df_bicycle_counters_boroughs |> 
-  filter(grepl("Manhattan Bridge", name)) |> 
+man_br_ids <- df_bicycle_counters_boroughs |> 
+  filter(grepl(paste(c("Manhattan Bridge", "Forsyth"), collapse='|'), name)) |> 
   pull(id)
 
 man_br_ids
@@ -366,9 +366,9 @@ df_bicycle_counters_boroughs |>
 # double-check date range (min and max)
 df_counts_raw |> 
   mutate(date = mdy_hms(date)) |> 
-  filter(id==100047029) |> 
+  filter(id==100039064) |> 
   slice(which.min(date),which.max(date))
-# From metadata file:  'As of May 7, 2019 the Display Manhattan Side counter is the primary source of bike counts on the bike path of the bridge'. since the range is 2012-2023, let's choose just the Manhattan Bridge Display Bike Couinter 100047029 for all man bridge data.
+# From metadata file:  'As of May 7, 2019 the Display Manhattan Side counter is the primary source of bike counts on the bike path of the bridge'. since the range is 2012-2023, let's choose just the Manhattan Bridge Display Bike Couinter 100047029 for all man bridge data.  Removed below.
 
 
 
@@ -392,13 +392,11 @@ df_bicycle_counters_boroughs |>
 
 # filter out all duplicate/unnecessary counters (includes 'Test' 300020692):
 df_bicycle_counters_boroughs<-df_bicycle_counters_boroughs |> 
-  filter(!id==300028963 & !id==300029648 &!id==100009426 & !id==100055175 & !id==100009429 & !id==100005020 & !id==100051865 & !id==100048744 & !id==100062893 & !id==300020692 & !id==300020241 & !id==100010022)
+  filter(!id==300028963 & !id==300029648 &!id==100009426 & !id==100055175 & !id==100009429 & !id==100005020 & !id==100051865 & !id==100048744 & !id==100062893 & !id==300020692 & !id==300020241 & !id==100010022 & !id==100039064)
 
-#how many counters now?
+# how many counters now? should be 18
 dim(df_bicycle_counters_boroughs)
 
-# what about Forsythe plaza 100039064?  It's right next to brooklyn bridge on a map
-df_bicycle_counters_boroughs
 
 # Optional:  Save to csv
 # path_name<-'df_bicycle_counters_boroughs.csv'
@@ -411,7 +409,7 @@ df_bicycle_counters_boroughs
 ### Update df_counts by removing duplicate counters
 ```{r}
 
-# 29 distinct counter id's.  need to be reduced to 19
+# 29 distinct counter id's.  need to be reduced to 18
 df_counts |> 
   distinct(id)
 
@@ -431,7 +429,10 @@ df_counts <- df_counts |>
   arrange(date) |>
   select(-c("date(date)", "yearweek(date)"))
 
-head(df_counts)
+# double-check distinct bike counter id's.  Should be 18
+df_counts |> 
+  distinct(id)
+
 
 # optional: save csv to desktop, to upload to dropbox.  It is too large for github
 #write.csv(df_counts, '/Users/<username>/Desktop/df_counts.csv', row.names=FALSE)
