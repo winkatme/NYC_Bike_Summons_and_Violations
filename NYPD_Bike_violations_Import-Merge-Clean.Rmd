@@ -306,11 +306,6 @@ df_bicycle_counters_boroughs$borough[grepl("Willis", df_bicycle_counters_borough
 df_bicycle_counters_boroughs$borough[grepl("Manhattan Bridge Interference", df_bicycle_counters_boroughs$name)] <- "Manhattan"
 
 
-# Optional:  Save to csv
-# path_name<-'df_bicycle_counters_boroughs.csv'
-# write.csv(df_bicycle_counters_boroughs, path_name, row.names=FALSE)
-# df_bicycle_counters_boroughs
-
 
 df_bicycle_counters_boroughs |>
   filter(!is.na(latitude)) |>
@@ -405,6 +400,11 @@ df_bicycle_counters_boroughs<-df_bicycle_counters_boroughs |>
 #how many counters now?
 dim(df_bicycle_counters_boroughs)
 
+# Optional:  Save to csv
+# path_name<-'df_bicycle_counters_boroughs.csv'
+# write.csv(df_bicycle_counters_boroughs, path_name, row.names=FALSE)
+# df_bicycle_counters_boroughs
+
 ```
 
 
@@ -431,7 +431,7 @@ df_counts <- df_counts |>
   arrange(date) |>
   select(-c("date(date)", "yearweek(date)"))
 
-# optional: save csv
+# optional: save csv to desktop, to upload to dropbox.  It is too large for github
 # write.csv(df_counts, '/Users/<username>/Desktop/df_counts.csv', row.names=FALSE)
 
 ```
@@ -569,7 +569,7 @@ df_bike_violations |>
 df_bike_violations |>
   filter(is.na(city_nm))
 
-# Takeaway: none of the 92 have longitude or latitiude info either.  Can leave out if need be.
+# Takeaway: none of the 92 have longitude or latitiude info either.  To be removed in next cell.
 ```
 
 ### Clean: city_nm == 'New York' values changed to their boroughs.
