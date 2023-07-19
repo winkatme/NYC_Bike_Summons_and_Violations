@@ -72,25 +72,23 @@ ts_daily_total |>
 # fill gaps dates and re-join with df_counts data, so that gapped dates now have total cyclsits. Replace violation na's with 0s.
 
 # import df_counts:
-path2 <- "https://www.dropbox.com/s/oaklaldm8td9wem/Bicycle_Counts.csv?dl=1"
-df_counts <- read.csv(path2)
 
-
-
-
-df_counts <- df_counts |>
-  filter(id %in% bike_counter_ids_no_dupes) |> 
-  mutate(date = mdy_hms(date)) |>
-  group_by(date(date)) |>
-  mutate(daily_total = sum(counts)) |>
-  ungroup() |>
-  group_by(yearweek(date)) |>
-  mutate(weekly_total = sum(counts)) |>
-  ungroup() |>
-  arrange(date) |>
-  select(-c("date(date)", "yearweek(date)")) |>
-  mutate(date = date(date)) |>
-  select(-c(countid, id, status))
+# old code
+#path2 <- "https://www.dropbox.com/s/oaklaldm8td9wem/Bicycle_Counts.csv?dl=1"
+#df_counts <- read.csv(path2)
+#df_counts <- df_counts |>
+#  filter(id %in% bike_counter_ids_no_dupes) |> 
+#  mutate(date = mdy_hms(date)) |>
+#  group_by(date(date)) |>
+#  mutate(daily_total = sum(counts)) |>
+#  ungroup() |>
+#  group_by(yearweek(date)) |>
+#  mutate(weekly_total = sum(counts)) |>
+#  ungroup() |>
+#  arrange(date) |>
+#  select(-c("date(date)", "yearweek(date)")) |>
+#  mutate(date = date(date)) |>
+#  select(-c(countid, id, status))
 
 path3 <- "https://www.dropbox.com/s/nffkpwuz1u6kd5t/df_counts.csv?dl=1"
 df_counts <- readr::read_csv(path3)
@@ -180,8 +178,7 @@ mapview(na.omit(df_bicycle_counters_boroughs), xcol = "longitude", ycol = "latit
 ### Bike counters used per year
 
 ```{r}
-df_counts_raw |> 
-  mutate(date = mdy_hms(date)) |> 
+df_counts |> 
   mutate(id = as.factor(id)) |> 
   group_by(year=year(date)) |> 
   distinct(id) |> 
@@ -190,45 +187,36 @@ df_counts_raw |>
   
 
 # lets look at the ones used in 2023 and their counts
-df_counts_raw |> 
-  mutate(date = mdy_hms(date)) |> 
+df_counts |> 
   mutate(date=year(date)) |> 
   filter(date=='2023') |> 
   mutate(id=as.factor(id)) |> 
   summarize(sum=sum(counts), .by=id) |> 
-  arrange(sum)
+  arrange(desc(sum))
   
-#brooklyn bridge has some dupes.
-  
-df_counts_raw  
+# get names of top 3 counters
+df_bicycle_counters_boroughs |> 
+  filter(id %in% c(100009427, 100009428, 100047029))
 ```
 
-
-## Which bike counter counted the most cyclists in 2022? during the busiest months?
+## Which bike counters counted the most cyclists in 2022?
 
 ```{r}
-df_counts_raw |> 
-  mutate(date = date(mdy_hms(date))) |> 
+df_counts |> 
+  mutate(date = date(date)) |>
   filter(year(date)==2022) |> 
-  arrange(date) |> 
-  group_by(id) |> 
-  mutate(sum = sum(counts)) |> 
-  ungroup() |> 
-  distinct(id, .keep_all=TRUE) |> 
+  group_by(id, year(date)) |> 
+  summarize(sum = sum(counts)) |> 
   arrange(desc(sum))
-
+  
 # 1. 100009427 with 1964902 counts: wburg side of wburg bridge.
 # 2. 100009428 with 1818163 counts: Queens side of Queensboro
 # 3. 100047029 with 1584788: Manhattan side of Manhattan bridge 1584788
-# 4. 100062893, same as above
-# 5. 100010019 with 1066870: Kent ave in Wburg
-# 6. 300020241 with 1002070: Manhattan side of Brookly bridge
+# 4. 100010019 with 1066870: Kent ave in Wburg
+# 5. 300020904 with 1002070: Brooklyn Bridge
 
-# geoplot biggest of 2022
-df_bicycle_counters |> 
-  filter(id==300020241
-         ) |> 
-  mapview(xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)  
+# geoplot
+#df_bicycle_counters |> filter(id==300020904) |> mapview(xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)  
 
 ```
 
@@ -265,7 +253,7 @@ length(fct_unique(df$violation_code))
 ```{r}
 length(df$violation_code)
 
-# ans: 122509
+# ans: 122525
 ```
 
 ## What were the most popular violations?
@@ -358,7 +346,7 @@ lm = lm(ts_daily_total$daily_total_cyclists~ts_daily_total$violation_date)
 lm
 
 
-# 5.975 increase per day
+# 6.003 increase per day
 ```
 
 
@@ -424,7 +412,7 @@ ts_monthly_total |>
   gg_subseries(monthly_total_cyclists)
 # takeaways:
 ## seasonality is a little clearer.  monthly difference is clearer.
-## 2023 is turning out to be noticeably more riders than previous years.
+## 2023 is turning out to be noticeably more riders than previous years in colder months.
 
 
 # Ridership changes over time takeways:
@@ -503,6 +491,8 @@ ts_daily_total |>
 # monthly:  just cleaner graph of daily violations over time.  Post-covid looks steady.
 ts_monthly_total |>
   autoplot(monthly_total_violations)
+
+# takeaway: some seasonality - more violations in warmer months, dips to fewer in colder.  This seasonality was less pronounced during 2020, but seems to be going back to previous trends in 2022. 
 ```
 
 ## Do number of violations change throughout the year (seasonal)?
@@ -527,11 +517,18 @@ ts_monthly_total |>
 # takeaway - Hard to see any trends, but fewer violations in Nov/Dec/Jan.  Most in Sept Oct.  2021 was a steady year.
 ```
 
-## Which month or months have the most violations?
+## Which months have the most violations?
 
 ```{r}
 # from graph above, March and September, but August is catching up.
 ```
+
+## Which months have the fewest?
+
+```{r}
+# from graph above, December.  Ignore April, skewed from lockdown.
+```
+
 
 
 ## As the number of riders increases, does the number of violations also increase?
@@ -547,7 +544,7 @@ df |>
   correlate() |>
   kable()
 
-# takeaawy cor: 0.0785254 So no, as the number of riders increases, the number of violations does not.
+# takeaawy cor: 0.0768097 So no, as the number of riders increases, the number of violations does not.
 ```
 
 ## Plot: daily violations vs. daily cylists
