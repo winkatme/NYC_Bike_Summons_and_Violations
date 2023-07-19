@@ -34,7 +34,7 @@ library(styler)
 # Import Data & Create tsibble
 
 ```{r import-and-tsibble, include=FALSE}
-df <- readr::read_csv("df_bike_violations_2023-07-09.csv")
+df <- readr::read_csv("df_bike_violations_2023-07-17.csv")
 
 df <- df |>
   mutate(violation_code = as.factor(violation_code)) |>
@@ -139,7 +139,7 @@ df |>
   slice(1:10) |>
   kable(caption = "Top 10 busiest cyclist days", align = "c")
 
-# takeaway: no particular trends, but mostly late summer / early autumn.  4 from September 2022.
+# takeaway: ?
 ```
 
 ## Which dates had the highest number of violations, and how many violations?
@@ -349,7 +349,7 @@ lm = lm(ts_daily_total$daily_total_cyclists~ts_daily_total$violation_date)
 lm
 
 
-# 4.665 increase per day
+# 5.975 increase per day
 ```
 
 
@@ -391,7 +391,7 @@ ts_daily_total |>
   filter_index(. ~ "2022") |>
   autoplot(yearly_total_cyclists)
 
-# Takeaway: Yes, it increases. slight dip in 2019 but clearly increasing
+# Takeaway: Yes, it increases. but at a slower rate after covid
 ```
 
 ## Does ridership change throughout the year (seasonality)?
@@ -421,7 +421,6 @@ ts_monthly_total |>
 # Ridership changes over time takeways:
 ## Ridership is increasing.
 ## Clear yearly seasonality, with May-Oct being the busiest, and Nov-Apr being less busy.
-## Dec, Jan, Feb have all been increaseing, especially post-pandemic
 ```
 
 ## Daily total cyclists decomposition
@@ -490,7 +489,7 @@ ts_daily_total |>
   autoplot(yearly_total_violations)
 
 
-# takeaway: not reall, post-covid. It looks steady.  2020, even with lockdown, had more violations than 2021 and 2022, but less than 2019.
+# takeaway: large drop after lockdown, but staying steady.
 
 # monthly:  just cleaner graph of daily violations over time.  Post-covid looks steady.
 ts_monthly_total |>
@@ -539,7 +538,7 @@ df |>
   correlate() |>
   kable()
 
-# takeaawy cor: 0.2167395 So no, as the number of riders increases, the number of violations does not.
+# takeaawy cor: 0.0785254 So no, as the number of riders increases, the number of violations does not.
 ```
 
 ## Plot: daily violations vs. daily cylists
@@ -555,7 +554,7 @@ ts_daily_total |>
 ### Plot: Pre-covid
 
 ```{r message = FALSE, warning=FALSE}
-# correlation:  0.5026907
+# correlation:  0.46
 cor <- ts_daily_total |>
   filter_index(~"2020-04") |>
   select(daily_total_cyclists, daily_total_violations) |>
@@ -587,7 +586,7 @@ ts_daily_total |>
   geom_smooth(method = lm) +
   sm_statCorr(label_x = 120, label_y = 1000)
 
-# correlation:  ~0.38
+# correlation:  ~0.37
 ts_daily_total |>
   filter_index("2020-04" ~ .) |>
   select(daily_total_cyclists, daily_total_violations) |>

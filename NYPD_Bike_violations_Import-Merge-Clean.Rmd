@@ -53,7 +53,7 @@ df_violation_codes <- df_violation_codes |>
 ```{r}
 # Remove duplicates
 
-# IOLATION_CODE duplicates found: (1110A and 1151A)
+# VIOLATION_CODE duplicates found: (1110A and 1151A)
 # This step proved to be necessary, as merging the two documents would duplicate the number of rows of any violation code in df to match any duplicates in violations.  This caused the # of rows of df to be over 200,000, when it should have remained the same (184770)
 
 df_violation_codes |>
@@ -169,7 +169,7 @@ str(df_merged)
 ### Merge violations data with with Violations code data by violation code
 
 ```{r}
-# matches violation description with violation code
+# matches violation description with violation code.  makes it easier to see what violaion the code refers to.
 
 df_merged <- df_merged |>
   left_join(x = df_merged, y = df_violation_codes_no_dupes, by = "violation_code")
@@ -232,6 +232,8 @@ df_counts_raw |>
 
 ```{r}
 # create new columns for daily and weekly totals
+# Note: This will be updated later, when duplicate counters are removed. However, this is useful in order to show which counters are duplicates.
+
 df_counts <- df_counts |>
   group_by(date(date)) |>
   mutate(daily_total = sum(counts)) |>
@@ -244,14 +246,15 @@ df_counts <- df_counts |>
 
 head(df_counts)
 
-# optional: save csv
-#write.csv(df_counts, '/Users/<username>/Desktop/df_counts.csv', row.names=FALSE)
+
 ```
 
 ### Create borough df
 
 ```{r}
+# adds a column that contains each counter's borough.
 # source: https://data.cityofnewyork.us/Transportation/Bicycle-Counters/smn3-rzf9
+
 
 df_bicycle_counters <- read.csv("Bicycle_Counters.csv")
 
@@ -427,6 +430,9 @@ df_counts <- df_counts |>
   ungroup() |>
   arrange(date) |>
   select(-c("date(date)", "yearweek(date)"))
+
+# optional: save csv
+# write.csv(df_counts, '/Users/<username>/Desktop/df_counts.csv', row.names=FALSE)
 
 ```
 
