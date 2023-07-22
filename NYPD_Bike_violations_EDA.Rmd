@@ -108,7 +108,23 @@ ts_daily_total <- ts_daily_total |>
 # double check for na's:
 ts_daily_total |>
   filter(is.na(daily_total_cyclists))
+
 ```
+
+## Create sf for spatial analysis
+
+```{r}
+# attempt to create st
+
+sf_bike_violations <- readr::read_csv("df_bike_violations_2023-07-18.csv") |> 
+  filter(!is.na(longitude)) |> 
+  st_as_sf(coords=c("longitude","latitude"), crs=4326) # remember x=lon and y=lat
+
+class(sf_bike_violations)
+
+
+```
+
 
 
 ```{r clean}
@@ -234,6 +250,7 @@ df_counts |>
 ```
 
 
+
 ```{r top-three-counters-2022-2023-names}
 # get names of top 3 counters
 df_bicycle_counters_boroughs |> 
@@ -254,7 +271,7 @@ df_bicycle_counters_boroughs |>
 
 ```{r}
 length(fct_unique(df_bike_violations$violation_code))
-# ans: 184? 3?
+# ans: 184? 183?  review na deletions
 ```
 
 ## How many total violations were handed out to cyclists?
@@ -286,7 +303,7 @@ df_bike_violations |>
 
 ### Unique violation: code 12332: Marty McFly
 
-```{r}
+```{r Marty-McFly}
 df_bike_violations |> 
   filter(violation_code==12332) |> 
   select(violation_code, violation_date, description)
@@ -338,6 +355,12 @@ df_bike_violations |>
 # takeaway: we have a better view of the major ticketing areas for 1111D1C: uws, ues (and their corresponding avenues up through Harlem), up and down 1st and 2nd ave, especialy in the east village, over the Wburg Bridge, up and down 4th and 5th aves in Brooklyn, Liberty Ave in Ozone park/ Richmond Hill, East side of prospect park on Bedf_bike_violationsord Ave, and Bensonhurst, bk.
 ```
 
+```{r}
+df_bike_violations
+```
+
+
+
 # EDA: Daily Cyclists
 
 ## Plot: daily total cyclists over time
@@ -381,7 +404,7 @@ df_counts_raw |>
 # potential issues;  fewer bike counters earlier on.
 ```
 
-## Plot: daily total cyclists histogram
+## Histogram: daily total cyclists
 
 ```{r}
 ts_daily_total |>
@@ -391,7 +414,7 @@ ts_daily_total |>
 
 ## Does ridership increase or decrease yearly?
 
-```{r ridership-increase-yearly}
+```{r plot-yearly-ridership}
 # leave out 2023 since we only have up to March
 
 ts_yearly_total |> 
@@ -480,13 +503,22 @@ ts_daily_total |>
 
 
 
-## Plot: daily total violations historgram
+## Histogram: daily total violations
 
 ```{r}
 ts_daily_total |>
   ggplot(aes(x = daily_total_violations)) +
   geom_histogram(bins = 80)
+
+
+str(ts_daily_total)
 ```
+
+
+```{r}
+df_bicycle_counters_boroughs
+```
+
 
 ## Are the yearly/monthly number of violations trending up or down?
 
@@ -586,6 +618,7 @@ cor <- ts_daily_total |>
   slice(1) |>
   select(daily_total_violations) |>
   as.numeric()
+
 
 # pre-covid
 ts_daily_total |>
