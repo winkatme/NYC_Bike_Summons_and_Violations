@@ -111,17 +111,38 @@ ts_daily_total |>
 
 ```
 
-## Create sf for spatial analysis
+## Create st for spatial analysis
 
 ```{r}
-# attempt to create st
+# import df
+# source for help:  https://gis.stackexchange.com/questions/305403/load-a-csv-as-simple-features-r
 
-sf_bike_violations <- readr::read_csv("df_bike_violations_2023-07-18.csv") |> 
+st_bike_violations <- readr::read_csv("df_bike_violations_2023-07-18.csv") |> 
   filter(!is.na(longitude)) |> 
   st_as_sf(coords=c("longitude","latitude"), crs=4326) # remember x=lon and y=lat
 
-class(sf_bike_violations)
+class(st_bike_violations$geometry)
 
+st_bbox(st_bike_violations)
+
+st_crs(st_bike_violations)
+
+install.packages('stars')
+library(stars)
+
+plot(st_bike_violations)
+
+# point pattern test
+install.packages('spatstat')
+library(spatstat)
+
+ppp_bike_violations <- df_bike_violations |> 
+  select('x_coord_cd', 'y_coord_cd') |> 
+  filter(!is.na(x_coord_cd)) |> 
+  st_as_sf(coords = c("x_coord_cd", "y_coord_cd")) |> 
+  as.ppp()
+
+ppp_bike_violations 
 
 ```
 
