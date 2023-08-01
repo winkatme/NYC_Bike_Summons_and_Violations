@@ -33,7 +33,7 @@ library(janitor)
 library(styler)
 ```
 
-# Import Data & Create tsibble
+# Import Data
 
 ```{r import-and-tsibble, include=FALSE}
 df_bike_violations <- readr::read_csv("df_bike_violations_2023-07-18.csv")
@@ -46,6 +46,12 @@ df_bike_violations <- df_bike_violations |>
   mutate(violation_date = as.POSIXct(violation_date))
 
 
+```
+
+# Create and clean daily tsibble for time series analysis
+
+```{r clean}
+
 # create a daily data tsibble
 ts_daily_total <- df_bike_violations |>
   mutate(violation_date = as_date(violation_date)) |>
@@ -53,11 +59,7 @@ ts_daily_total <- df_bike_violations |>
   summarize(daily_total_violations = sum(n())) |>
   ungroup() |>
   as_tsibble(index = violation_date)
-```
 
-## Clean daily tsibble
-
-```{r clean}
 # check for missing dates  # ans: 24
 ts_daily_total |>
   # filter(is.na(daily_total_cyclists)) |>
@@ -111,7 +113,7 @@ ts_daily_total |>
 
 ```
 
-## Create st for spatial analysis
+## Optional: Create st/sf for spatial analysis
 
 ```{r}
 # import df
@@ -142,7 +144,11 @@ ppp_bike_violations <- df_bike_violations |>
   st_as_sf(coords = c("x_coord_cd", "y_coord_cd")) |> 
   as.ppp()
 
-ppp_bike_violations 
+plot(ppp_bike_violations$window)
+plot(ppp_bike_violations)
+
+plot(density(ppp_bike_violations,sigma = bw.diggle))
+plot(ppp_bike_violations, add=T)
 
 ```
 
