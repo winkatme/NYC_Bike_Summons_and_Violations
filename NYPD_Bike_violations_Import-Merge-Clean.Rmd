@@ -108,7 +108,7 @@ dim(df_violation_codes_no_dupes)
 # import NYPD Summons csv
 # source: https://data.cityofnewyork.us/Public-Safety/NYPD-B-Summons-Year-to-Date-/57p3-pdcj
 
-df_current_violations <- read.csv("NYPD_B_Summons__Year_to_Date_.csv")
+df_current_violations <- read.csv("Data/Raw/NYPD_B_Summons__Year_to_Date_.csv")
 
 # Remove unneeded columns.  update column types as needed
 # CHG_LAW_CD - can be removed.  Just determines if it was ny state or local nyc law
@@ -256,7 +256,7 @@ head(df_counts)
 # source: https://data.cityofnewyork.us/Transportation/Bicycle-Counters/smn3-rzf9
 
 
-df_bicycle_counters <- read.csv("Bicycle_Counters.csv")
+df_bicycle_counters <- read.csv("Data/Raw/Bicycle_Counters.csv")
 
 df_bicycle_counters
 
@@ -409,7 +409,7 @@ dim(df_bicycle_counters_boroughs)
 ### Update df_counts by removing duplicate counters
 ```{r}
 
-# 29 distinct counter id's.  need to be reduced to 18
+# 29 distinct counter id's.  need to be reduced
 df_counts |> 
   distinct(id)
 
@@ -658,6 +658,6 @@ head(df_bike_violations)
 # file is approx 25mb. That exceeds limit for uploading via browser, but it is able to upload to git via push
 # install.packages("glue")
 todays_date <- Sys.Date()
-path_name<-glue('df_bike_violations_{todays_date}.csv')
+path_name<-glue('Data/Processed/df_bike_violations_{todays_date}.csv')
 write.csv(df_bike_violations, path_name, row.names=FALSE)
 ```
