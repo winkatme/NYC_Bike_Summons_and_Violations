@@ -22,6 +22,7 @@ library(mapview)
 # install.packages('tidygeocoder')
 library(tidygeocoder)
 library(janitor)
+install.packages("styler")
 library(styler)
 ```
 
@@ -33,7 +34,7 @@ library(styler)
 
 ```{r}
 # import Code Violations xlsx
-# After cleaning, his file will contain the violation code numbers and their corresponding descriptions.  
+# After cleaning, his file will contain the violation code numbers and their corresponding descriptions.
 
 # source:  https://dmv.ny.gov/e-data/violationcodes.xlsx
 # library(readxl)
@@ -98,7 +99,6 @@ df_violation_codes_no_dupes <- df_violation_codes |>
 
 dim(df_violation_codes_no_dupes)
 # View(violations_no_dupes)
-
 ```
 
 ## NYPD Violations data
@@ -246,8 +246,6 @@ df_counts <- df_counts |>
   select(-c("date(date)", "yearweek(date)"))
 
 head(df_counts)
-
-
 ```
 
 ### Create borough df
@@ -318,82 +316,81 @@ df_bicycle_counters_boroughs |>
 ### Remove duplicate bike counters
 
 ```{r}
-
 # first, find counters that share a latitude value
-df_bicycle_counters_boroughs |> 
-  mutate(lat_sum = sum(n()), .by=latitude) |> 
-  ungroup() |> 
-  arrange(desc(lat_sum), latitude) 
+df_bicycle_counters_boroughs |>
+  mutate(lat_sum = sum(n()), .by = latitude) |>
+  ungroup() |>
+  arrange(desc(lat_sum), latitude)
 
-# observations: 
+# observations:
 
-## 1. willis ave has 3 
+## 1. willis ave has 3
 # according to metadata file (DataDictionary-BicycleCounters.xlsx on web page with original dataset), the willis ave station counts bikes (300029647), pedestrians (300029648) and has the sume of those (300028963).  Therefore, let's remove the two that are not exclusively bikes (removed below).
 
 ## 2. amsterdam/columbus has 2 at the same lat/lon.  should one be deleted?  the streets are a block away and run in different directions. Check to see if totals are equal.
 # test to see if counts for a single day are the same:
-df_counts_raw |> 
-  filter(id==100057320 | id==100057319) |> 
-  mutate(date=mdy_hms(date)) |> 
-  mutate(date = date(date)) |> 
-  filter(date== '2020-04-14') |> 
-  group_by(id) |> 
+df_counts_raw |>
+  filter(id == 100057320 | id == 100057319) |>
+  mutate(date = mdy_hms(date)) |>
+  mutate(date = date(date)) |>
+  filter(date == "2020-04-14") |>
+  group_by(id) |>
   summarize(sum = sum(counts))
 # the counts are different, so we can leave both in.
 
 ## 3.  manhattan bridge has 2+2+2 for 'interference' + forsythe plaza.
 # let's look at all man bridge.
-man_br_ids <- df_bicycle_counters_boroughs |> 
-  filter(grepl(paste(c("Manhattan Bridge", "Forsyth"), collapse='|'), name)) |> 
+man_br_ids <- df_bicycle_counters_boroughs |>
+  filter(grepl(paste(c("Manhattan Bridge", "Forsyth"), collapse = "|"), name)) |>
   pull(id)
 
 man_br_ids
 
 # view all man bridge (un-hash for map)
-df_bicycle_counters |> 
+df_bicycle_counters |>
   filter(id %in% man_br_ids) # |> filter(!is.na(longitude)) |> mapview(xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)
 
-#view count sums, check for max and doubles
-df_counts_raw |> 
-  filter(id %in% man_br_ids) |> 
-  group_by(id) |> 
+# view count sums, check for max and doubles
+df_counts_raw |>
+  filter(id %in% man_br_ids) |>
+  group_by(id) |>
   summarize(sum = sum(counts))
-# from this we can see that 100047029 and 100062893 are the biggest counters with 14012230 each. 
+# from this we can see that 100047029 and 100062893 are the biggest counters with 14012230 each.
 
-df_bicycle_counters_boroughs |> 
-  filter(id==100047029|id==100062893)
+df_bicycle_counters_boroughs |>
+  filter(id == 100047029 | id == 100062893)
 # 'Manhattan Bridge Display Bike Counter'	and 'Manhattan Bridge Bike Comprehensive'
 
 # double-check date range (min and max)
-df_counts_raw |> 
-  mutate(date = mdy_hms(date)) |> 
-  filter(id==100039064) |> 
-  slice(which.min(date),which.max(date))
+df_counts_raw |>
+  mutate(date = mdy_hms(date)) |>
+  filter(id == 100039064) |>
+  slice(which.min(date), which.max(date))
 # From metadata file:  'As of May 7, 2019 the Display Manhattan Side counter is the primary source of bike counts on the bike path of the bridge'. since the range is 2012-2023, let's choose just the Manhattan Bridge Display Bike Couinter 100047029 for all man bridge data.  Removed below.
 
 
 
 # note there are some brooklyn bridge dupes as well, in 2023 data:
-df_counts_raw |> 
-  mutate(date = mdy_hms(date)) |> 
-  mutate(date=year(date)) |> 
-  #filter(date=='2023') |> 
-  mutate(id=as.factor(id)) |> 
-  filter(id %in% c(100010022, 300020241, 300020904)) |> 
-  summarize(sum=sum(counts), .by=id) |> 
+df_counts_raw |>
+  mutate(date = mdy_hms(date)) |>
+  mutate(date = year(date)) |>
+  # filter(date=='2023') |>
+  mutate(id = as.factor(id)) |>
+  filter(id %in% c(100010022, 300020241, 300020904)) |>
+  summarize(sum = sum(counts), .by = id) |>
   arrange(sum)
 
 
 # since 300030904 'Comprehensive Brooklyn Bridge Counter' has more total than the others, let's keep that one and discard 300020241, 100010022.  it's date range is also longer than the other two.
-  
-df_bicycle_counters_boroughs |> 
-  filter(grepl('Brooklyn', name))
+
+df_bicycle_counters_boroughs |>
+  filter(grepl("Brooklyn", name))
 
 
 
 # filter out all duplicate/unnecessary counters (includes 'Test' 300020692):
-df_bicycle_counters_boroughs<-df_bicycle_counters_boroughs |> 
-  filter(!id==300028963 & !id==300029648 &!id==100009426 & !id==100055175 & !id==100009429 & !id==100005020 & !id==100051865 & !id==100048744 & !id==100062893 & !id==300020692 & !id==300020241 & !id==100010022 & !id==100039064)
+df_bicycle_counters_boroughs <- df_bicycle_counters_boroughs |>
+  filter(!id == 300028963 & !id == 300029648 & !id == 100009426 & !id == 100055175 & !id == 100009429 & !id == 100005020 & !id == 100051865 & !id == 100048744 & !id == 100062893 & !id == 300020692 & !id == 300020241 & !id == 100010022 & !id == 100039064)
 
 # how many counters now? should be 18
 dim(df_bicycle_counters_boroughs)
@@ -403,24 +400,22 @@ dim(df_bicycle_counters_boroughs)
 # path_name<-'df_bicycle_counters_boroughs.csv'
 # write.csv(df_bicycle_counters_boroughs, path_name, row.names=FALSE)
 # df_bicycle_counters_boroughs
-
 ```
 
 
 ### Update df_counts by removing duplicate counters
 ```{r}
-
 # 29 distinct counter id's.  need to be reduced
-df_counts |> 
+df_counts |>
   distinct(id)
 
-bike_counter_ids_no_dupes<-df_bicycle_counters_boroughs |> 
+bike_counter_ids_no_dupes <- df_bicycle_counters_boroughs |>
   pull(id)
 
 
-df_counts <- df_counts |> 
-  filter(id %in% bike_counter_ids_no_dupes) |> 
-  #distinct(id) |> 
+df_counts <- df_counts |>
+  filter(id %in% bike_counter_ids_no_dupes) |>
+  # distinct(id) |>
   group_by(date(date)) |>
   mutate(daily_total = sum(counts)) |>
   ungroup() |>
@@ -431,13 +426,12 @@ df_counts <- df_counts |>
   select(-c("date(date)", "yearweek(date)"))
 
 # double-check distinct bike counter id's.  Should be 18
-df_counts |> 
+df_counts |>
   distinct(id)
 
 
 # optional: save csv to desktop, to upload to dropbox.  It is too large for github
-#write.csv(df_counts, '/Users/<username>/Desktop/df_counts.csv', row.names=FALSE)
-
+# write.csv(df_counts, '/Users/<username>/Desktop/df_counts.csv', row.names=FALSE)
 ```
 
 
@@ -486,7 +480,7 @@ df_bike_violations <- df_merged |>
   select(-c("counts", "date")) |>
   rename("daily_total_cyclists" = "daily_total") |>
   rename("weekly_total_cyclists" = "weekly_total") |>
-  droplevels() |> 
+  droplevels() |>
   arrange(violation_date)
 ```
 
@@ -495,14 +489,12 @@ df_bike_violations <- df_merged |>
 ```{r}
 # check for na's
 
-df_bike_violations |> 
-  summarise(across(everything(), ~ sum(is.na(.x)))) |> 
+df_bike_violations |>
+  summarise(across(everything(), ~ sum(is.na(.x)))) |>
   t()
 
 # there are 103 'na' entries for location coordinate data.  We can ignore these for now, and remove them when data location is required.  There is no sense in discarding the rest of the information, like violation codes, which can be used.
-
 ```
-
 
 #### Clean na values in description
 
@@ -523,7 +515,7 @@ df_bike_violations |>
 #  filter(violation_code=='22653')
 
 
-# change all violation codes to decided on values
+# change all 4 violation codes to chosen values
 df_bike_violations <- df_bike_violations |>
   mutate(violation_code = replace(violation_code, violation_code == "37524A", "37524AB")) |>
   mutate(violation_code = replace(violation_code, violation_code == "4014", "4014B")) |>
@@ -536,40 +528,60 @@ df_bike_violations$description[df_bike_violations$violation_code == "4014B"] <- 
 df_bike_violations$description[df_bike_violations$violation_code == "4021A"] <- "NO LICENSE PLATE OR SINGLE LICENSE PLATE"
 df_bike_violations$description[df_bike_violations$violation_code == "22651M"] <- "MISCELLANEOUS EQUIPMENT VIOLATION - LIMITED USE MOTORCYCLE"
 
-# double-check that there are no violatinn codes with na's in the description
+
+# are there any description violation code na's left?
 df_bike_violations |>
   filter(is.na(description)) |>
-  distinct(violation_code)
+  count()
+
+# yes.  There are 16. Let's view them:
+df_bike_violations |>
+  filter(is.na(description))
+
+# since these 16 have no violation code or description, I think we can safely delete them, as they provide no useful information.
+
+df_bike_violations <- df_bike_violations |>
+  filter(!is.na(description))
+
+# are there any na's left for description or violation code?
+df_bike_violations |>
+  filter(is.na(description) | is.na(violation_code))
+
+# no.
 ```
 
 
 #### Clean city_nm NAs
 
+City_nm has empty values that don't say NA.  Let's make them say NA.
+
 ```{r}
-# city_nm has empty values that don't say NA.  Let's make them say NA
 df_bike_violations$city_nm <- as.character(df_bike_violations$city_nm)
 df_bike_violations$city_nm[df_bike_violations$city_nm == ""] <- NA
 df_bike_violations$city_nm <- as.factor(df_bike_violations$city_nm)
 
 # Can try to check this for cleaner way to change to NAs in dplyr:  https://stackoverflow.com/questions/24172111/change-the-blank-cells-to-na
+```
 
-# how many city_nm na values now?  #ans: 92
+how many city_nm na values now? still 92
+```{r}
 df_bike_violations |>
   group_by(city_nm) |>
   summarize(sum = sum(n()))
+```
 
-# View the 92 na's
+View the 92 na's
+
+```{r}
 df_bike_violations |>
   filter(is.na(city_nm))
-
-# Takeaway: none of the 92 have longitude or latitiude info either.  To be removed in next cell.
 ```
+
+Takeaway: none of the 92 have longitude or latitiude info either.  Can be removed.
 
 ### Clean: city_nm == 'New York' values changed to their boroughs.
 
 ```{r}
-head(df_bike_violations)
-
 df_bike_violations |>
   filter(city_nm == "NEW YORK") |>
   # three rows were missing latitude/longitude values.  mapview needs no na's.
@@ -627,22 +639,22 @@ df_bike_violations |>
 
 df_bike_violations |>
   filter(city_nm == "NEW YORK")
-# takeaway:  these dont have longitudinal or latitudinal info.  
+# takeaway:  these dont have longitudinal or latitudinal info.
 
 # Since there are only 95 na, we can drop them all.
 
-df_bike_violations <- df_bike_violations |> 
-  filter(!city_nm == "NEW YORK") |> 
+df_bike_violations <- df_bike_violations |>
+  filter(!city_nm == "NEW YORK") |>
   filter(!is.na(city_nm))
 
-df_bike_violations |> 
+df_bike_violations |>
   str()
 
 head(df_bike_violations)
 
 # are we done with nas?
-df_bike_violations |> 
-  summarise(across(everything(), ~ sum(is.na(.x)))) |> 
+df_bike_violations |>
+  summarise(across(everything(), ~ sum(is.na(.x)))) |>
   t()
 
 dim(df_bike_violations)
@@ -655,6 +667,6 @@ dim(df_bike_violations)
 # file is approx 25mb. That exceeds limit for uploading via browser, but it is able to upload to git via push
 # install.packages("glue")
 todays_date <- Sys.Date()
-path_name<-glue('Data/Processed/df_bike_violations_{todays_date}.csv')
-write.csv(df_bike_violations, path_name, row.names=FALSE)
+path_name <- glue("Data/Processed/df_bike_violations_{todays_date}.csv")
+write.csv(df_bike_violations, path_name, row.names = FALSE)
 ```
