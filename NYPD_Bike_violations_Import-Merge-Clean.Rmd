@@ -33,6 +33,8 @@ library(styler)
 
 ```{r}
 # import Code Violations xlsx
+# After cleaning, his file will contain the violation code numbers and their corresponding descriptions.  
+
 # source:  https://dmv.ny.gov/e-data/violationcodes.xlsx
 # library(readxl)
 # library(httr)
@@ -54,6 +56,7 @@ df_violation_codes <- df_violation_codes |>
 # Remove duplicates
 
 # VIOLATION_CODE duplicates found: (1110A and 1151A)
+
 # This step proved to be necessary, as merging the two documents would duplicate the number of rows of any violation code in df to match any duplicates in violations.  This caused the # of rows of df to be over 200,000, when it should have remained the same (184770)
 
 df_violation_codes |>
@@ -93,9 +96,9 @@ df_violation_codes_no_dupes <- df_violation_codes |>
 # df_violation_codes_no_dupes |>
 #   filter(violation_code=='1151A'|violation_code=='1110A')
 
-
 dim(df_violation_codes_no_dupes)
 # View(violations_no_dupes)
+
 ```
 
 ## NYPD Violations data
@@ -105,17 +108,17 @@ dim(df_violation_codes_no_dupes)
 ```{r}
 # only run once
 
-# import NYPD Summons csv
+# import NYPD Summons violations csv
+
 # source: https://data.cityofnewyork.us/Public-Safety/NYPD-B-Summons-Year-to-Date-/57p3-pdcj
 
-df_current_violations <- read.csv("Data/Raw/NYPD_B_Summons__Year_to_Date_.csv")
+df_current_violations <- readr::read_csv("Data/Raw/NYPD_B_Summons__Year_to_Date_.csv")
 
 # Remove unneeded columns.  update column types as needed
-# CHG_LAW_CD - can be removed.  Just determines if it was ny state or local nyc law
+# CHG_LAW_CD - can be removed.  It just states whether the violation was NY state or local NYC law
 # JURIS_CD - can be removed.  no info in metadata.  only one distinct value.
 # VIOLATION_TIME - redundant
-### to delete ### LAW_CODE_ON_TICKET - can probably be removed.  most likely redundant with violation_code
-### to delete ### RPT_OWNING_CMD - precinct where reported. change this from integer to factor, since it acts similar to a zip code.
+# RPT_OWNING_CMD - precinct where reported. change this from integer to factor, since it acts similar to a zip code.
 
 df_current_violations <- df_current_violations |>
   clean_names() |>
@@ -127,7 +130,7 @@ df_current_violations <- df_current_violations |>
   select(-c(chg_law_cd, violation_time, juris_cd)) |>
   rename("location" = "location_point")
 
-glimpse(df_current_violations)
+str(df_current_violations)
 ```
 
 ### Import historic violations data
@@ -137,7 +140,7 @@ glimpse(df_current_violations)
 
 path <- "https://www.dropbox.com/s/9pikbkygm7ywq2h/NYPD_B_Summons__Historic_.csv?dl=1"
 
-df_historic <- read.csv(path)
+df_historic <- readr::read_csv(path)
 
 df_historic <- df_historic |>
   clean_names() |>
@@ -162,14 +165,12 @@ df_merged <- df_merged |>
 
 str(df_merged)
 # length(unique(df_merged$violation_code))
-
-str(df_merged)
 ```
 
-### Merge violations data with with Violations code data by violation code
+### Merge merged violation data with violation code description data
 
 ```{r}
-# matches violation description with violation code.  makes it easier to see what violaion the code refers to.
+# matches violation description with violation code.  makes it easier to see what the violation code refers to.
 
 df_merged <- df_merged |>
   left_join(x = df_merged, y = df_violation_codes_no_dupes, by = "violation_code")
@@ -444,7 +445,7 @@ df_counts |>
 ### Incomplete - Merge borough data with count data
 
 ```{r}
-# I'm doubtful that this step is necessary, since the counter locations are so heavily skewed for Manhattan
+# Ignore cell - I'm doubtful that this step is necessary, since the counter locations are so heavily skewed for Manhattan
 
 
 sort(unique(df_counts_raw$id)) == sort(unique(df_bicycle_counters_boroughs$id))
@@ -472,10 +473,6 @@ df_bicycle_counters_boroughs |>
 ## Merge violations data with rider count data
 
 ```{r}
-str(df_counts)
-str(df_merged)
-
-
 # create 'date' column of just ymd (no hms) in df_counts to merge on
 df_counts <- df_counts |>
   mutate(date = date(date)) |>
@@ -498,19 +495,12 @@ df_bike_violations <- df_merged |>
 ```{r}
 # check for na's
 
-head(df_bike_violations)
-
-# 0 na's for daily_total_cyclists
-df_bike_violations |>
-  filter(is.na(daily_total_cyclists))
-
-# there are 16 entries with na for violation_code.  
 df_bike_violations |> 
-  filter(is.na(violation_code))
+  summarise(across(everything(), ~ sum(is.na(.x)))) |> 
+  t()
 
-# remove the 16 entries with 'na' for violation_code, as they will are not useful to the report.
-df_bike_violations <- df_bike_violations |> 
-  filter(!is.na(violation_code))
+# there are 103 'na' entries for location coordinate data.  We can ignore these for now, and remove them when data location is required.  There is no sense in discarding the rest of the information, like violation codes, which can be used.
+
 ```
 
 
@@ -649,6 +639,13 @@ df_bike_violations |>
   str()
 
 head(df_bike_violations)
+
+# are we done with nas?
+df_bike_violations |> 
+  summarise(across(everything(), ~ sum(is.na(.x)))) |> 
+  t()
+
+dim(df_bike_violations)
 ```
 
 ## Optional - save csv
