@@ -485,20 +485,25 @@ df_bike_violations <- df_merged |>
 
 ## Clean NAs
 
-```{r}
-# check for na's
+Total rows before NA cleaning:
 
+```{r}
+dim(df_bike_violations)
+```
+
+Total NA's per column:
+
+```{r}
 df_bike_violations |>
   summarise(across(everything(), ~ sum(is.na(.x)))) |>
   t()
 ```
 
-Takeaway 1: there are 103 'na' entries for location coordinate data.  We can ignore these for now, and remove them when data location is required.  There is no sense in discarding the rest of the information, like violation codes, which can be used.
+Takeaway 1: there are 103 'na' entries for location coordinate data.  We can ignore these for now, and remove them when data location is required.  There is no sense in discarding useful information, like violation codes and violation dates.
 
-Takeaway 2: 92 for city_nm to be removed/cleaned
+Takeaway 2: 92 for city_nm to be removed/cleaned.
 
 Takeaway 3: 2068 for description to be filled in.
-
 
 ### 'description' NA's
 
@@ -512,7 +517,6 @@ df_bike_violations |>
 # df_bike_violations |>
 #  filter(violation_code=='22653')
 ```
-
 
 There were only 4 distinct Violation codes with no description:
 
@@ -573,16 +577,17 @@ No.
 
 ### 'city_nm' NAs
 
-
 ```{r}
 df_bike_violations |>
   group_by(city_nm) |>
   summarize(sum = sum(n()))
 ```
 
-By first changing the city_nm == 'New York' values to their specific boroughs, we also manage to fill-in/remove the NAs.
+Since "New York" is not a borough, let's first examine and then change the city_nm == 'New York' values to their specific boroughs.
 
-Let's view the New York city_nm values on a map to see if there are any outside of Manhattan
+We then remove any unchanged city_nm == 'New York' rows.  Because we use dplyr::filter(), this has the effect of also removing any NAs.
+
+Since New York is colloquially synonymous with Manhattan, let's view the city_nm == 'New York' values on a map to see if there are any outside of Manhattan:
 
 ```{r}
 df_bike_violations |>
@@ -611,7 +616,7 @@ Use reverse geo look-up to get correct boroughs for city_nm == 'New York' entrie
 # mutate(borough = gsub('Richmond County', 'Staten Island', borough)) |>
 # mutate(borough = gsub('Queens County', 'Queens', borough))
 
-# create temp file for merging
+# create temp file for merging from reverse geo look-up
 df_tmp <- df_bike_violations |>
   filter(city_nm == "NEW YORK") |>
   filter(!is.na(latitude) | !is.na(longitude)) |>
@@ -633,20 +638,20 @@ df_bike_violations <- df_bike_violations |>
   mutate(city_nm = case_when(city_nm == "Queens" ~ "QUEENS", .default = city_nm)) |> 
   select(-suburb)
 
-# check again for New York values
+# check again for city_nm == 'New York' values
 df_bike_violations |>
   group_by(city_nm) |>
   summarize(sum = sum(n()))
 ```
 
-Takeaway: better - now only 3 NEW YORK and 92 na.
+Takeaway: better - now only 3 NEW YORK values
 
 Let's view the remaining New York ones
 
 ```{r}
-df_bike_violations |>
-  summarise(across(everything(), ~ sum(is.na(.x)))) |>
-  t()
+df_bike_violations |> 
+  filter(city_nm=='NEW YORK')
+
 ```
 
 Takeaway:  these dont have longitudinal or latitudinal info.  We may therefore remove them.  And since filter in dplyr automatically removes NAs, the rest of the NA's are removed as well.  So that is 92 NA's + 3 city_nm=='New York' = 95 removed values.  We are left with 122,509 rows, when we started with 122,604.
@@ -667,7 +672,7 @@ df_bike_violations |>
   summarize(sum = sum(n()))
 ```
 
-View the na's
+View the remaining na's
 
 ```{r}
 df_bike_violations |>
@@ -676,7 +681,6 @@ df_bike_violations |>
 ```
 
 Takeaway: We are left with 8 entries that have NA values for their coordinates only.  We may leave these in, as there is still valuable information for their violation dates and codes.  These can easily be dropped for any geo mapping, if required.
-
 
 
 ## Optional - save csv
