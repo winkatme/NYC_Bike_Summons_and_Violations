@@ -491,13 +491,14 @@ df_bike_violations <- df_merged |>
 df_bike_violations |>
   summarise(across(everything(), ~ sum(is.na(.x)))) |>
   t()
-
-# there are 103 'na' entries for location coordinate data.  We can ignore these for now, and remove them when data location is required.  There is no sense in discarding the rest of the information, like violation codes, which can be used.
-
-# 92 for city_nm to be removed/cleaned
-
-# 2068 for description to be filled in.
 ```
+
+Takeaway 1: there are 103 'na' entries for location coordinate data.  We can ignore these for now, and remove them when data location is required.  There is no sense in discarding the rest of the information, like violation codes, which can be used.
+
+Takeaway 2: 92 for city_nm to be removed/cleaned
+
+Takeaway 3: 2068 for description to be filled in.
+
 
 ### 'description' NA's
 
@@ -508,20 +509,24 @@ df_bike_violations |>
   filter(is.na(description)) |>
   distinct(violation_code)
 
-# There were only 4 distinct Violation codes with no description:
-
-# 37524A (NOTE: after adjusting this value, this is the 5th most common violation code) - since 37524 is UNLAWFUL USE OF TV RECEIVING SET and 37524AB is OPER BICYCLE WITH MORE 1 EARPHONE, I will take the liberty to change all of these to 37524AB.
-# 4014 does not exist, but 4014B is COMMERCIAL VEHICLE ON PARKWAY- NYC.  Change all to 4014B
-# 4021 is associated with 4 different violation codes:  4021A - NO LICENSE PLATE OR SINGLE LICENSE PLATE, 4021B1 - DIRTY PLATE OR PLATE COVERED BY GLASS OR PLASTIC, 4021B2 - PLATE KNOWINGLY COVERED WITH INTENT TO OBSCURE, 4021B3 - PLATE OBSCURED BY VEHICLE OR ANYTHING CARRIED THERON.  Since these are all related to license plates, I will change these all to 4021A
-# 22653 - this was closest to two values, 22651 - EQUIPMENT VIOLATION LIMITED USE VEHICLE and 22651M - MISCELLANEOUS EQUIPMENT VIOLATION - LIMITED USE MOTORCYCLE.  Since all 18 of the 22653 violations were either e-bike or escooter, I will change all of these to 22651M
-
 # df_bike_violations |>
 #  filter(violation_code=='22653')
 ```
 
 
+There were only 4 distinct Violation codes with no description:
+
+37524A (NOTE: after adjusting this value, this is the 5th most common violation code) - since 37524 is UNLAWFUL USE OF TV RECEIVING SET and 37524AB is OPER BICYCLE WITH MORE 1 EARPHONE, I will take the liberty to change all of these to 37524AB.
+
+4014 does not exist, but 4014B is COMMERCIAL VEHICLE ON PARKWAY- NYC.  Change all to 4014B
+
+4021 is associated with 4 different violation codes:  4021A - NO LICENSE PLATE OR SINGLE LICENSE PLATE, 4021B1 - DIRTY PLATE OR PLATE COVERED BY GLASS OR PLASTIC, 4021B2 - PLATE KNOWINGLY COVERED WITH INTENT TO OBSCURE, 4021B3 - PLATE OBSCURED BY VEHICLE OR ANYTHING CARRIED THERON.  Since these are all related to license plates, I will change these all to 4021A
+
+22653 - this was closest to two values, 22651 - EQUIPMENT VIOLATION LIMITED USE VEHICLE and 22651M - MISCELLANEOUS EQUIPMENT VIOLATION - LIMITED USE MOTORCYCLE.  Since all 18 of the 22653 violations were either e-bike or escooter, I will change all of these to 22651M
+
+Let's change all 4 violation codes to chosen values:
+
 ```{r}
-# change all 4 violation codes to chosen values
 df_bike_violations <- df_bike_violations |>
   mutate(violation_code = replace(violation_code, violation_code == "37524A", "37524AB")) |>
   mutate(violation_code = replace(violation_code, violation_code == "4014", "4014B")) |>
@@ -533,9 +538,11 @@ df_bike_violations$description[df_bike_violations$violation_code == "37524AB"] <
 df_bike_violations$description[df_bike_violations$violation_code == "4014B"] <- "COMMERCIAL VEHICLE ON PARKWAY- NYC"
 df_bike_violations$description[df_bike_violations$violation_code == "4021A"] <- "NO LICENSE PLATE OR SINGLE LICENSE PLATE"
 df_bike_violations$description[df_bike_violations$violation_code == "22651M"] <- "MISCELLANEOUS EQUIPMENT VIOLATION - LIMITED USE MOTORCYCLE"
+```
 
+Are there any description violation code na's left?
 
-# are there any description violation code na's left?
+```{r}
 df_bike_violations |>
   filter(is.na(description)) |>
   count()
@@ -548,23 +555,32 @@ df_bike_violations |>
   filter(is.na(description))
 ```
 
-Since these 16 have no violation code or description, I think we can safely delete them, as they provide no useful information.
+Since these 16 have no violation code or description, we can safely remove them, as they provide no useful information.
 
-```{r}
+```{r remove-violation-NAs}
 df_bike_violations <- df_bike_violations |>
   filter(!is.na(description))
-
-# are there any na's left for description or violation code?
-df_bike_violations |>
-  filter(is.na(description) | is.na(violation_code))
-
-# no.
 ```
 
+Are there any NA's remaining for 'description'?
+
+```{r}
+df_bike_violations |>
+  filter(is.na(description))
+```
+
+No. 
 
 ### 'city_nm' NAs
 
-By changing the city_nm == 'New York' values  to their specific boroughs, we also manage to remove the NAs.
+
+```{r}
+df_bike_violations |>
+  group_by(city_nm) |>
+  summarize(sum = sum(n()))
+```
+
+By first changing the city_nm == 'New York' values to their specific boroughs, we also manage to fill-in/remove the NAs.
 
 Let's view the New York city_nm values on a map to see if there are any outside of Manhattan
 
@@ -576,7 +592,7 @@ df_bike_violations |>
   mapview(xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)
 ```
 
-takeaway from graph:  The large majority are in Manhattan, but there are still a few in Queens/Brooklyn
+Takeaway from graph:  The large majority are in Manhattan, but there are still a few in Queens/Brooklyn
 
 Use reverse geo look-up to get correct boroughs for city_nm == 'New York' entries.
 
@@ -633,7 +649,7 @@ df_bike_violations |>
   t()
 ```
 
-Takeaway:  these dont have longitudinal or latitudinal info.  We may therefore remove them
+Takeaway:  these dont have longitudinal or latitudinal info.  We may therefore remove them.  And since filter in dplyr automatically removes NAs, the rest of the NA's are removed as well.  So that is 92 NA's + 3 city_nm=='New York' = 95 removed values.  We are left with 122,509 rows, when we started with 122,604.
 
 ```{r remove city_nm==NewYork}
 df_bike_violations <- df_bike_violations |> 
@@ -643,39 +659,25 @@ df_bike_violations <- df_bike_violations |>
 # df_bike_violations |>
 #   filter(city_nm == "NEW YORK")
 
-```
 
-#### Now deal with city_nm na's
-
-View the 92 na's
-
-```{r}
-df_bike_violations |>
-  filter(is.na(city_nm))
-```
-
-Takeaway: none of the 92 have longitude or latitiude info either.  Can be removed.
-
-
-```{r}
-# Since there are only 95 na, we can drop them all.
-
-df_bike_violations <- df_bike_violations |>
-  filter(!city_nm == "NEW YORK") |>
-  filter(!is.na(city_nm))
+dim(df_bike_violations)
 
 df_bike_violations |>
-  str()
+  group_by(city_nm) |>
+  summarize(sum = sum(n()))
+```
 
-head(df_bike_violations)
+View the na's
 
-# are we done with nas?
+```{r}
 df_bike_violations |>
   summarise(across(everything(), ~ sum(is.na(.x)))) |>
   t()
-
-dim(df_bike_violations)
 ```
+
+Takeaway: We are left with 8 entries that have NA values for their coordinates only.  We may leave these in, as there is still valuable information for their violation dates and codes.  These can easily be dropped for any geo mapping, if required.
+
+
 
 ## Optional - save csv
 
