@@ -401,8 +401,8 @@ dim(df_bicycle_counters_boroughs)
 # df_bicycle_counters_boroughs
 ```
 
-
 ### Update df_counts by removing duplicate counters
+
 ```{r}
 # 29 distinct counter id's.  need to be reduced
 df_counts |>
