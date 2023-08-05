@@ -154,7 +154,7 @@ df_historic <- df_historic |>
 str(df_historic)
 ```
 
-### Merge historic violations data with current violations data
+### Merge historic with current
 
 ```{r}
 df_merged <- merge(df_historic, df_current_violations, all.x = TRUE, all.y = TRUE)
@@ -226,7 +226,6 @@ df_counts_raw |>
   distinct(id) |>
   arrange(id)
 ```
-
 
 
 ### Create daily and weekly rider total columns
@@ -563,7 +562,8 @@ df_bike_violations$city_nm <- as.factor(df_bike_violations$city_nm)
 # Can try to check this for cleaner way to change to NAs in dplyr:  https://stackoverflow.com/questions/24172111/change-the-blank-cells-to-na
 ```
 
-how many city_nm na values now? still 92
+How many city_nm na values now? still 92
+
 ```{r}
 df_bike_violations |>
   group_by(city_nm) |>
