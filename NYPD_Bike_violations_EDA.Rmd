@@ -36,7 +36,7 @@ library(styler)
 # Import Data
 
 ```{r import-and-tsibble, include=FALSE}
-df_bike_violations <- readr::read_csv("df_bike_violations_2023-08-05.csv")
+df_bike_violations <- readr::read_csv("Data/Processed/df_bike_violations_2023-08-05.csv")
 
 df_bike_violations <- df_bike_violations |>
   mutate(violation_code = as.factor(violation_code)) |>
@@ -44,15 +44,11 @@ df_bike_violations <- df_bike_violations |>
   mutate(city_nm = as.factor(city_nm)) |>
   mutate(rpt_owning_cmd = as.factor(rpt_owning_cmd)) |>
   mutate(violation_date = as.POSIXct(violation_date))
-
-
 ```
 
 # Create and clean daily tsibble for time series analysis
 
 ```{r clean}
-
-# create a daily data tsibble
 ts_daily_total <- df_bike_violations |>
   mutate(violation_date = as_date(violation_date)) |>
   group_by(violation_date, daily_total_cyclists) |>
@@ -64,37 +60,21 @@ ts_daily_total <- df_bike_violations |>
 ts_daily_total |>
   # filter(is.na(daily_total_cyclists)) |>
   count_gaps()
+```
 
+
+```{r clean}
 # are the days missing from df_counts?  # ans: no.
 # df_counts |>
 #  filter(is.na(daily_total))
+```
 
+fill gaps in dates and re-join with df_counts data, so that gapped dates now have total cyclsits columns. Replace violation na's with 0's.
 
-
-# fill gaps dates and re-join with df_counts data, so that gapped dates now have total cyclsits. Replace violation na's with 0s.
-
+```{r clean}
 # import df_counts:
-
-# old code
-#path2 <- "https://www.dropbox.com/s/oaklaldm8td9wem/Bicycle_Counts.csv?dl=1"
-#df_counts <- read.csv(path2)
-#df_counts <- df_counts |>
-#  filter(id %in% bike_counter_ids_no_dupes) |> 
-#  mutate(date = mdy_hms(date)) |>
-#  group_by(date(date)) |>
-#  mutate(daily_total = sum(counts)) |>
-#  ungroup() |>
-#  group_by(yearweek(date)) |>
-#  mutate(weekly_total = sum(counts)) |>
-#  ungroup() |>
-#  arrange(date) |>
-#  select(-c("date(date)", "yearweek(date)")) |>
-#  mutate(date = date(date)) |>
-#  select(-c(countid, id, status))
-
 path3 <- "https://www.dropbox.com/s/nffkpwuz1u6kd5t/df_counts.csv?dl=1"
 df_counts <- readr::read_csv(path3)
-
 
 # fill date gaps for ts_daily_total and join with df_counts
 ts_daily_total <- ts_daily_total |>
@@ -106,11 +86,13 @@ ts_daily_total <- ts_daily_total |>
   select(-c("date", "counts", "weekly_total")) |>
   mutate_at("daily_total_violations", ~ replace_na(., 0))
 
-
 # double check for na's:
-ts_daily_total |>
-  filter(is.na(daily_total_cyclists))
+# ts_daily_total |>
+#  filter(is.na(daily_total_cyclists))
 
+# double check for gaps:
+ts_daily_total |> 
+  count_gaps()
 ```
 
 ## Optional: Create st/sf for spatial analysis
@@ -119,7 +101,7 @@ ts_daily_total |>
 # import df
 # source for help:  https://gis.stackexchange.com/questions/305403/load-a-csv-as-simple-features-r
 
-st_bike_violations <- readr::read_csv("df_bike_violations_2023-07-18.csv") |> 
+st_bike_violations <- readr::read_csv("Data/Processed/df_bike_violations_2023-08-05.csv") |> 
   filter(!is.na(longitude)) |> 
   st_as_sf(coords=c("longitude","latitude"), crs=4326) # remember x=lon and y=lat
 
@@ -129,13 +111,13 @@ st_bbox(st_bike_violations)
 
 st_crs(st_bike_violations)
 
-install.packages('stars')
+#install.packages('stars')
 library(stars)
 
 plot(st_bike_violations)
 
 # point pattern test
-install.packages('spatstat')
+#install.packages('spatstat')
 library(spatstat)
 
 ppp_bike_violations <- df_bike_violations |> 
@@ -152,16 +134,7 @@ plot(ppp_bike_violations, add=T)
 
 ```
 
-
-
-```{r clean}
-# double check for date gaps:
-ts_daily_total |>
-  count_gaps()
-```
-
-
-## Create monthly and yearly total data tsibble
+## Create monthly and yearly total data tsibbles
 
 ```{r monthly-tsibble}
 # create a monthly data tsibble from cleaned daily tsibble
@@ -198,9 +171,9 @@ df_bike_violations |>
   distinct(violation_date, daily_total_cyclists) |>
   slice(1:10) |>
   kable(caption = "Top 10 busiest cyclist days", align = "c")
-
-# takeaway: ?
 ```
+
+takeaway...?
 
 ## Which dates had the highest number of violations, and how many violations?
 
@@ -214,10 +187,9 @@ df_bike_violations |>
   arrange(desc(daily_total_violations)) |>
   slice(1:10) |>
   kable(caption = "Top 10 busiest violation days", align = "c")
-
-
-# mostly warmer days in 2018 and 2019, pre-pandemic
 ```
+
+Takeaway: mostly warmer days in 2018 and 2019, pre-pandemic.
 
 # EDA: Bike Counters
 
@@ -250,32 +222,30 @@ df_counts |>
   summarize(sum = sum(counts)) |> 
   arrange(desc(sum))
   
-# 1. 100009427 with 1964902 counts: wburg side of wburg bridge.
-# 2. 100009428 with 1818163 counts: Queens side of Queensboro
-# 3. 100047029 with 1584788: Manhattan side of Manhattan bridge 1584788
-# 4. 100010019 with 1066870: Kent ave in Wburg
-# 5. 300020904 with 1002070: Brooklyn Bridge
-
 # geoplot
 #df_bike_violations_bicycle_counters |> filter(id==300020904) |> mapview(xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)  
-
 ```
+
+Takeaway:  Top 5:
+1. 100009427 with 1964902: Williamsburg side of Williamsburg bridge.
+2. 100009428 with 1818163: Queens side of Queensboro Bridge
+3. 100047029 with 1584788: Manhattan side of Manhattan bridge 1584788
+4. 100010019 with 1066870: Kent ave in Wburg
+5. 300020904 with 1002070: Brooklyn Bridge
 
 
 ## Which bike counters counted the most cyclists in 2023?
 
 ```{r}
-# lets look at the ones used in 2023 and their counts
 df_counts |> 
   mutate(date=year(date)) |> 
   filter(date=='2023') |> 
   mutate(id=as.factor(id)) |> 
   summarize(sum=sum(counts), .by=id) |> 
   arrange(desc(sum))
-
-# top 3 are the same.  4 and 5 are switched
 ```
 
+Takeaway:  Top 3 are the same.  4 and 5 are switched
 
 
 ```{r top-three-counters-2022-2023-names}
@@ -285,7 +255,7 @@ df_bicycle_counters_boroughs |>
 ```
 
 
-### To do: which bike counter counted the most bikes during the busiest month?
+### ?To do: which bike counter counted the most bikes during the busiest month?
 
 ```{r}
 
@@ -294,24 +264,21 @@ df_bicycle_counters_boroughs |>
 
 # EDA: Violation Codes
 
-## How many different violations were handed out to cyclist?
+## How many unique violations were handed out to cyclist?
 
 ```{r}
 length(fct_unique(df_bike_violations$violation_code))
-# ans: 184? 183?  review na deletions
 ```
 
 ## How many total violations were handed out to cyclists?
 
 ```{r}
 length(df_bike_violations$violation_code)
-
-# ans: 122525
 ```
 
-## What were the most popular violations?
+## What were the most common violations?
 
-```{r 10-most-popular-violations-table, message=FALSE}
+```{r 10-most-common-violations-table, message=FALSE}
 df_bike_violations |>
   mutate(violation_date = date(violation_date)) |>
   summarize(
@@ -323,10 +290,10 @@ df_bike_violations |>
   slice(1:10) |>
   kable()
 
-# takewaways:  44% were for failing to stop at red light.
-
 # note:  12332: ATTACHING SELF TO MOVING MOTOR VEHICLE a/k/a, the Marty McFly rule
 ```
+
+Takeaway:  44.1% + 5.2% ≈ 50% were for failing to stop at a red light.
 
 ### Unique violation: code 12332: Marty McFly
 
@@ -338,14 +305,18 @@ df_bike_violations |>
 df_bike_violations |> 
   filter(violation_code==12332) |> 
   mapview(xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)
-
-
 ```
 
-## To Do: Total violations per borough
+## Plot: Total violations per year, per borough.
 
-```{r}
-
+```{r plot-Yearly-Cyclist-Violations}
+df_bike_violations |> 
+  group_by(year=year(violation_date), city_nm) |> 
+  ggplot(aes(x=year, fill=city_nm))+
+  geom_bar()+
+  #geom_bar(position = position_dodge())+
+  labs(title="Yearly Cyclist Violations", fill="Borough")+
+  scale_fill_brewer()
 ```
 
 
