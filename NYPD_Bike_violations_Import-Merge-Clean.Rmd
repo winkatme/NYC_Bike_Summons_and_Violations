@@ -483,7 +483,7 @@ df_bike_violations <- df_merged |>
   arrange(violation_date)
 ```
 
-### Check for NAs
+## Clean NAs
 
 ```{r}
 # check for na's
@@ -493,9 +493,13 @@ df_bike_violations |>
   t()
 
 # there are 103 'na' entries for location coordinate data.  We can ignore these for now, and remove them when data location is required.  There is no sense in discarding the rest of the information, like violation codes, which can be used.
+
+# 92 for city_nm to be removed/cleaned
+
+# 2068 for description to be filled in.
 ```
 
-#### Clean na values in description
+### 'description' NA's
 
 ```{r}
 # check to see which Violation codes correspond to empty description cells
@@ -504,7 +508,8 @@ df_bike_violations |>
   filter(is.na(description)) |>
   distinct(violation_code)
 
-# There were 4 distinct Violation codes with no description:
+# There were only 4 distinct Violation codes with no description:
+
 # 37524A (NOTE: after adjusting this value, this is the 5th most common violation code) - since 37524 is UNLAWFUL USE OF TV RECEIVING SET and 37524AB is OPER BICYCLE WITH MORE 1 EARPHONE, I will take the liberty to change all of these to 37524AB.
 # 4014 does not exist, but 4014B is COMMERCIAL VEHICLE ON PARKWAY- NYC.  Change all to 4014B
 # 4021 is associated with 4 different violation codes:  4021A - NO LICENSE PLATE OR SINGLE LICENSE PLATE, 4021B1 - DIRTY PLATE OR PLATE COVERED BY GLASS OR PLASTIC, 4021B2 - PLATE KNOWINGLY COVERED WITH INTENT TO OBSCURE, 4021B3 - PLATE OBSCURED BY VEHICLE OR ANYTHING CARRIED THERON.  Since these are all related to license plates, I will change these all to 4021A
@@ -512,8 +517,10 @@ df_bike_violations |>
 
 # df_bike_violations |>
 #  filter(violation_code=='22653')
+```
 
 
+```{r}
 # change all 4 violation codes to chosen values
 df_bike_violations <- df_bike_violations |>
   mutate(violation_code = replace(violation_code, violation_code == "37524A", "37524AB")) |>
@@ -532,13 +539,18 @@ df_bike_violations$description[df_bike_violations$violation_code == "22651M"] <-
 df_bike_violations |>
   filter(is.na(description)) |>
   count()
+```
 
-# yes.  There are 16. Let's view them:
+Yes.  There are 16. Let's view them:
+
+```{r}
 df_bike_violations |>
   filter(is.na(description))
+```
 
-# since these 16 have no violation code or description, I think we can safely delete them, as they provide no useful information.
+Since these 16 have no violation code or description, I think we can safely delete them, as they provide no useful information.
 
+```{r}
 df_bike_violations <- df_bike_violations |>
   filter(!is.na(description))
 
@@ -550,36 +562,11 @@ df_bike_violations |>
 ```
 
 
-#### Clean city_nm NAs
+### 'city_nm' NAs
 
-City_nm has empty values that don't say NA.  Let's make them say NA.
+By changing the city_nm == 'New York' values  to their specific boroughs, we also manage to remove the NAs.
 
-```{r}
-df_bike_violations$city_nm <- as.character(df_bike_violations$city_nm)
-df_bike_violations$city_nm[df_bike_violations$city_nm == ""] <- NA
-df_bike_violations$city_nm <- as.factor(df_bike_violations$city_nm)
-
-# Can try to check this for cleaner way to change to NAs in dplyr:  https://stackoverflow.com/questions/24172111/change-the-blank-cells-to-na
-```
-
-How many city_nm na values now? still 92
-
-```{r}
-df_bike_violations |>
-  group_by(city_nm) |>
-  summarize(sum = sum(n()))
-```
-
-View the 92 na's
-
-```{r}
-df_bike_violations |>
-  filter(is.na(city_nm))
-```
-
-Takeaway: none of the 92 have longitude or latitiude info either.  Can be removed.
-
-### Clean: city_nm == 'New York' values changed to their boroughs.
+Let's view the New York city_nm values on a map to see if there are any outside of Manhattan
 
 ```{r}
 df_bike_violations |>
@@ -587,18 +574,22 @@ df_bike_violations |>
   # three rows were missing latitude/longitude values.  mapview needs no na's.
   filter(!is.na(latitude) | !is.na(longitude)) |>
   mapview(xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)
+```
 
-# takeaway from graph:  The large majority are in Manhattan, but there are still a few in Queens/Brooklyn
+takeaway from graph:  The large majority are in Manhattan, but there are still a few in Queens/Brooklyn
 
-# Can we use reverse geo lookup to get the boroughs?
-df_bike_violations |>
-  filter(city_nm == "NEW YORK") |>
-  # three rows were missing latitude/longitude values.  mapview needs no na's.
-  filter(!is.na(latitude) | !is.na(longitude)) |>
-  reverse_geocode(
-    lat = latitude, long = longitude, method = "osm",
-    address = address_found, full_results = TRUE
-  )
+Use reverse geo look-up to get correct boroughs for city_nm == 'New York' entries.
+
+```{r}
+# Can we use reverse geo lookup to get the boroughs? Yes.  hashed out because it takes a while to run
+# df_bike_violations |>
+#   filter(city_nm == "NEW YORK") |>
+#   # three rows were missing latitude/longitude values.  mapview needs no na's.
+#   filter(!is.na(latitude) | !is.na(longitude)) |>
+#   reverse_geocode(
+#     lat = latitude, long = longitude, method = "osm",
+#     address = address_found, full_results = TRUE
+#   )
 # select(id, name, latitude, longitude, suburb)
 # rename('borough' = 'suburb') |>
 # mutate(borough = gsub('Richmond County', 'Staten Island', borough)) |>
@@ -615,10 +606,7 @@ df_tmp <- df_bike_violations |>
   ) |>
   select("evnt_key", "suburb")
 
-
-df_bike_violations |>
-  slice(1:100)
-
+# merge correct values and re-name
 df_bike_violations <- df_bike_violations |>
   left_join(df_tmp, by = "evnt_key") |>
   mutate(city_nm = case_when((city_nm == "NEW YORK" & !is.na(suburb)) ~ suburb, .default = city_nm)) |>
@@ -626,21 +614,50 @@ df_bike_violations <- df_bike_violations |>
   mutate(city_nm = case_when(city_nm == "Kings County" ~ "BROOKLYN", .default = city_nm)) |>
   mutate(city_nm = case_when(city_nm == "Queens County" ~ "QUEENS", .default = city_nm)) |>
   mutate(city_nm = case_when(city_nm == "Brooklyn" ~ "BROOKLYN", .default = city_nm)) |>
-  mutate(city_nm = case_when(city_nm == "Queens" ~ "QUEENS", .default = city_nm))
-
-# clean this up if re-running df_bike_violations from scratch
-df_bike_violations <- df_bike_violations |>
+  mutate(city_nm = case_when(city_nm == "Queens" ~ "QUEENS", .default = city_nm)) |> 
   select(-suburb)
 
+# check again for New York values
 df_bike_violations |>
   group_by(city_nm) |>
   summarize(sum = sum(n()))
-# takeaway: this is better: now only 3 NEW YORK and 92 na.
+```
 
+Takeaway: better - now only 3 NEW YORK and 92 na.
+
+Let's view the remaining New York ones
+
+```{r}
 df_bike_violations |>
-  filter(city_nm == "NEW YORK")
-# takeaway:  these dont have longitudinal or latitudinal info.
+  summarise(across(everything(), ~ sum(is.na(.x)))) |>
+  t()
+```
 
+Takeaway:  these dont have longitudinal or latitudinal info.  We may therefore remove them
+
+```{r remove city_nm==NewYork}
+df_bike_violations <- df_bike_violations |> 
+  filter(city_nm != "NEW YORK")
+
+# to double check:
+# df_bike_violations |>
+#   filter(city_nm == "NEW YORK")
+
+```
+
+#### Now deal with city_nm na's
+
+View the 92 na's
+
+```{r}
+df_bike_violations |>
+  filter(is.na(city_nm))
+```
+
+Takeaway: none of the 92 have longitude or latitiude info either.  Can be removed.
+
+
+```{r}
 # Since there are only 95 na, we can drop them all.
 
 df_bike_violations <- df_bike_violations |>
