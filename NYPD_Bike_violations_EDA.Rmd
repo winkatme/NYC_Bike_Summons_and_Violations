@@ -211,7 +211,6 @@ df_counts |>
 # looks like max per year is 14.  so not all are used at once.
 ```
 
-
 ## Which bike counters counted the most cyclists in 2022?
 
 ```{r}
@@ -255,11 +254,26 @@ df_bicycle_counters_boroughs |>
 ```
 
 
-### ?To do: which bike counter counted the most bikes during the busiest month?
+## Monthly trends for Wburg bridge bike path bike counter
 
 ```{r}
+df_counts |> 
+  filter(id==100009427) |> 
+  mutate(date = date(date)) |> 
+  filter(year(date) >= 2018) |> 
+  distinct(date, .keep_all = TRUE) |> 
+  ggplot(aes(x=date, y=daily_total))+
+  geom_line()+
+  geom_abline()+
+  labs(title="Williamsburg bridge bike path daily counts since 2018")
+
 
 ```
+
+Takeaways: 
+* Seasonality trend - fewer riders in the colder months, more in the summer months.
+* Slow but steady growth in ridership.
+* Big bump in the fall of 2019.  Bump in the summer after covid lockdown, Slight dip in the summr of 2021, but rising again in 2022.
 
 
 # EDA: Violation Codes
@@ -348,6 +362,7 @@ df_bike_violations |>
 # takeaway: better, but still not as clear as I'd like.
 ```
 
+Let's just view the most common violation, fct_lump==11111D1C, for all of 2022:
 
 ```{r geomap-most-common-voilation-past-year}
 # Let's just view fct_lump==1111D1C for the previous year:
@@ -358,14 +373,13 @@ df_bike_violations |>
   filter(fct_lump == "1111D1C") |>
   mapview(xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE, alpha.regions = 0.2)
 
-# takeaway: we have a better view of the major ticketing areas for 1111D1C: uws, ues (and their corresponding avenues up through Harlem), up and down 1st and 2nd ave, especialy in the east village, over the Wburg Bridge, up and down 4th and 5th aves in Brooklyn, Liberty Ave in Ozone park/ Richmond Hill, East side of prospect park on Bedf_bike_violationsord Ave, and Bensonhurst, bk.
 ```
+
+Takeaway: we have a better view of the major ticketing areas for 1111D1C: uws, ues (and their corresponding avenues up through Harlem), up and down 1st and 2nd ave, especialy in the east village, over the Wburg Bridge, up and down 4th and 5th aves in Brooklyn, Liberty Ave in Ozone park/ Richmond Hill, East side of prospect park on Bedf_bike_violationsord Ave, and Bensonhurst, bk.
 
 ```{r}
 df_bike_violations
 ```
-
-
 
 # EDA: Daily Cyclists
 
