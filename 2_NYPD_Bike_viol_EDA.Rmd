@@ -215,7 +215,7 @@ df_bicycle_counters_boroughs |>
 
 Takeaway: mostly in Manhattan.  Even the ones in the Bronx and SI are at Manhattan access points.
 
-### Bike counters used per year
+## Bike counters used per year
 
 ```{r, rows.print = 12}
 df_counts |> 
@@ -225,7 +225,7 @@ df_counts |>
   summarise(n=n()) 
 ```
 
-Takeway: It looks like max per year is 14.  so not all are used at once.
+Takeway: It looks like max per year is 14.  so not all are 18 used at once.
 
 ## Which bike counters counted the most cyclists in 2022?
 
@@ -249,7 +249,7 @@ Takeaway:  Top 5:
 5. 300020904 with 1002070: Brooklyn Bridge
 
 
-## Which bike counters counted the most cyclists in 2023?
+## Which bike counters counted the most cyclists in 2023, so far?
 
 ```{r}
 df_counts |> 
@@ -262,13 +262,11 @@ df_counts |>
 
 Takeaway:  Top 3 are the same.  4 and 5 are switched
 
-
 ```{r top-three-counters-2022-2023-names}
 # get names of top 3 counters
 df_bicycle_counters_boroughs |> 
   filter(id %in% c(100009427, 100009428, 100047029))
 ```
-
 
 ## Time series plot for Wburg bridge bike path bike counter
 
@@ -279,7 +277,7 @@ df_counts |>
   filter(id==100009427) |> 
   mutate(date = date(date)) |> 
   filter(year(date) >= 2018) |> 
-  group_map(~ broom::tidy(lm(daily_total ~ date, data = .x)))
+  group_map(~ broom::tidy(lm(daily_total ~ date, data = .x))) 
   
 ```
 
