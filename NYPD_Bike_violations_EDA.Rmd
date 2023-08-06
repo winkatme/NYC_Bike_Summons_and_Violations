@@ -129,8 +129,8 @@ ppp_bike_violations <- df_bike_violations |>
 plot(ppp_bike_violations$window)
 plot(ppp_bike_violations)
 
-plot(density(ppp_bike_violations,sigma = bw.diggle))
-plot(ppp_bike_violations, add=T)
+#plot(density(ppp_bike_violations,sigma = bw.diggle))
+#plot(ppp_bike_violations, add=T)
 
 ```
 
@@ -193,23 +193,39 @@ Takeaway: mostly warmer days in 2018 and 2019, pre-pandemic.
 
 # EDA: Bike Counters
 
+## Total bike counters
+
+```{r}
+nrow(df_bicycle_counters_boroughs)
+```
+
 ## Geoplot: bike counters
 
 ```{r geoplot-bike-counters}
 mapview(na.omit(df_bicycle_counters_boroughs), xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)
 ```
 
-### Bike counters used per year
+## Bike counters per borough
 
 ```{r}
+df_bicycle_counters_boroughs |> 
+  group_by(borough) |> 
+  count()
+```
+
+Takeaway: mostly in Manhattan.  Even the ones in the Bronx and SI are at Manhattan access points.
+
+### Bike counters used per year
+
+```{r, rows.print = 12}
 df_counts |> 
   mutate(id = as.factor(id)) |> 
   group_by(year=year(date)) |> 
   distinct(id) |> 
   summarise(n=n()) 
-
-# looks like max per year is 14.  so not all are used at once.
 ```
+
+Takeway: It looks like max per year is 14.  so not all are used at once.
 
 ## Which bike counters counted the most cyclists in 2022?
 
@@ -228,7 +244,7 @@ df_counts |>
 Takeaway:  Top 5:
 1. 100009427 with 1964902: Williamsburg side of Williamsburg bridge.
 2. 100009428 with 1818163: Queens side of Queensboro Bridge
-3. 100047029 with 1584788: Manhattan side of Manhattan bridge 1584788
+3. 100047029 with 1584788: Manhattan side of Manhattan bridge
 4. 100010019 with 1066870: Kent ave in Wburg
 5. 300020904 with 1002070: Brooklyn Bridge
 
@@ -254,9 +270,25 @@ df_bicycle_counters_boroughs |>
 ```
 
 
-## Monthly trends for Wburg bridge bike path bike counter
+## Time series plot for Wburg bridge bike path bike counter
 
-```{r}
+Slope of wburg daily ridership line since 2018
+
+```{r message=FALSE}
+df_counts |> 
+  filter(id==100009427) |> 
+  mutate(date = date(date)) |> 
+  filter(year(date) >= 2018) |> 
+  group_map(~ broom::tidy(lm(daily_total ~ date, data = .x)))
+  
+```
+
+
+Takeaway: 6.5 riders per day increase for wburg bridge.
+
+Plot:
+
+```{r Plot-wburg-bridge-daily-counts, message=FALSE}
 df_counts |> 
   filter(id==100009427) |> 
   mutate(date = date(date)) |> 
@@ -264,15 +296,14 @@ df_counts |>
   distinct(date, .keep_all = TRUE) |> 
   ggplot(aes(x=date, y=daily_total))+
   geom_line()+
-  geom_abline()+
+  geom_smooth(method = lm)+
+  #geom_abline(slope = coef(lm(daily_total ~  date(date), data=df_counts))[2], intercept = coef(lm(daily_total ~  date(date), data=df_counts))[1])+
   labs(title="Williamsburg bridge bike path daily counts since 2018")
-
-
 ```
 
 Takeaways: 
-* Seasonality trend - fewer riders in the colder months, more in the summer months.
-* Slow but steady growth in ridership.
+* Seasonality trend - fewer riders in the colder months, more in the summer months. (Note that when graphing all time points since 2014, there was a big increase in the winter of 2016.  This was due to the new citibikes, as well as an unusually warm winter).
+* Ridership growth since 2018 is ~6.5 increase per day. 
 * Big bump in the fall of 2019.  Bump in the summer after covid lockdown, Slight dip in the summr of 2021, but rising again in 2022.
 
 
