@@ -553,17 +553,22 @@ Ridership changes over time takeaways:
 
 ## Daily total cyclists decomposition
 
-```{r daily-total-cyclists-decomp, message=FALSE, warning=FALSE }
-# classical decomp doesnt handle multi seasonality too well
+### Classical Decomp
+
+```{r classical-decomp, message=FALSE, warning=FALSE }
 ts_daily_total |>
   #  filter(!is.na(daily_total_cyclists)) |>
   #  fill_gaps() |>
   model(classical_decomposition(daily_total_cyclists, type = "additive")) |>
   components() |>
   autoplot()
+```
 
+Takeaway: Classical decomposition does not handle multi-seasonality of the data too well.
 
-# STL - best so far
+### STL Decomp
+
+```{r stl-decomp, message=FALSE, warning=FALSE }
 ts_daily_total |>
   model(
     STL(daily_total_cyclists ~ trend(window = 365) +
@@ -571,32 +576,31 @@ ts_daily_total |>
   ) |>
   components() |>
   autoplot()
+```
 
+Takeway: STL is best
+
+### Moving average
+
+```{r moving-average, message=FALSE, warning=FALSE }
 # what about moving average for trend?  it ok.  I think stl is best.
 ts_daily_total |>
   mutate(`5-MA` = slider::slide_dbl(daily_total_cyclists, mean, .before = 90, .after = 90, .complete = TRUE)) |>
   autoplot(daily_total_cyclists) +
   geom_line(aes(y = `5-MA`), colour = "#D55E00")
-
-# what about just a regular regression line
-ts_daily_total |>
-  autoplot(daily_total_cyclists) +
-  stat_smooth(method = "lm")
 ```
+
 
 # EDA: Daily Violations
 
 ## Plot: daily total violations over time
 
-```{r}
+```{r plot-daily-total-violations}
 ts_daily_total |>
   autoplot(daily_total_violations)
-
-# takeaway:  There were more violations before the pandemic.  During lockdown, very few.
 ```
 
-
-
+Takeaway:  There were more violations before the pandemic.  During lockdown, very few.
 
 ## Histogram: daily total violations
 
@@ -604,77 +608,54 @@ ts_daily_total |>
 ts_daily_total |>
   ggplot(aes(x = daily_total_violations)) +
   geom_histogram(bins = 80)
-
-
-str(ts_daily_total)
 ```
-
-
-```{r}
-df_bicycle_counters_boroughs
-```
-
 
 ## Are the yearly/monthly number of violations trending up or down?
 
 ```{r plot-yearly-total-violations}
 ts_yearly_total |> 
   filter_index(. ~ "2022") |>
-  autoplot(yearly_total_violations)
-
-# takeaway: large drop after lockdown, but staying steady.
+  autoplot(yearly_total_violations)+
+  ylim(0, NA)
 ```
 
+Takeaway: large drop in violations after lockdown, but staying steady.
 
 ```{r plot-monthly-total-violations}
 # monthly:  just cleaner graph of daily violations over time.  Post-covid looks steady.
 ts_monthly_total |>
-  autoplot(monthly_total_violations)
-
-# takeaway: some seasonality - more violations in warmer months, dips to fewer in colder.  This seasonality was less pronounced during 2020, but seems to be going back to previous trends in 2022.
+  autoplot(monthly_total_violations).
 ```
 
+Takeaway: Some seasonality - more violations in warmer months, dips to fewer in colder.  This seasonality was less pronounced during 2020, but seems to be going back to previous trends in 2022
 
-## Do number of violations change throughout the year (seasonal)?
+## Do the number of violations change throughout the year (seasonal)?
 
-```{r}
-# just post-covid
+Let's look at just post-lockdown:
+
+```{r plot-viol-seasonality-post-lockdown}
 ts_daily_total |>
   filter_index("2020-03" ~ .) |>
   gg_season(daily_total_violations)
 ```
 
+Monthly is easier to see
 
-```{r}
-# is it easier to see monthly?
+```{r plot-viol-seasonality-monthly-post-lockdown}
 ts_monthly_total |>
   filter_index("2020-03" ~ .) |>
   gg_season(monthly_total_violations)
 ```
 
+Let's view a subseries plot
 
-```{r}
-# subseries plot
+```{r plot-viol-seasonality-subseries-post-lockdown}
 ts_monthly_total |>
   filter_index("2020-03" ~ .) |>
   gg_subseries(monthly_total_violations)
-
-# takeaway - Hard to see any trends, but fewer violations in Nov/Dec/Jan.  Most in Sept Oct.  2021 was a steady year.
 ```
 
-
-
-## Which months have the most violations?
-
-```{r}
-# from graph above, March and September, but August is catching up.
-```
-
-## Which months have the fewest?
-
-```{r}
-# from graph above, December.  Ignore April, skewed from lockdown.
-```
+Takeawy: Hard to see any trends, but fewer violations in Nov/Dec/Jan/Feb.  Most in Sept, March, August.  April has a lower average due to covid lockdown in 2020.
 
 ## As the number of riders increases, does the number of violations also increase?
 
@@ -686,13 +667,15 @@ df_bike_violations |>
   group_by(violation_date) |>
   mutate(daily_total_violations = sum(n())) |>
   select(daily_total_cyclists, daily_total_violations) |>
-  correlate() |>
-  kable()
-
-# takeaawy cor: 0.0768097 So no, as the number of riders increases, the number of violations does not.
+  correlate() 
 ```
 
-## Plot: daily violations vs. daily cylists
+Takeway: cor: 0.0768097 So no, as the number of riders increases, the number of violations does not.
+
+
+## However, Does this differ for pre-covid and post-lockdown?
+
+### Plot: daily violations vs. daily cylists, since 2018
 
 ```{r}
 ts_daily_total |>
@@ -700,9 +683,7 @@ ts_daily_total |>
   geom_point()
 ```
 
-## Does this differ for pre-covid and post-lockdown?
-
-### Plot: Pre-covid
+### Plot: daily violations vs. daily cylists, Pre-lockdown
 
 ```{r message = FALSE, warning=FALSE}
 # correlation:  0.46
@@ -714,7 +695,6 @@ cor <- ts_daily_total |>
   select(daily_total_violations) |>
   as.numeric()
 
-
 # pre-covid
 ts_daily_total |>
   filter_index(~"2020-04") |>
@@ -724,7 +704,7 @@ ts_daily_total |>
   sm_statCorr(label_x = 250, label_y = 1000)
 ```
 
-### Plot: Post-covid
+### Plot: daily violations vs. daily cylists, Pose-lockdown
 
 ```{r message=FALSE}
 # devtools::install_github('smin95/smplot2', force = TRUE)
@@ -748,6 +728,8 @@ ts_daily_total |>
 # ans: they differ a little more than all together.  pre-covid was a better indicator.
 ```
 
+Takeaway: Yes, there is a positive correlation between cyclists per day and violations per day, when the data is split pre- and post-lockdown.  It's strength is medium though, and does not tell the whole picture.  
+
 ## Do largest violations (summed per day) change over time?
 
 ```{r message = FALSE}
@@ -763,10 +745,9 @@ df_bike_violations |>
   ) |>
   ggplot(aes(x = date, y = sum)) +
   geom_line()
-
-
-# takeaway:  No.  not much different than general daily violations plot.  lower amount around Dec/Jan, otherwise fairly steady.
 ```
+
+Takeaway:  No.  not much different than general daily violations plot.  lower amount around Dec/Jan, otherwise fairly steady.
 
 ## To Do: Did the type of violations change after covid?
 
@@ -775,12 +756,12 @@ df_bike_violations |>
 
 ```
 
-## To do: Can we predict ridership?
+## To do: Can we forecast ridership?
 
 ```{r}
 ```
 
-## To do: Can we predict daily violations?
+## To do: Can we foreast daily violations?
 
 ```{r}
 
