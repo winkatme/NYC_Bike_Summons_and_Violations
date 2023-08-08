@@ -314,7 +314,7 @@ df_bicycle_counters_boroughs |>
 
 ### Remove duplicate bike counters
 
-```{r}
+```{r df_bicycle_counters_boroughs-complete}
 # first, find counters that share a latitude value
 df_bicycle_counters_boroughs |>
   mutate(lat_sum = sum(n()), .by = latitude) |>

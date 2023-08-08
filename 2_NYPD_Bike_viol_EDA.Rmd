@@ -48,7 +48,7 @@ df_bike_violations <- df_bike_violations |>
 
 # Create and clean daily tsibble for time series analysis
 
-```{r clean}
+```{r clean, message=FALSE}
 ts_daily_total <- df_bike_violations |>
   mutate(violation_date = as_date(violation_date)) |>
   group_by(violation_date, daily_total_cyclists) |>
@@ -63,7 +63,7 @@ ts_daily_total |>
 ```
 
 
-```{r clean}
+```{r clean2}
 # are the days missing from df_counts?  # ans: no.
 # df_counts |>
 #  filter(is.na(daily_total))
@@ -71,7 +71,7 @@ ts_daily_total |>
 
 fill gaps in dates and re-join with df_counts data, so that gapped dates now have total cyclsits columns. Replace violation na's with 0's.
 
-```{r clean}
+```{r clean3}
 # import df_counts:
 path3 <- "https://www.dropbox.com/s/nffkpwuz1u6kd5t/df_counts.csv?dl=1"
 df_counts <- readr::read_csv(path3)
