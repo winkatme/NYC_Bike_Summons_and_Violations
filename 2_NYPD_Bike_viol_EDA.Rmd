@@ -195,7 +195,9 @@ Takeaway: mostly warmer days in 2018 and 2019, pre-pandemic.
 
 ## Total bike counters
 
-```{r}
+```{r, message=FALSE}
+df_bicycle_counters_boroughs <- readr::read_csv("Data/Processed/df_bicycle_counters_boroughs.csv")
+
 nrow(df_bicycle_counters_boroughs)
 ```
 
@@ -485,7 +487,7 @@ coef(lm(ts_daily_total$daily_total_cyclists~ts_daily_total$violation_date))[2]
 ## Plot: yearly trend in number of cyclists, to 2022
 
 ```{r message=FALSE }
-str(df_counts_raw)
+
 
 df_counts_raw |> 
   mutate(date = mdy_hms(date)) |> 

@@ -396,8 +396,8 @@ dim(df_bicycle_counters_boroughs)
 
 
 # Optional:  Save to csv
-# path_name<-'df_bicycle_counters_boroughs.csv'
-# write.csv(df_bicycle_counters_boroughs, path_name, row.names=FALSE)
+#path_name<-'Data/Processed/df_bicycle_counters_boroughs.csv'
+#write.csv(df_bicycle_counters_boroughs, path_name, row.names=FALSE)
 # df_bicycle_counters_boroughs
 ```
 
