@@ -313,7 +313,7 @@ Takeaways:
 length(fct_unique(df_bike_violations$violation_code))
 ```
 
-## How many total violations were handed out to cyclists?
+## How many total violations were handed out to cyclists since 2018?
 
 ```{r}
 length(df_bike_violations$violation_code)
@@ -362,7 +362,7 @@ df_bike_violations |>
   scale_fill_brewer()
 ```
 
-
+Takeaway: Large drop across the board in violations after 2019, especially in Manhattan.  Barely any in Staten Island
 
 ## Geocode: Violations location clusters
 
@@ -376,10 +376,9 @@ df_fct_lump_post_covid <- df_bike_violations |>
 
 
 mapview(na.omit(df_fct_lump_post_covid), xcol = "longitude", ycol = "latitude", zcol = "fct_lump", crs = 4269, grid = FALSE, alpha.regions = 0.1)
-
-# takeaway: map is too full,  let's just view  since 2022-04
 ```
 
+map is too full,  let's just view since April 2022
 
 ```{r}
 df_bike_violations |>
@@ -387,11 +386,31 @@ df_bike_violations |>
   mutate(date = date(violation_date)) |>
   filter(date >= "2022-04-01") |>
   mapview(xcol = "longitude", ycol = "latitude", zcol = "fct_lump", crs = 4269, grid = FALSE, alpha.regions = 0.2)
-
-# takeaway: better, but still not as clear as I'd like.
 ```
 
-Let's just view the most common violation, fct_lump==11111D1C, for all of 2022:
+better, but still not too clear.
+
+How about just one month - May 2022?
+
+```{r geoplot-vilations-may-2022}
+df_bike_violations |>
+  mutate(fct_lump = fct_lump(f = df_bike_violations$violation_code, n = 9)) |>
+  mutate(date = date(violation_date)) |>
+  filter(date >= "2022-05-01" & date <= "2022-05-31") |> 
+  mapview(xcol = "longitude", ycol = "latitude", zcol = "fct_lump", crs = 4269, grid = FALSE, alpha.regions = 0.2)
+```
+
+What were the total number of violations in this time frame, May of 2022?
+
+```{r}
+df_bike_violations |> 
+  mutate(date = date(violation_date)) |>
+  filter(date >= "2022-05-01" & date <= "2022-05-31") |>   
+  nrow()
+```
+
+
+For the sake of clustering, let's just view the most common violation, 11111D1C, for the previous year of data (since April of 2022):
 
 ```{r geomap-most-common-voilation-past-year}
 # Let's just view fct_lump==1111D1C for the previous year:
@@ -404,11 +423,42 @@ df_bike_violations |>
 
 ```
 
-Takeaway: we have a better view of the major ticketing areas for 1111D1C: uws, ues (and their corresponding avenues up through Harlem), up and down 1st and 2nd ave, especialy in the east village, over the Wburg Bridge, up and down 4th and 5th aves in Brooklyn, Liberty Ave in Ozone park/ Richmond Hill, East side of prospect park on Bedf_bike_violationsord Ave, and Bensonhurst, bk.
+What were the total number of 1111D1C violations in this time frame?
 
 ```{r}
-df_bike_violations
+df_bike_violations |> 
+  mutate(fct_lump = fct_lump(f = df_bike_violations$violation_code, n = 9)) |>
+  mutate(date = date(violation_date)) |>
+  filter(date >= "2022-04-01") |>
+  filter(fct_lump == "1111D1C") |>
+  nrow()
 ```
+
+
+Takeaway: We have a better view of the major ticketing areas for 1111D1C: 
+* UWS 
+* UES (and their corresponding avenues up through Harlem), 
+* Up and down 1st and 2nd aves, especially in the east village, 
+* On the Brooklyn side of the Williamsburg Bridge, 
+* Up and down 4th and 5th aves in Brooklyn, 
+* Liberty Ave in Ozone park/ Richmond Hill, 
+* The East side of Prospect Park on Bedford Ave
+* Bensonhurst, bk.
+
+
+## Is there a trend for 1111D1C over time?
+
+```{r}
+df_bike_violations |> 
+  mutate(date = date(violation_date)) |>
+  filter(violation_code=="1111D1C") |> 
+  group_by(date) |> 
+  count() |> 
+  ggplot(aes(x=date, y=n))+
+  geom_line()
+```
+
+Takeaway: the trend does not look out of the ordinary.  
 
 # EDA: Daily Cyclists
 
@@ -418,22 +468,17 @@ df_bike_violations
 ts_daily_total |>
   autoplot(daily_total_cyclists) +
   geom_smooth(method = "lm")
-
-
-# takeaway: ridership did not change much pre or post pandemic. not even during lockdown, although possible hickup.
-# However, ridership seems to be increasing in the colder months while remaining level in the warmer months.
-# since the ridership is clearly cyclical, an average won't tell us as much as we like.  But we can still see an increase over time.
 ```
+
+Takeaway: ridership did not change much pre or post pandemic. not even during lockdown, although possible hiccup.
+However, ridership seems to be increasing in the colder months while remaining level in the warmer months.
+Since the ridership is clearly cyclical, an average won't tell us as much as we like.  But we can still see an increase over time.
 
 ### Slope: Daily increase in number of cyclists
 
 ```{r message=FALSE }
-lm = lm(ts_daily_total$daily_total_cyclists~ts_daily_total$violation_date)
-lm
+coef(lm(ts_daily_total$daily_total_cyclists~ts_daily_total$violation_date))[2]
 
-
-
-# 6.003 increase per day
 ```
 
 
@@ -448,7 +493,8 @@ df_counts_raw |>
   summarise(yearly = sum(counts)) |> 
   filter(date < 2023) |> 
   ggplot(aes(x=date, y=yearly))+
-  geom_line()
+  geom_line()+
+  scale_x_continuous(breaks=seq(2012, 2022,2))
   
 # potential issues;  fewer bike counters earlier on.
 ```
@@ -469,9 +515,9 @@ ts_daily_total |>
 ts_yearly_total |> 
   filter_index(. ~ "2022") |>
   autoplot(yearly_total_cyclists)
-
-# Takeaway: Yes, it increases. but at a slower rate after covid
 ```
+
+Takeaway: Yes, it increases. but at a slower rate after covid
 
 ## Does ridership change throughout the year (seasonality)?
 
@@ -479,31 +525,31 @@ ts_yearly_total |>
 # yearly seasonal plot
 ts_daily_total |>
   gg_season(daily_total_cyclists)
-# takeaway - it's roughly the same yearly cycle per year.  increase in ridership from May-Oct, decrease Nov-Apr
 ```
 
+Takeaway - it's roughly the same yearly cycle per year.  increase in ridership from May-Oct, decrease Nov-Apr
 
-```{r}
-# same as above but monthly totals, looks cleaner:
+A plot with monthly totals would look cleaner while still conveying enough information
+
+```{r plot-monthly-totals}
 ts_monthly_total |>
   gg_season(monthly_total_cyclists)
-# takeaway - dip in April 2020 during covid lockdown, but not much less than before.
 ```
 
+Takeaway - dip in April 2020 during covid lockdown, but not much less than before.
 
 ```{r yearly-ridership-trends-by-month}
-# looking at it by month:
 ts_monthly_total |>
   gg_subseries(monthly_total_cyclists)
-# takeaways:
-## seasonality is a little clearer.  monthly difference is clearer.
-## 2023 is turning out to be noticeably more riders than previous years in colder months.
-
-
-# Ridership changes over time takeways:
-## Ridership is increasing.
-## Clear yearly seasonality, with May-Oct being the busiest, and Nov-Apr being less busy.
 ```
+
+Takeaways:
+* Seasonality is clearer.  Monthly differences are clearer.
+* 2023 is turning out to be noticeably more riders than previous years in colder months of Jan and Feb.
+
+Ridership changes over time takeaways:
+* Ridership is increasing.
+* Clear yearly seasonality, with May-Oct being the busiest, and Nov-Apr being less busy.
 
 ## Daily total cyclists decomposition
 
