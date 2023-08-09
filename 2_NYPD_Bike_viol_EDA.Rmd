@@ -31,6 +31,8 @@ library(mapview)
 library(janitor)
 #install.packages('styler')
 library(styler)
+#install.packages('patchwork')
+library(patchwork)
 ```
 
 # Import Data
@@ -487,19 +489,31 @@ coef(lm(ts_daily_total$daily_total_cyclists~ts_daily_total$violation_date))[2]
 ## Plot: yearly trend in number of cyclists, to 2022
 
 ```{r message=FALSE }
-
-
-df_counts_raw |> 
-  mutate(date = mdy_hms(date)) |> 
+plot1<-df_counts |> 
+  #mutate(date = mdy_hms(date)) |> 
   group_by(date=year(date)) |> 
   summarise(yearly = sum(counts)) |> 
   filter(date < 2023) |> 
   ggplot(aes(x=date, y=yearly))+
   geom_line()+
-  scale_x_continuous(breaks=seq(2012, 2022,2))
-  
-# potential issues;  fewer bike counters earlier on.
+  scale_x_continuous(breaks=seq(2012, 2022,2))+
+  labs(title='Yearly total cyclists', y='Cyclists')
+
+
+plot2 <-df_counts |> 
+  mutate(id = as.factor(id)) |> 
+  group_by(year=year(date)) |> 
+  distinct(id) |> 
+  summarise(n=n()) |> 
+  ggplot(aes(x=year, y=n))+
+  geom_line()+
+  scale_x_continuous(breaks=seq(2012, 2022,2))+
+  labs(title='Bike Counters per Year', y='Bike Counters')
+
+plot1 + plot2
 ```
+
+This isn't too accurate early on, as there were fewer bike counters used.
 
 ## Histogram: daily total cyclists
 
