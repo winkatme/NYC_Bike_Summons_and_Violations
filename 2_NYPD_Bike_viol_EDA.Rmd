@@ -5,7 +5,7 @@ output:
     df_print: paged
 ---
 
-```{r libraries, message=FALSE}
+```{r libraries, message=FALSE, warning=FALSE, results='hide'}
 library(knitr)
 library(tidyverse)
 library(lubridate)
@@ -50,7 +50,7 @@ df_bike_violations <- df_bike_violations |>
 
 # Create and clean daily tsibble for time series analysis
 
-```{r clean, message=FALSE}
+```{r clean, message=FALSE, warning=FALSE}
 ts_daily_total <- df_bike_violations |>
   mutate(violation_date = as_date(violation_date)) |>
   group_by(violation_date, daily_total_cyclists) |>
@@ -61,19 +61,19 @@ ts_daily_total <- df_bike_violations |>
 # check for missing dates  # ans: 24
 ts_daily_total |>
   # filter(is.na(daily_total_cyclists)) |>
-  count_gaps()
+  count_gaps() |> 
+  nrow()
 ```
 
-
-```{r clean2}
+```{r clean2, eval=FALSE}
 # are the days missing from df_counts?  # ans: no.
 # df_counts |>
 #  filter(is.na(daily_total))
 ```
 
-fill gaps in dates and re-join with df_counts data, so that gapped dates now have total cyclsits columns. Replace violation na's with 0's.
+Fill gaps in dates and re-join with df_counts data, so that gapped dates now have total cyclists columns. Replace violation na's with 0's.
 
-```{r clean3}
+```{r clean3, warning=FALSE, message=FALSE}
 # import df_counts:
 path3 <- "https://www.dropbox.com/s/nffkpwuz1u6kd5t/df_counts.csv?dl=1"
 df_counts <- readr::read_csv(path3)
@@ -99,7 +99,7 @@ ts_daily_total |>
 
 ## Optional: Create st/sf for spatial analysis
 
-```{r}
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 # import df
 # source for help:  https://gis.stackexchange.com/questions/305403/load-a-csv-as-simple-features-r
 
@@ -175,7 +175,7 @@ df_bike_violations |>
   kable(caption = "Top 10 busiest cyclist days", align = "c")
 ```
 
-takeaway...?
+Takeaway: Busiest single days were mostly in the autumn of 2019.
 
 ## Which dates had the highest number of violations, and how many violations?
 
@@ -211,13 +211,13 @@ mapview(na.omit(df_bicycle_counters_boroughs), xcol = "longitude", ycol = "latit
 
 ## Bike counters per borough
 
-```{r}
+```{r bike-counters-per-borough}
 df_bicycle_counters_boroughs |> 
   group_by(borough) |> 
   count()
 ```
 
-Takeaway: mostly in Manhattan.  Even the ones in the Bronx and SI are at Manhattan access points.
+Takeaway: mostly in Manhattan. Even the ones in the Bronx and SI are located near Manhattan access points.
 
 ## Bike counters used per year
 
@@ -229,11 +229,11 @@ df_counts |>
   summarise(n=n()) 
 ```
 
-Takeway: It looks like max per year is 14.  so not all are 18 used at once.
+Takeway: It looks like max per year is 14. so not all are 18 used at once.
 
 ## Which bike counters counted the most cyclists in 2022?
 
-```{r}
+```{r, message=FALSE}
 df_counts |> 
   mutate(date = date(date)) |>
   filter(year(date)==2022) |> 
@@ -245,13 +245,13 @@ df_counts |>
 #df_bike_violations_bicycle_counters |> filter(id==300020904) |> mapview(xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)  
 ```
 
-Takeaway:  Top 5:
-1. 100009427 with 1964902: Williamsburg side of Williamsburg bridge.
-2. 100009428 with 1818163: Queens side of Queensboro Bridge
-3. 100047029 with 1584788: Manhattan side of Manhattan bridge
-4. 100010019 with 1066870: Kent ave in Wburg
+Takeaway:\
+Top 5:\
+1. 100009427 with 1964902: Williamsburg side of Williamsburg bridge.\
+2. 100009428 with 1818163: Queens side of Queensboro Bridge\
+3. 100047029 with 1584788: Manhattan side of Manhattan bridge\
+4. 100010019 with 1066870: Kent ave in Wburg\
 5. 300020904 with 1002070: Brooklyn Bridge
-
 
 ## Which bike counters counted the most cyclists in 2023, so far?
 
@@ -264,7 +264,7 @@ df_counts |>
   arrange(desc(sum))
 ```
 
-Takeaway:  Top 3 are the same.  4 and 5 are switched
+Takeaway: Top 3 are the same. 4 and 5 are switched
 
 ```{r top-three-counters-2022-2023-names}
 # get names of top 3 counters
@@ -276,7 +276,7 @@ df_bicycle_counters_boroughs |>
 
 Slope of wburg daily ridership line since 2018
 
-```{r message=FALSE}
+```{r message=FALSE, warning=FALSE}
 df_counts |> 
   filter(id==100009427) |> 
   mutate(date = date(date)) |> 
@@ -284,7 +284,6 @@ df_counts |>
   group_map(~ broom::tidy(lm(daily_total ~ date, data = .x))) 
   
 ```
-
 
 Takeaway: 6.5 riders per day increase for wburg bridge.
 
@@ -303,11 +302,7 @@ df_counts |>
   labs(title="Williamsburg bridge bike path daily counts since 2018")
 ```
 
-Takeaways: 
-* Seasonality trend - fewer riders in the colder months, more in the summer months. (Note that when graphing all time points since 2014, there was a big increase in the winter of 2016.  This was due to the new citibikes, as well as an unusually warm winter).
-* Ridership growth since 2018 is ~6.5 increase per day. 
-* Big bump in the fall of 2019.  Bump in the summer after covid lockdown, Slight dip in the summr of 2021, but rising again in 2022.
-
+Takeaways: \* Seasonality trend - fewer riders in the colder months, more in the summer months. (Note that when graphing all time points since 2014, there was a big increase in the winter of 2016. This was due to the new citibikes, as well as an unusually warm winter). \* Ridership growth since 2018 is \~6.5 increase per day. \* Big bump in the fall of 2019. Bump in the summer after covid lockdown, Slight dip in the summr of 2021, but rising again in 2022.
 
 # EDA: Violation Codes
 
@@ -340,7 +335,7 @@ df_bike_violations |>
 # note:  12332: ATTACHING SELF TO MOVING MOTOR VEHICLE a/k/a, the Marty McFly rule
 ```
 
-Takeaway:  44.1% + 5.2% ≈ 50% were for failing to stop at a red light.
+Takeaway: 44.1% + 5.2% ≈ 50% were for failing to stop at a red light.
 
 ### Unique violation: code 12332: Marty McFly
 
@@ -366,7 +361,7 @@ df_bike_violations |>
   scale_fill_brewer()
 ```
 
-Takeaway: Large drop across the board in violations after 2019, especially in Manhattan.  Barely any in Staten Island
+Takeaway: Large drop across the board in violations after 2019, especially in Manhattan. Barely any in Staten Island
 
 ## Geocode: Violations location clusters
 
@@ -382,7 +377,7 @@ df_fct_lump_post_covid <- df_bike_violations |>
 mapview(na.omit(df_fct_lump_post_covid), xcol = "longitude", ycol = "latitude", zcol = "fct_lump", crs = 4269, grid = FALSE, alpha.regions = 0.1)
 ```
 
-map is too full,  let's just view since April 2022
+map is too full, let's just view since April 2022
 
 ```{r}
 df_bike_violations |>
@@ -413,7 +408,6 @@ df_bike_violations |>
   nrow()
 ```
 
-
 For the sake of clustering, let's just view the most common violation, 11111D1C, for the previous year of data (since April of 2022):
 
 ```{r geomap-most-common-voilation-past-year}
@@ -438,17 +432,7 @@ df_bike_violations |>
   nrow()
 ```
 
-
-Takeaway: We have a better view of the major ticketing areas for 1111D1C: 
-* UWS 
-* UES (and their corresponding avenues up through Harlem), 
-* Up and down 1st and 2nd aves, especially in the east village, 
-* On the Brooklyn side of the Williamsburg Bridge, 
-* Up and down 4th and 5th aves in Brooklyn, 
-* Liberty Ave in Ozone park/ Richmond Hill, 
-* The East side of Prospect Park on Bedford Ave
-* Bensonhurst, bk.
-
+Takeaway: We have a better view of the major ticketing areas for 1111D1C: \* UWS \* UES (and their corresponding avenues up through Harlem), \* Up and down 1st and 2nd aves, especially in the east village, \* On the Brooklyn side of the Williamsburg Bridge, \* Up and down 4th and 5th aves in Brooklyn, \* Liberty Ave in Ozone park/ Richmond Hill, \* The East side of Prospect Park on Bedford Ave \* Bensonhurst, bk.
 
 ## Is there a trend for 1111D1C over time?
 
@@ -462,7 +446,7 @@ df_bike_violations |>
   geom_line()
 ```
 
-Takeaway: the trend does not look out of the ordinary.  
+Takeaway: the trend does not look out of the ordinary.
 
 # EDA: Daily Cyclists
 
@@ -474,9 +458,7 @@ ts_daily_total |>
   geom_smooth(method = "lm")
 ```
 
-Takeaway: ridership did not change much pre or post pandemic. not even during lockdown, although possible hiccup.
-However, ridership seems to be increasing in the colder months while remaining level in the warmer months.
-Since the ridership is clearly cyclical, an average won't tell us as much as we like.  But we can still see an increase over time.
+Takeaway: ridership did not change much pre or post pandemic. not even during lockdown, although possible hiccup. However, ridership seems to be increasing in the colder months while remaining level in the warmer months. Since the ridership is clearly cyclical, an average won't tell us as much as we like. But we can still see an increase over time.
 
 ### Slope: Daily increase in number of cyclists
 
@@ -484,7 +466,6 @@ Since the ridership is clearly cyclical, an average won't tell us as much as we 
 coef(lm(ts_daily_total$daily_total_cyclists~ts_daily_total$violation_date))[2]
 
 ```
-
 
 ## Plot: yearly trend in number of cyclists, to 2022
 
@@ -543,7 +524,7 @@ ts_daily_total |>
   gg_season(daily_total_cyclists)
 ```
 
-Takeaway - it's roughly the same yearly cycle per year.  increase in ridership from May-Oct, decrease Nov-Apr
+Takeaway - it's roughly the same yearly cycle per year. increase in ridership from May-Oct, decrease Nov-Apr
 
 A plot with monthly totals would look cleaner while still conveying enough information
 
@@ -559,13 +540,9 @@ ts_monthly_total |>
   gg_subseries(monthly_total_cyclists)
 ```
 
-Takeaways:
-* Seasonality is clearer.  Monthly differences are clearer.
-* 2023 is turning out to be noticeably more riders than previous years in colder months of Jan and Feb.
+Takeaways: \* Seasonality is clearer. Monthly differences are clearer. \* 2023 is turning out to be noticeably more riders than previous years in colder months of Jan and Feb.
 
-Ridership changes over time takeaways:
-* Ridership is increasing.
-* Clear yearly seasonality, with May-Oct being the busiest, and Nov-Apr being less busy.
+Ridership changes over time takeaways: \* Ridership is increasing. \* Clear yearly seasonality, with May-Oct being the busiest, and Nov-Apr being less busy.
 
 ## Daily total cyclists decomposition
 
@@ -606,7 +583,6 @@ ts_daily_total |>
   geom_line(aes(y = `5-MA`), colour = "#D55E00")
 ```
 
-
 # EDA: Daily Violations
 
 ## Plot: daily total violations over time
@@ -616,7 +592,7 @@ ts_daily_total |>
   autoplot(daily_total_violations)
 ```
 
-Takeaway:  There were more violations before the pandemic.  During lockdown, very few.
+Takeaway: There were more violations before the pandemic. During lockdown, very few.
 
 ## Histogram: daily total violations
 
@@ -643,7 +619,7 @@ ts_monthly_total |>
   autoplot(monthly_total_violations)
 ```
 
-Takeaway: Some seasonality - more violations in warmer months, dips to fewer in colder.  This seasonality was less pronounced during 2020, but seems to be going back to previous trends in 2022
+Takeaway: Some seasonality - more violations in warmer months, dips to fewer in colder. This seasonality was less pronounced during 2020, but seems to be going back to previous trends in 2022
 
 ## Do the number of violations change throughout the year (seasonal)?
 
@@ -671,7 +647,7 @@ ts_monthly_total |>
   gg_subseries(monthly_total_violations)
 ```
 
-Takeawy: Hard to see any trends, but fewer violations in Nov/Dec/Jan/Feb.  Most in Sept, March, August.  April has a lower average due to covid lockdown in 2020.
+Takeawy: Hard to see any trends, but fewer violations in Nov/Dec/Jan/Feb. Most in Sept, March, August. April has a lower average due to covid lockdown in 2020.
 
 ## As the number of riders increases, does the number of violations also increase?
 
@@ -687,7 +663,6 @@ df_bike_violations |>
 ```
 
 Takeway: cor: 0.0768097 So no, as the number of riders increases, the number of violations does not.
-
 
 ## However, Does this differ for pre-covid and post-lockdown?
 
@@ -744,7 +719,7 @@ ts_daily_total |>
 # ans: they differ a little more than all together.  pre-covid was a better indicator.
 ```
 
-Takeaway: Yes, there is a positive correlation between cyclists per day and violations per day, when the data is split pre- and post-lockdown.  It's strength is medium though, and does not tell the whole picture.  
+Takeaway: Yes, there is a positive correlation between cyclists per day and violations per day, when the data is split pre- and post-lockdown. It's strength is medium though, and does not tell the whole picture.
 
 ## Do largest violations (summed per day) change over time?
 
@@ -763,7 +738,7 @@ df_bike_violations |>
   geom_line()
 ```
 
-Takeaway:  No.  not much different than general daily violations plot.  lower amount around Dec/Jan, otherwise fairly steady.
+Takeaway: No. not much different than general daily violations plot. lower amount around Dec/Jan, otherwise fairly steady.
 
 ## To Do: Did the type of violations change after covid?
 
@@ -782,8 +757,6 @@ Takeaway:  No.  not much different than general daily violations plot.  lower am
 ```{r}
 
 ```
-
-
 
 ```{r scratchpad, include=FALSE}
 
