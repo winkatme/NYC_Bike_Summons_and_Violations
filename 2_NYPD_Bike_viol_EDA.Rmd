@@ -251,6 +251,8 @@ clusters
 density <- density(ppp_test, sigma = 0.005)
 ?density
 plot(density)
+
+?mapview
 ```
 
 
