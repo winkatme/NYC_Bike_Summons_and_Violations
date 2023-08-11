@@ -123,7 +123,9 @@ plot(st_bike_violations)
 library(spatstat)
 
 ppp_bike_violations <- df_bike_violations |> 
-  select('x_coord_cd', 'y_coord_cd') |> 
+  mutate(date = date(violation_date)) |> 
+  filter(date >= '2022-04-01') |> 
+  filter(violation_code=='1111D1C') |> 
   filter(!is.na(x_coord_cd)) |> 
   st_as_sf(coords = c("x_coord_cd", "y_coord_cd")) |> 
   as.ppp()
@@ -133,6 +135,82 @@ plot(ppp_bike_violations)
 
 #plot(density(ppp_bike_violations,sigma = bw.diggle))
 #plot(ppp_bike_violations, add=T)
+
+
+# test: clusters for st_bike_violations
+
+?hclust
+
+
+
+d = dist(x = st_bike_violations$location, method = 'euclidean') 
+
+dim(st_bike_violations)
+
+
+st_bike_violations |> 
+  select(x_coord_cd, y_coord_cd) |> 
+  as.matrix() |> 
+  dist()
+# note: chnaged environment:
+# source: https://stackoverflow.com/questions/51295402/r-on-macos-error-vector-memory-exhausted-limit-reached
+#library(usethis) 
+#usethis::edit_r_environ()
+
+# since vector was too large to make distance matrix, just choose 1111D1C, since april 2022
+
+st_bike_violations_1111D1C <- st_bike_violations |> 
+  mutate(date= date(violation_date)) |> 
+  filter(date >= "2022-04-01") |>
+  filter(violation_code=='1111D1C')
+
+d = dist(x = st_bike_violations_1111D1C$location, method = 'euclidean')
+
+clusters = hclust(d = d,method='ward.D2')
+
+# test for spdep
+install.packages('spdep')
+library(spdep)
+
+st_bike_violations_1111D1C |> 
+  st_geometry() |> 
+  plot(border = "grey", lwd = 0.5)
+nb_soi |> plot(coords = coords, add = TRUE, 
+               points = FALSE, lwd = 0.5)
+```
+
+
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+# test for ppp point pattern analysis 
+# source: https://cran.r-project.org/web/packages/spatstat/vignettes/getstart.pdf
+
+# for binding box dimensions:
+st_bbox(st_bike_violations_1111D1C)
+
+
+
+# this works
+ppp_test <- ppp(st_coordinates(st_bike_violations_1111D1C)[,1], st_coordinates(st_bike_violations_1111D1C)[,2], c(-74.1556, -73.76750), c(40.57416, 40.88731))
+plot(ppp_test)
+
+
+ggplot() + 
+  geom_sf(data = st_bike_violations)
+
+
+plot(density(ppp_test))
+
+plot(quadratcount(ppp_test, nx=10, ny=10))
+
+
+ppp_clust<-clusterset(ppp_test)
+
+ppp_clust
+
+as.SpatialPoints.ppp(ppp_test)
+ppp_test$y
+
+mapview(ppp_test, xcol = ppp_test$x, ycol = ppp_test$y, crs = 4269, grid = FALSE, alpha.regions = 0.1)
 
 ```
 
