@@ -187,15 +187,21 @@ nb_soi |> plot(coords = coords, add = TRUE,
 # for binding box dimensions:
 st_bbox(st_bike_violations_1111D1C)
 
+st_bike_violations_1111D1C$geometry
 
 
 # this works
 ppp_test <- ppp(st_coordinates(st_bike_violations_1111D1C)[,1], st_coordinates(st_bike_violations_1111D1C)[,2], c(-74.1556, -73.76750), c(40.57416, 40.88731))
 plot(ppp_test)
 
+ggplot(data=ppp_test)+
+  geom_point(aes(x=longitude,y=latitude),size=0.1)
+
+ppp_test
 
 ggplot() + 
   geom_sf(data = st_bike_violations)
+
 
 
 plot(density(ppp_test))
@@ -203,8 +209,12 @@ plot(density(ppp_test))
 plot(quadratcount(ppp_test, nx=10, ny=10))
 
 
+kppm_test<-kppm(ppp_test)
+plot.kppm_test
+
 ppp_clust<-clusterset(ppp_test)
 
+plot(ppp_test, main=ppp_clust)
 ppp_clust
 
 as.SpatialPoints.ppp(ppp_test)
@@ -213,6 +223,37 @@ ppp_test$y
 mapview(ppp_test, xcol = ppp_test$x, ycol = ppp_test$y, crs = 4269, grid = FALSE, alpha.regions = 0.1)
 
 ```
+
+```{r}
+# cluster test with regular data
+df_bike_violations_1111D1C <- df_bike_violations |> 
+  mutate(date = date(violation_date)) |> 
+  filter(date >= '2022-04-01') |> 
+  filter(violation_code=='1111D1C')
+
+colnames(df_bike_violations_1111D1C)
+
+distances <- df_bike_violations_1111D1C |> 
+  select(longitude, latitude) |> 
+  dist(method='euclidean')
+
+distances
+
+
+clust = hclust(distances,method = "ward.D2")
+plot(clust)
+
+#library(dendextend)
+
+clusters = cutree(clust, k=6)
+clusters
+
+density <- density(ppp_test, sigma = 0.005)
+?density
+plot(density)
+```
+
+
 
 ## Create monthly and yearly total data tsibbles
 
