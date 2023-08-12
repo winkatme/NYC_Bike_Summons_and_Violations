@@ -249,10 +249,37 @@ clusters = cutree(clust, k=6)
 clusters
 
 density <- density(ppp_test, sigma = 0.005)
-?density
 plot(density)
 
-?mapview
+str(density)
+
+install.packages('tigris')
+library(tigris)
+manhattan_tigris = tracts(state='NY',county = 'New York',cb = TRUE)
+
+#install.packages('tmap')
+library(tmap)
+
+tmap_mode("view")
+
+tm_shape(manhattan_tigris)+
+  tm_borders()+
+  plot(density)
+
+
+library(ggmap)
+map = get_map(location = c(-77.08597,38.7),source="google",maptype="roadmap",zoom=12)
+ggmap(map)+geom_point(data = dat2,aes(x=longitude,y=latitude,size=Magnitude))
+
+ggplot(data=density$v)
+
+install.packages('rgdal')
+library(rgdal)
+
+class(nyc)
+
+?density
+
 ```
 
 
