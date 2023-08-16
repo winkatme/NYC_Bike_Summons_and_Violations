@@ -100,6 +100,8 @@ ts_daily_total |>
 ## Optional: Create st/sf for spatial analysis
 
 ```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+# WORK IN PROGRESS
+
 # import df
 # source for help:  https://gis.stackexchange.com/questions/305403/load-a-csv-as-simple-features-r
 
@@ -168,8 +170,10 @@ d = dist(x = st_bike_violations_1111D1C$location, method = 'euclidean')
 
 clusters = hclust(d = d,method='ward.D2')
 
+
+
 # test for spdep
-install.packages('spdep')
+#install.packages('spdep')
 library(spdep)
 
 st_bike_violations_1111D1C |> 
@@ -181,29 +185,35 @@ nb_soi |> plot(coords = coords, add = TRUE,
 
 
 ```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+# WORK IN PROGRESS
 # test for ppp point pattern analysis 
 # source: https://cran.r-project.org/web/packages/spatstat/vignettes/getstart.pdf
 
 # for binding box dimensions:
 st_bbox(st_bike_violations_1111D1C)
 
-st_bike_violations_1111D1C$geometry
+st_crs(st_bike_violations_1111D1C)
+owin(st_geometry(st_bike_violations_1111D1C))
+?st_transform()
 
+?owin
 
 # this works
 ppp_test <- ppp(st_coordinates(st_bike_violations_1111D1C)[,1], st_coordinates(st_bike_violations_1111D1C)[,2], c(-74.1556, -73.76750), c(40.57416, 40.88731))
 plot(ppp_test)
 
-ggplot(data=ppp_test)+
-  geom_point(aes(x=longitude,y=latitude),size=0.1)
+
+
+st_bike_violations_1111D1C
 
 ppp_test
 
+# work:
 ggplot() + 
-  geom_sf(data = st_bike_violations)
+  geom_sf(data = st_bike_violations_1111D1C, size=0.1)
 
 
-
+# this works
 plot(density(ppp_test))
 
 plot(quadratcount(ppp_test, nx=10, ny=10))
@@ -225,6 +235,8 @@ mapview(ppp_test, xcol = ppp_test$x, ycol = ppp_test$y, crs = 4269, grid = FALSE
 ```
 
 ```{r}
+# WORK IN PROGRESS
+
 # cluster test with regular data
 df_bike_violations_1111D1C <- df_bike_violations |> 
   mutate(date = date(violation_date)) |> 
@@ -266,6 +278,9 @@ tm_shape(manhattan_tigris)+
   tm_borders()+
   plot(density)
 
+
+# ggmaps
+?register_google 
 
 library(ggmap)
 map = get_map(location = c(-77.08597,38.7),source="google",maptype="roadmap",zoom=12)
@@ -898,7 +913,44 @@ Takeaway: No. not much different than general daily violations plot. lower amoun
 ## To do: Can we forecast ridership?
 
 ```{r}
+ts_daily_total |> 
+  autoplot(daily_total_cyclists)
+
+
 ```
+
+### Seasonal naive forecast
+
+```{r}
+
+ts_daily_snaive_mod <- ts_daily_total |> 
+  model(model = NAIVE(daily_total_cyclists ~ lag(365)))
+
+ts_fc <- ts_daily_snaive_mod|> forecast(h = "2 years")
+
+ts_fc |> 
+  autoplot(ts_daily_total)
+
+```
+
+Takeaway: Plot does not tell us much.  As error bars increase, there can be as many as 80000+ cyclists in a day, or as few as in the negative numbers.  
+
+### Seasnal naive forecast on monthly totals
+
+```{r}
+ts_monthly_snaive_mod <- ts_monthly_total |> 
+  model(model = NAIVE(monthly_total_cyclists ~ lag(365)))
+
+ts_fc <- ts_monthly_snaive_mod|> forecast(h = "2 years")
+
+ts_fc |> 
+  autoplot(ts_monthly_total)
+
+
+ts_monthly_total |> 
+  head()
+```
+
 
 ## To do: Can we foreast daily violations?
 
