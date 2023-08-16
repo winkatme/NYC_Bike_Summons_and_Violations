@@ -946,16 +946,22 @@ ts_fc <- ts_monthly_snaive_mod|> forecast(h = "2 years")
 ts_fc |> 
   autoplot(ts_monthly_total)
 
+augment(ts_monthly_snaive_mod)
 
-ts_monthly_total |> 
-  head()
 ```
 
 Takeaway:  This looks a lot better.  
 
-```{r}
+Let's take a look at the residuals
 
+```{r, warning=FALSE}
+# mean(augment(ts_monthly_snaive_mod)$.resid, na.rm=TRUE)  # 74750.9
+
+gg_tsresiduals(ts_monthly_snaive_mod)
 ```
+
+Takeaways:  Residuals look normally distributed enough and uncorrelated enough.  Sig lag at 12 months, but that's to be expected as there's yearly seasonality.  SLightly sig lag at 7 months.  Will safely ignore this. One potential issue is that the mean is not quite 0, it's 74750.9.  
+
 
 
 
