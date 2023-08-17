@@ -913,45 +913,20 @@ Takeaway: No. not much different than general daily violations plot. lower amoun
 
 ## To do: Can we forecast ridership?
 
+Let's see how the daily totals look
+
 ```{r}
 ts_daily_total |> 
   autoplot(daily_total_cyclists)
-
-
 ```
 
-### Seasonal naive forecast
+Pretty messy.  The monthly totals look easier to read, so let's use those.
 
 ```{r}
-
-ts_daily_snaive_mod <- ts_daily_total |> 
-  model(model = NAIVE(daily_total_cyclists ~ lag(365)))
-
-ts_fc <- ts_daily_snaive_mod |> forecast(h = "2 years")
-
-ts_fc |> 
-  autoplot(ts_daily_total)
-
+ts_monthly_total |> 
+  autoplot(monthly_total_cyclists)
 ```
 
-Takeaway: Plot does not tell us much.  As error bars increase, there can be as many as 80000+ cyclists in a day, or as few as in the negative numbers.  
-
-### Seasnal naive forecast on monthly totals
-
-```{r}
-ts_monthly_snaive_mod <- ts_monthly_total |> 
-  model(model = NAIVE(monthly_total_cyclists ~ lag(12)))
-
-ts_fc <- ts_monthly_snaive_mod|> forecast(h = "2 years")
-
-ts_fc |> 
-  autoplot(ts_monthly_total)
-
-str(ts_monthly_snaive_mod)
-
-```
-
-Takeaway:  This looks a lot better.  Let's just analyze monthly
 
 ### Train and test sets for monthly data
 
@@ -962,7 +937,18 @@ train<-ts_monthly_total |>
 test<-ts_monthly_total |> 
   select(!monthly_total_violations) |> 
   filter_index("2022-01"~.)
+```
 
+### Seasonal Naive forecast on monthly totals
+
+```{r}
+ts_monthly_snaive_mod <- ts_monthly_total |> 
+  model(model = NAIVE(monthly_total_cyclists ~ lag(12)))
+
+ts_fc <- ts_monthly_snaive_mod|> forecast(h = "2 years")
+
+ts_fc |> 
+  autoplot(ts_monthly_total)
 
 ```
 
@@ -970,26 +956,22 @@ test<-ts_monthly_total |>
 #### Seasonal naive monthly residuals
 
 ```{r, warning=FALSE}
-# mean(augment(ts_monthly_snaive_mod)$.resid, na.rm=TRUE)  # 74750.9
-
 train_snaive_mod <- train |> 
   model(model = NAIVE(monthly_total_cyclists ~ lag(12)))
+
+mean(augment(train_snaive_mod)$.resid, na.rm=TRUE)  # 85885.5
 
 gg_tsresiduals(train_snaive_mod)
 ```
 
+Tests to see if residuals differ from white noise:
 
 ```{r}
-#ljung-box test to see if residuals differ from white noise:
 augment(train_snaive_mod) %>% features(.innov, box_pierce, lag = 12)
-
 augment(train_snaive_mod) %>% features(.innov, ljung_box, lag = 12)
-
 ```
 
-Takeaways:  Residuals look normally distributed enough and uncorrelated enough.  Sig lag at 12 months, but that's to be expected as there's yearly seasonality. Also sig at 5 months.  Will safely ignore this. One potential issue is that the mean is not quite 0, it's 74750.9.  
-
-
+Takeaways: passes box_pierce, but almost passes ljung_box.  Resids don't look close to normal.  
 
 How does it do on the test set?
 
@@ -1005,16 +987,16 @@ fct <-train |>
 
 RMSE 131213.6	
 
-Plot it
+#### Visualize the Seasonal Naive forecast:
 
-```{r warning=FALSE}
-
-autoplot(train)+
+```{r message=FALSE, warning=FALSE}
+autoplot(train) +
   autolayer(fct, PI = F, size=0.7)+
   autolayer(test)
 ```
 
-Takeaway:  Looks good.  Pretty accuarate.  Let's compare to other methods.
+Takeaway:  Errors can get extreme (less than 0 at one point). Does not take into account the trend of the data.  Let's compare to other methods.
+
 
 
 
