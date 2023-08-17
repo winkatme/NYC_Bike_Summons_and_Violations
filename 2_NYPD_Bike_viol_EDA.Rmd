@@ -13,6 +13,7 @@ knitr::opts_chunk$set(message = FALSE)
 # options(digits = 7)
 library(rmarkdown)
 library(fpp3)
+#library(forecast)
 library(readxl)
 library(httr)
 library(glue)
@@ -926,7 +927,7 @@ ts_daily_total |>
 ts_daily_snaive_mod <- ts_daily_total |> 
   model(model = NAIVE(daily_total_cyclists ~ lag(365)))
 
-ts_fc <- ts_daily_snaive_mod|> forecast(h = "2 years")
+ts_fc <- ts_daily_snaive_mod |> forecast(h = "2 years")
 
 ts_fc |> 
   autoplot(ts_daily_total)
@@ -946,30 +947,80 @@ ts_fc <- ts_monthly_snaive_mod|> forecast(h = "2 years")
 ts_fc |> 
   autoplot(ts_monthly_total)
 
-augment(ts_monthly_snaive_mod)
+str(ts_monthly_snaive_mod)
 
 ```
 
-Takeaway:  This looks a lot better.  
+Takeaway:  This looks a lot better.  Let's just analyze monthly
 
-Let's take a look at the residuals
+### Train and test sets for monthly data
+
+```{r}
+train<-ts_monthly_total |> 
+  select(!monthly_total_violations) |> 
+  filter_index(~"2021-12")
+test<-ts_monthly_total |> 
+  select(!monthly_total_violations) |> 
+  filter_index("2022-01"~.)
+
+
+```
+
+
+#### Seasonal naive monthly residuals
 
 ```{r, warning=FALSE}
 # mean(augment(ts_monthly_snaive_mod)$.resid, na.rm=TRUE)  # 74750.9
 
-gg_tsresiduals(ts_monthly_snaive_mod)
+train_snaive_mod <- train |> 
+  model(model = NAIVE(monthly_total_cyclists ~ lag(12)))
+
+gg_tsresiduals(train_snaive_mod)
 ```
 
-Takeaways:  Residuals look normally distributed enough and uncorrelated enough.  Sig lag at 12 months, but that's to be expected as there's yearly seasonality.  SLightly sig lag at 7 months.  Will safely ignore this. One potential issue is that the mean is not quite 0, it's 74750.9.  
+
+```{r}
+#ljung-box test to see if residuals differ from white noise:
+augment(train_snaive_mod) %>% features(.innov, box_pierce, lag = 12)
+
+augment(train_snaive_mod) %>% features(.innov, ljung_box, lag = 12)
+
+```
+
+Takeaways:  Residuals look normally distributed enough and uncorrelated enough.  Sig lag at 12 months, but that's to be expected as there's yearly seasonality. Also sig at 5 months.  Will safely ignore this. One potential issue is that the mean is not quite 0, it's 74750.9.  
+
+
+
+How does it do on the test set?
+
+```{r}
+
+fct <-train |> 
+  model(model = NAIVE(monthly_total_cyclists ~ lag(12))) |> 
+  forecast(test)
+
+(RMSE_seasonal_naive_monthly <-accuracy(fct, ts_monthly_total)$RMSE)
+
+```
+
+RMSE 131213.6	
+
+Plot it
+
+```{r warning=FALSE}
+
+autoplot(train)+
+  autolayer(fct, PI = F, size=0.7)+
+  autolayer(test)
+```
+
+Takeaway:  Looks good.  Pretty accuarate.  Let's compare to other methods.
 
 
 
 
 ## To do: Can we foreast daily violations?
 
-```{r}
-
-```
 
 ```{r scratchpad, include=FALSE}
 
