@@ -1003,15 +1003,85 @@ Since there is clear seasonality, let's try ETS
 
 ### ETS Forecast on monthly data
 
+Method chosen: Holt winters additive (AAA) (with seasonality)
+Because the seasonal variations are roughly constant through the series.
+
 ```{r}
-fit_ETS <- train %>%
+fit_ETS <- ts_monthly_total %>%
   model(ETS(monthly_total_cyclists ~ error("A") + trend("A") + season("A")))
 
 fc <- fit_ETS |> forecast(h = "2 years")
 
 fc |> 
-  autoplot(train)
+  autoplot(ts_monthly_total)
 ```
+
+How does it perform on the test set?
+
+```{r}
+fct <- train %>%
+  model(ETS(monthly_total_cyclists ~ error("A") + trend("A") + season("A"))) |> 
+  forecast(test)
+
+(RMSE_seasonal_naive_monthly <-accuracy(fct, ts_monthly_total)$RMSE)
+
+fct
+```
+
+RMSE = 131517.  Worse than seasonal naive.  
+
+#### Visualize ETS
+
+```{r}
+autoplot(train) +
+  autolayer(fct, PI = F, size=0.7)+
+  autolayer(test)
+```
+
+
+Maybe the trend was too strong.  I wonder if we can do damping
+
+### ETS with trend damping
+
+```{r}
+fct <- train %>%
+  model(ETS(monthly_total_cyclists ~ error("A") + trend("Ad") + season("A"))) |> 
+  forecast(test)
+
+(RMSE_seasonal_naive_monthly <-accuracy(fct, ts_monthly_total)$RMSE)
+```
+
+RMSE: 86652.98.  Much better.  Let's visualize it:
+
+#### Vusialize ETS with trend damping
+
+```{r}
+autoplot(train) +
+  autolayer(fct, size=0.7)+
+  autolayer(test)
+```
+
+Does it look different when we train it on all of the data and forecast 2 years?
+
+```{r}
+fit_ETS <- ts_monthly_total %>%
+  model(ETS(monthly_total_cyclists ~ error("A") + trend("Ad") + season("A")))
+
+fc <- fit_ETS |> forecast(h = "2 years")
+
+fc |> 
+  autoplot(ts_monthly_total)
+```
+
+Just by looking at it, the peak in the summer of 2024 doesn't reach as high.  It's a little more conservative of an estimation.  
+
+
+How would an ARIMA fare?
+
+```{r}
+
+```
+
 
 
 
