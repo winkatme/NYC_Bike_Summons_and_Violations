@@ -911,7 +911,9 @@ Takeaway: No. not much different than general daily violations plot. lower amoun
 
 ```
 
-## To do: Can we forecast ridership?
+# Forecasting
+
+## Forecasting ridership
 
 Let's see how the daily totals look
 
@@ -997,11 +999,25 @@ autoplot(train) +
 
 Takeaway:  Errors can get extreme (less than 0 at one point). Does not take into account the trend of the data.  Let's compare to other methods.
 
+Since there is clear seasonality, let's try ETS
+
+### ETS Forecast on monthly data
+
+```{r}
+fit_ETS <- train %>%
+  model(ETS(monthly_total_cyclists ~ error("A") + trend("A") + season("A")))
+
+fc <- fit_ETS |> forecast(h = "2 years")
+
+fc |> 
+  autoplot(train)
+```
 
 
 
 
 ## To do: Can we foreast daily violations?
+
 
 
 ```{r scratchpad, include=FALSE}
