@@ -38,7 +38,7 @@ library(patchwork)
 
 # Import Data
 
-```{r import-and-tsibble, include=FALSE}
+```{r import, include=FALSE}
 df_bike_violations <- readr::read_csv("Data/Processed/df_bike_violations_2023-08-05.csv")
 
 df_bike_violations <- df_bike_violations |>
@@ -51,7 +51,7 @@ df_bike_violations <- df_bike_violations |>
 
 # Create and clean daily tsibble for time series analysis
 
-```{r clean, message=FALSE, warning=FALSE}
+```{r daily-tsibble, message=FALSE, warning=FALSE}
 ts_daily_total <- df_bike_violations |>
   mutate(violation_date = as_date(violation_date)) |>
   group_by(violation_date, daily_total_cyclists) |>

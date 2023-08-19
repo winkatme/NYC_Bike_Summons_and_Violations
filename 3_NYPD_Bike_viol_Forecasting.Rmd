@@ -14,6 +14,47 @@ library(fpp3)
 # Import daily and monthly tsibbles
 
 ```{r}
+# import bike violations
+
+df_bike_violations <- readr::read_csv("Data/Processed/df_bike_violations_2023-08-05.csv")
+
+df_bike_violations <- df_bike_violations |>
+  mutate(violation_code = as.factor(violation_code)) |>
+  mutate(veh_category = as.factor(veh_category)) |>
+  mutate(city_nm = as.factor(city_nm)) |>
+  mutate(rpt_owning_cmd = as.factor(rpt_owning_cmd)) |>
+  mutate(violation_date = as.POSIXct(violation_date))
+
+# creat daily tsibble
+ts_daily_total <- df_bike_violations |>
+  mutate(violation_date = as_date(violation_date)) |>
+  group_by(violation_date, daily_total_cyclists) |>
+  summarize(daily_total_violations = sum(n())) |>
+  ungroup() |>
+  as_tsibble(index = violation_date)
+
+# fill date gaps
+# import df_counts
+path3 <- "https://www.dropbox.com/s/nffkpwuz1u6kd5t/df_counts.csv?dl=1"
+df_counts <- readr::read_csv(path3)
+
+# fill date gaps for ts_daily_total and join with df_counts
+ts_daily_total <- ts_daily_total |>
+  fill_gaps() |>
+  select(-daily_total_cyclists) |>
+  mutate(date = violation_date) |>
+  left_join(y = df_counts, by = "date", multiple = "any") |>
+  rename(daily_total_cyclists = daily_total) |>
+  select(-c("date", "counts", "weekly_total")) |>
+  mutate_at("daily_total_violations", ~ replace_na(., 0))
+
+# create a monthly data tsibble from cleaned daily tsibble
+ts_monthly_total <- ts_daily_total |>
+  index_by(yearmonth(violation_date)) |>
+  summarize(across(c("daily_total_violations", "daily_total_cyclists"), ~ sum(.x, na.rm = TRUE))) |>
+  rename(monthly_total_cyclists = daily_total_cyclists) |>
+  rename(monthly_total_violations = daily_total_violations) |>
+  rename(date = "yearmonth(violation_date)")
 
 ```
 
