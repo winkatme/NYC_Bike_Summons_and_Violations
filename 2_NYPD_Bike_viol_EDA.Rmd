@@ -947,7 +947,7 @@ ts_daily_total |>
   mutate(violations_to_cyclists = daily_total_violations/daily_total_cyclists) |> 
   filter_index("2020-04"~.) |> 
   model(
-    STL(violations_to_cyclists ~ trend(window = 365) +
+    STL(violations_to_cyclists ~ trend(window = 90) +
       season(period = "year"))
   ) |>
   components() |>
@@ -955,9 +955,7 @@ ts_daily_total |>
 
 ```
 
-Takeaway: doesn't look great.  Does not account for increase in 2023, which is seen in the moving average.  
-
-
+Takeaway: Setting window to 90 looks better.  Takes into account increase in 2023.  Looking at season_year, we see that the ratio peaks in Feb-March or so, then dips, slowly increases until around Nov, then dips the most around New Years. 
 
 
 ## To Do: Did the type of violations change after covid?
