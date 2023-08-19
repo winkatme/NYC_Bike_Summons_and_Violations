@@ -1,0 +1,241 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+```{r libraries, message=FALSE, warning=FALSE, include=FALSE}
+library(knitr)
+library(tidyverse)
+library(fpp3)
+```
+
+
+# Forecasting: Monthly total riders
+
+Let's see how the daily totals look
+
+```{r}
+ts_daily_total |> 
+  autoplot(daily_total_cyclists)
+```
+
+Pretty messy.  The monthly totals look easier to read, so let's use those:
+
+```{r}
+ts_monthly_total |> 
+  autoplot(monthly_total_cyclists)
+```
+
+
+## Train and test sets for monthly data
+
+Training set is through the end of 2021.  Test set is from Jan 2022 until March 2023.
+
+```{r}
+train<-ts_monthly_total |> 
+  select(!monthly_total_violations) |> 
+  filter_index(~"2021-12")
+
+test<-ts_monthly_total |> 
+  select(!monthly_total_violations) |> 
+  filter_index("2022-01"~.)
+```
+
+## Seasonal Naive forecast on monthly totals
+
+```{r}
+ts_monthly_snaive_mod <- ts_monthly_total |> 
+  model(model = NAIVE(monthly_total_cyclists ~ lag(12)))
+
+ts_fc <- ts_monthly_snaive_mod|> forecast(h = "2 years")
+
+ts_fc |> 
+  autoplot(ts_monthly_total)
+
+```
+
+
+### Seasonal naive monthly residuals
+
+```{r, warning=FALSE}
+train_snaive_mod <- train |> 
+  model(model = NAIVE(monthly_total_cyclists ~ lag(12)))
+
+mean(augment(train_snaive_mod)$.resid, na.rm=TRUE)  # 85885.5
+
+gg_tsresiduals(train_snaive_mod)
+```
+
+Tests to see if residuals differ from white noise:
+
+```{r}
+augment(train_snaive_mod) %>% features(.innov, box_pierce, lag = 12)
+augment(train_snaive_mod) %>% features(.innov, ljung_box, lag = 12)
+```
+
+Takeaways: passes box_pierce, but almost passes ljung_box.  Resids don't look close to normal.  
+
+How does it do on the test set?
+
+```{r}
+
+fct <-train |> 
+  model(model = NAIVE(monthly_total_cyclists ~ lag(12))) |> 
+  forecast(test)
+
+(RMSE_seasonal_naive_monthly <-accuracy(fct, ts_monthly_total)$RMSE)
+
+```
+
+RMSE 131213.6	
+
+### Visualize the Seasonal Naive forecast:
+
+```{r message=FALSE, warning=FALSE}
+autoplot(train) +
+  autolayer(fct, PI = F, size=0.7)+
+  autolayer(test)
+```
+
+Takeaway:  Errors can get extreme (less than 0 at one point). Does not take into account the trend of the data.  Let's compare to other methods.
+
+Since there is clear seasonality, let's try ETS
+
+## ETS Forecast on monthly data
+
+Method chosen: Holt winters additive (AAA) (with seasonality)
+Because the seasonal variations are roughly constant through the series.
+
+```{r}
+fit_ETS <- ts_monthly_total %>%
+  model(ETS(monthly_total_cyclists ~ error("A") + trend("A") + season("A")))
+
+fc <- fit_ETS |> forecast(h = "2 years")
+
+fc |> 
+  autoplot(ts_monthly_total)
+```
+
+How does it perform on the test set?
+
+```{r}
+fct <- train %>%
+  model(ETS(monthly_total_cyclists ~ error("A") + trend("A") + season("A"))) |> 
+  forecast(test)
+
+(RMSE_seasonal_naive_monthly <-accuracy(fct, ts_monthly_total)$RMSE)
+
+fct
+```
+
+RMSE = 131517.  Worse than seasonal naive.  
+
+### Visualize ETS
+
+```{r}
+autoplot(train) +
+  autolayer(fct, PI = F, size=0.7)+
+  autolayer(test)
+```
+
+
+Maybe the trend was too strong.  I wonder if we can do damping
+
+## ETS with trend damping
+
+```{r}
+fct_ETS_AAdA <- train %>%
+  model(ETS(monthly_total_cyclists ~ error("A") + trend("Ad") + season("A"))) |> 
+  forecast(test)
+
+(RMSE_seasonal_naive_monthly <-accuracy(fct_ETS_AAdA, ts_monthly_total)$RMSE)
+```
+
+RMSE: 86652.98.  Much better.  Let's visualize it:
+
+### Vusialize ETS with trend damping
+
+```{r message=FALSE, warnings=FALSE}
+autoplot(train) +
+  autolayer(fct_ETS_AAdA, size=0.7)+
+  autolayer(test)
+```
+
+Does it look different when we train it on all of the data and forecast 2 years?
+
+```{r}
+fit_ETS <- ts_monthly_total %>%
+  model(ETS(monthly_total_cyclists ~ error("A") + trend("Ad") + season("A")))
+
+fc <- fit_ETS |> forecast(h = "2 years")
+
+fc |> 
+  autoplot(ts_monthly_total)
+```
+
+Just by looking at it, the peak in the summer of 2024 doesn't reach as high.  It's a little more conservative of an estimation.  
+
+
+## Auto-ETS
+
+What does the ETS command itself decide to be the best model for the training data?
+
+```{r}
+mod_Auto_ETS <-train |> 
+  model(ETS(monthly_total_cyclists))
+
+report(mod_Auto_ETS)
+```
+
+It has chosen a different model, ANA.  Let's see how it does on the test data
+
+```{r}
+fct_ETS_ANA <- mod_Auto_ETS |> 
+  forecast(test)
+
+(RMSE_seasonal_naive_monthly <-accuracy(fct_ETS_ANA, ts_monthly_total)$RMSE)
+```
+
+The RMSE is 103125.5.  Not the best.  
+
+How would an ARIMA model fare?
+
+## Auto-ARIMA model 
+
+Let's see what ARIMA model the auto-ARIMA chooses.
+
+```{r}
+mod_Auto_ARIMA <- train |> 
+  model(ARIMA(monthly_total_cyclists)) 
+
+report(mod_Auto_ARIMA)
+```
+
+'Auto-ARIMA' has chosen an ARIMA(1,0,0)(1,1,0)[12] w/ drift model for the train dataset.  Let's see how it scores on the test dataset
+
+```{r}
+fct_Auto_ARIMA <- mod_Auto_ARIMA |> 
+  forecast(test)
+
+(RMSE_seasonal_naive_monthly <-accuracy(fct_Auto_ARIMA, ts_monthly_total)$RMSE)
+```
+
+138587.7.  Not nearly as good as out best ETS.
+
+Let's see what it's forecast looks like:
+
+```{r message=FALSE, warning=FALSE}
+autoplot(train) +
+  autolayer(fct_Auto_ARIMA, size=0.7)+
+  autolayer(test)
+```
+
+
+## To do: Can we foreast daily violations?
+
+
+```{r}
+
+```
+
