@@ -622,7 +622,7 @@ ts_daily_total |>
   geom_smooth(method = "lm")
 ```
 
-Takeaway: ridership did not change much pre or post pandemic. not even during lockdown, although possible hiccup. However, ridership seems to be increasing in the colder months while remaining level in the warmer months. Since the ridership is clearly cyclical, an average won't tell us as much as we like. But we can still see an increase over time.
+Takeaway: ridership did not change much pre vs. post pandemic. not even during lockdown, although possible hiccup. However, ridership seems to be increasing in the colder months while remaining level in the warmer months. Since the ridership is clearly cyclical, an average won't tell us as much as we like. But we can still see an increase over time. However, this could be influence by less ridership earlier on (in 2018).  
 
 ### Slope: Daily increase in number of cyclists
 
@@ -904,10 +904,65 @@ df_bike_violations |>
 
 Takeaway: No. not much different than general daily violations plot. lower amount around Dec/Jan, otherwise fairly steady.
 
+
+# EDA: Ratio of violations to cyclists
+
+Since the data is seasonal, does the ratio of violations to cyclists even that out?
+
+```{r}
+ts_daily_total |> 
+  mutate(violations_to_cyclists = daily_total_violations/daily_total_cyclists) |> 
+  autoplot(violations_to_cyclists)
+```
+
+Takeaway: Possibly, but it doesn't look like it. The ratio changed after covid lockdown.
+
+Let's just look at post-covid:
+
+```{r}
+ts_daily_total |> 
+  mutate(violations_to_cyclists = daily_total_violations/daily_total_cyclists) |> 
+  filter_index("2020-04"~.) |> 
+  autoplot(violations_to_cyclists)
+```
+
+## Can we view the trend of the ratio?
+
+Let's first look at moving average: 
+
+```{r message=FALSE, warning=FALSE}
+ts_daily_total |>
+  mutate(violations_to_cyclists = daily_total_violations/daily_total_cyclists) |> 
+  filter_index("2020-04"~.) |> 
+  mutate(`5-MA` = slider::slide_dbl(violations_to_cyclists, mean, .before = 30, .after = 30, .complete = TRUE)) |>
+  autoplot(violations_to_cyclists) +
+  geom_line(aes(y = `5-MA`), colour = "#D55E00")
+```
+
+
+STL Decomposition:
+
+```{r}
+ts_daily_total |>
+  mutate(violations_to_cyclists = daily_total_violations/daily_total_cyclists) |> 
+  filter_index("2020-04"~.) |> 
+  model(
+    STL(violations_to_cyclists ~ trend(window = 365) +
+      season(period = "year"))
+  ) |>
+  components() |>
+  autoplot()
+
+```
+
+Takeaway: doesn't look great.  Does not account for increase in 2023, which is seen in the moving average.  
+
+
+
+
 ## To Do: Did the type of violations change after covid?
 
 ```{r}
-
 
 ```
 
