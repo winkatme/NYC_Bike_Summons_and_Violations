@@ -1044,20 +1044,20 @@ Maybe the trend was too strong.  I wonder if we can do damping
 ### ETS with trend damping
 
 ```{r}
-fct <- train %>%
+fct_ETS_AAdA <- train %>%
   model(ETS(monthly_total_cyclists ~ error("A") + trend("Ad") + season("A"))) |> 
   forecast(test)
 
-(RMSE_seasonal_naive_monthly <-accuracy(fct, ts_monthly_total)$RMSE)
+(RMSE_seasonal_naive_monthly <-accuracy(fct_ETS_AAdA, ts_monthly_total)$RMSE)
 ```
 
 RMSE: 86652.98.  Much better.  Let's visualize it:
 
 #### Vusialize ETS with trend damping
 
-```{r}
+```{r message=FALSE, warnings=FALSE}
 autoplot(train) +
-  autolayer(fct, size=0.7)+
+  autolayer(fct_ETS_AAdA, size=0.7)+
   autolayer(test)
 ```
 
@@ -1076,11 +1076,60 @@ fc |>
 Just by looking at it, the peak in the summer of 2024 doesn't reach as high.  It's a little more conservative of an estimation.  
 
 
-How would an ARIMA fare?
+### Auto-ETS
+
+What does the ETS command itself decide to be the best model for the training data?
 
 ```{r}
+mod_Auto_ETS <-train |> 
+  model(ETS(monthly_total_cyclists))
 
+report(mod_Auto_ETS)
 ```
+
+It has chosen a different model, ANA.  Let's see how it does on the test data
+
+```{r}
+fct_ETS_ANA <- mod_Auto_ETS |> 
+  forecast(test)
+
+(RMSE_seasonal_naive_monthly <-accuracy(fct_ETS_ANA, ts_monthly_total)$RMSE)
+```
+
+The RMSE is 103125.5.  Not the best.  
+
+How would an ARIMA model fare?
+
+### Auto-ARIMA model 
+
+Let's see what ARIMA model the auto-ARIMA chooses.
+
+```{r}
+mod_Auto_ARIMA <- train |> 
+  model(ARIMA(monthly_total_cyclists)) 
+
+report(mod_Auto_ARIMA)
+```
+
+'Auto-ARIMA' has chosen an ARIMA(1,0,0)(1,1,0)[12] w/ drift model for the train dataset.  Let's see how it scores on the test dataset
+
+```{r}
+fct_Auto_ARIMA <- mod_Auto_ARIMA |> 
+  forecast(test)
+
+(RMSE_seasonal_naive_monthly <-accuracy(fct_Auto_ARIMA, ts_monthly_total)$RMSE)
+```
+
+138587.7.  Not nearly as good as out best ETS.
+
+Let's see what it's forecast looks like:
+
+```{r message=FALSE, warning=FALSE}
+autoplot(train) +
+  autolayer(fct_Auto_ARIMA, size=0.7)+
+  autolayer(test)
+```
+
 
 
 
