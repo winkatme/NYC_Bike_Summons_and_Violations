@@ -125,7 +125,7 @@ augment(train_snaive_mod) %>% features(.innov, ljung_box, lag = 12)
 
 Takeaways: passes box_pierce, but almost passes ljung_box.  Resids don't look close to normal.  
 
-How does it do on the test set?
+### Seasonal Naive RMSE
 
 ```{r}
 
@@ -173,7 +173,7 @@ fct <- train %>%
   model(ETS(monthly_total_cyclists ~ error("A") + trend("A") + season("A"))) |> 
   forecast(test)
 
-(RMSE_seasonal_naive_monthly <-accuracy(fct, ts_monthly_total)$RMSE)
+(RMSE_ETS_AAA_monthly <-accuracy(fct, ts_monthly_total)$RMSE)
 
 fct
 ```
@@ -198,7 +198,7 @@ fct_ETS_AAdA <- train %>%
   model(ETS(monthly_total_cyclists ~ error("A") + trend("Ad") + season("A"))) |> 
   forecast(test)
 
-(RMSE_seasonal_naive_monthly <-accuracy(fct_ETS_AAdA, ts_monthly_total)$RMSE)
+(RMSE_ETS_AAdA <-accuracy(fct_ETS_AAdA, ts_monthly_total)$RMSE)
 ```
 
 RMSE: 86652.98.  Much better.  Let's visualize it:
@@ -243,7 +243,7 @@ It has chosen a different model, ANA.  Let's see how it does on the test data
 fct_ETS_ANA <- mod_Auto_ETS |> 
   forecast(test)
 
-(RMSE_seasonal_naive_monthly <-accuracy(fct_ETS_ANA, ts_monthly_total)$RMSE)
+(RMSE_ETS_ANA <-accuracy(fct_ETS_ANA, ts_monthly_total)$RMSE)
 ```
 
 The RMSE is 103125.5.  Not the best.  
@@ -267,7 +267,7 @@ report(mod_Auto_ARIMA)
 fct_Auto_ARIMA <- mod_Auto_ARIMA |> 
   forecast(test)
 
-(RMSE_seasonal_naive_monthly <-accuracy(fct_Auto_ARIMA, ts_monthly_total)$RMSE)
+(RMSE_ARIMA_100_110_12 <-accuracy(fct_Auto_ARIMA, ts_monthly_total)$RMSE)
 ```
 
 138587.7.  Not nearly as good as out best ETS.
@@ -279,6 +279,17 @@ autoplot(train) +
   autolayer(fct_Auto_ARIMA, size=0.7)+
   autolayer(test)
 ```
+
+## Model Summations
+
+```{r}
+cat('seasonal Naive:\t\t\t', RMSE_seasonal_naive_monthly, '\n', 
+    'ETS_AAA:\t\t\t', RMSE_ETS_AAA_monthly, '\n',
+    'ETS_AAdA:\t\t\t', RMSE_ETS_AAdA, '\n',
+    'ETS_ANA:\t\t\t', RMSE_ETS_ANA, '\n',
+    'ARIMA (1,0,0)(1,1,0)[12]\t', RMSE_ARIMA_100_110_12)
+```
+
 
 
 ## To do: Can we foreast daily violations?
