@@ -291,6 +291,57 @@ cat('seasonal Naive:\t\t\t', RMSE_seasonal_naive_monthly, '\n',
 ```
 
 
+# Test: TS regression
+
+Is there a linear relationship between monthly violations and total cyclists?
+
+```{r}
+ts_monthly_total |> 
+  ggplot(aes(x=monthly_total_cyclists, y=monthly_total_violations))+
+  geom_point()
+```
+
+Takeway:  it looks like there are two groups.  My guess is that the groups are pre-covid and post.  Let's just plot post covid:
+
+```{r}
+ts_monthly_total |> 
+  filter_index('2020-04' ~.) |> 
+  ggplot(aes(x=monthly_total_cyclists, y=monthly_total_violations))+
+  geom_point()
+```
+
+Looks better.  What if we color it by month?
+
+```{r}
+ts_monthly_total |> 
+  filter_index('2020-04' ~.) |> 
+  ggplot(aes(x=monthly_total_cyclists, y=monthly_total_violations, col=as.factor(month(date))))+
+  geom_point()
+```
+
+Takeaway: Months do seem to cluster together.  
+
+## Ts Reg model (post covid)
+
+```{r}
+ts_reg_mod <- ts_monthly_total |> 
+  filter_index('2020-04' ~.) |> 
+	model(TSLM(monthly_total_cyclists ~ monthly_total_violations+ trend() + season()))
+
+report(ts_reg_mod)
+```
+
+Takeaway:  The adjusted R^2 is 0.9008, which is very good. June seems to have the highest beta value.  monthly total violations has a tiny beta value, by far.  This shows that seasonality has a larger impact on total cyclists than monthly total violations.
+
+
+Is monthly total cyclists normally distributed?  
+
+```{r}
+qqnorm(ts_monthly_total$monthly_total_cyclists)
+```
+
+Ans: Not perfect, but, it's normal enough.
+
 
 ## To do: Can we foreast daily violations?
 
