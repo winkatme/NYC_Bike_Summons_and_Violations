@@ -327,12 +327,12 @@ The correlation is now 0.5012866.  Much better.
 
 Post covid plot:
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 ts_monthly_total |> 
   filter_index('2020-04' ~.) |> 
   ggplot(aes(x=monthly_total_violations , y=monthly_total_cyclists))+
-  geom_point()
-
+  geom_point()+
+  geom_smooth(method = "lm", se = FALSE)
 ```
 
 Looks better.  What if we color it by month?
@@ -340,12 +340,22 @@ Looks better.  What if we color it by month?
 ```{r}
 ts_monthly_total |> 
   filter_index('2020-04' ~.) |> 
-  ggplot(aes(x=monthly_total_violations, y=monthly_total_cyclists, col=as.factor(month(date))))+
+  mutate(month=as.factor(month(date))) |> 
+  ggplot(aes(x=monthly_total_violations, y=monthly_total_cyclists, col=month))+
   geom_point()
 ```
 
-Takeaway: Months do seem to cluster together.  
+Takeaway: Visually, the months do seem to cluster together.  
 
+double-check: is that april that's  month number 4 in the green with the minimum violations?
+
+```{r}
+ts_monthly_total |> 
+  filter_index('2020-04' ~.) |> 
+  slice(which.min(monthly_total_violations))
+```
+
+Yes.  So we can safely assume that month 1 is Jan, 2 is Feb, etc.
 
 
 ### TS Reg model (post covid)
