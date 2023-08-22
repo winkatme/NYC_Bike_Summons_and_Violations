@@ -293,21 +293,43 @@ cat('seasonal Naive:\t\t\t', RMSE_seasonal_naive_monthly, '\n',
 
 # Test: TS regression
 
+Correlation
+
+```{r}
+cor(ts_monthly_total$monthly_total_cyclists, ts_monthly_total$monthly_total_violations)
+```
+
+The correlation is very small 
+
 Is there a linear relationship between monthly violations and total cyclists?
 
 ```{r}
 ts_monthly_total |> 
-  ggplot(aes(x=monthly_total_cyclists, y=monthly_total_violations))+
+  ggplot(aes(x=monthly_total_violations, y=monthly_total_cyclists))+
   geom_point()
 ```
 
 Takeway:  it looks like there are two groups.  My guess is that the groups are pre-covid and post.  Let's just plot post covid:
 
+Post covid cor:
+
+```{r}
+ts_monthly_total |> 
+  filter_index('2020-04'~.) |> 
+  select(monthly_total_violations, monthly_total_cyclists) |> 
+  correlate()
+```
+
+The correlation is now 0.5012866.  Much better.
+
+Post covid plot:
+
 ```{r}
 ts_monthly_total |> 
   filter_index('2020-04' ~.) |> 
-  ggplot(aes(x=monthly_total_cyclists, y=monthly_total_violations))+
+  ggplot(aes(x=monthly_total_violations , y=monthly_total_cyclists))+
   geom_point()
+
 ```
 
 Looks better.  What if we color it by month?
@@ -315,20 +337,38 @@ Looks better.  What if we color it by month?
 ```{r}
 ts_monthly_total |> 
   filter_index('2020-04' ~.) |> 
-  ggplot(aes(x=monthly_total_cyclists, y=monthly_total_violations, col=as.factor(month(date))))+
+  ggplot(aes(x=monthly_total_violations, y=monthly_total_cyclists, col=as.factor(month(date))))+
   geom_point()
 ```
 
 Takeaway: Months do seem to cluster together.  
 
+
+
 ## Ts Reg model (post covid)
 
+Without trend or season:
+
 ```{r}
-ts_reg_mod <- ts_monthly_total |> 
+ts_reg_mod1 <- ts_monthly_total |> 
+  filter_index('2020-04' ~.) |> 
+	model(TSLM(monthly_total_cyclists ~ monthly_total_violations))
+
+report(ts_reg_mod1)
+```
+
+
+Terrible R-squared.
+
+With slope and season:
+
+```{r}
+ts_reg_mod2 <- ts_monthly_total |> 
   filter_index('2020-04' ~.) |> 
 	model(TSLM(monthly_total_cyclists ~ monthly_total_violations+ trend() + season()))
 
-report(ts_reg_mod)
+report(ts_reg_mod2)
+
 ```
 
 Takeaway:  The adjusted R^2 is 0.9008, which is very good. June seems to have the highest beta value.  monthly total violations has a tiny beta value, by far.  This shows that seasonality has a larger impact on total cyclists than monthly total violations.
