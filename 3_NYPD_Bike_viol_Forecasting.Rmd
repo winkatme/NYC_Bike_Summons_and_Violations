@@ -151,7 +151,7 @@ Takeaway:  Errors can get extreme (less than 0 at one point). Does not take into
 
 Since there is clear seasonality, let's try ETS
 
-## ETS Forecast on monthly data
+## ETS Forecast on monthly data (ETS_AAA)
 
 Method chosen: Holt winters additive (AAA) (with seasonality)
 Because the seasonal variations are roughly constant through the series.
@@ -180,7 +180,7 @@ fct
 
 RMSE = 131517.  Worse than seasonal naive.  
 
-### Visualize ETS
+### Visualize ETS_AAA
 
 ```{r}
 autoplot(train) +
@@ -191,7 +191,7 @@ autoplot(train) +
 
 Maybe the trend was too strong.  I wonder if we can do damping
 
-## ETS with trend damping
+## ETS with trend damping (ETS_AAdA)
 
 ```{r}
 fct_ETS_AAdA <- train %>%
@@ -226,7 +226,7 @@ fc |>
 Just by looking at it, the peak in the summer of 2024 doesn't reach as high.  It's a little more conservative of an estimation.  
 
 
-## Auto-ETS
+## Auto-ETS (ETS_ANA)
 
 What does the ETS command itself decide to be the best model for the training data?
 
@@ -291,7 +291,10 @@ cat('seasonal Naive:\t\t\t', RMSE_seasonal_naive_monthly, '\n',
 ```
 
 
-# Test: TS regression
+
+
+
+##TS regression model
 
 Correlation
 
@@ -309,7 +312,7 @@ ts_monthly_total |>
   geom_point()
 ```
 
-Takeway:  it looks like there are two groups.  My guess is that the groups are pre-covid and post.  Let's just plot post covid:
+Takeway:  it looks like there might be two separate groups here.  My guess is that the groups are pre-covid and post.  Let's just look at post covid:
 
 Post covid cor:
 
@@ -345,7 +348,7 @@ Takeaway: Months do seem to cluster together.
 
 
 
-## Ts Reg model (post covid)
+### TS Reg model (post covid)
 
 Without trend or season:
 
@@ -390,3 +393,36 @@ Ans: Not perfect, but, it's normal enough.
 
 ```
 
+# ETS_AAdA (best model) evaluation
+
+```{r}
+mod_ETS_AAdA <- train %>%
+  model(ETS(monthly_total_cyclists ~ error("A") + trend("Ad") + season("A")))
+
+gg_tsresiduals(mod_ETS_AAdA)
+```
+
+Takeaway: resids look normal enough.  possible autocorrelation. Tests:
+
+```{r}
+augment(mod_ETS_AAdA) |> features(.innov, box_pierce, lag = 12)
+augment(mod_ETS_AAdA) |> features(.innov, ljung_box, lag = 12)
+```
+
+Both tests fail to reject null.  We may safely conclude that residuals are white noise.
+
+Let's forecast through 2025
+
+```{r}
+fct_ETS_AAdA <- train |> 
+  model(ETS(monthly_total_cyclists ~ error("A") + trend("Ad") + season("A"))) |> 
+  forecast(h=36)
+
+ts_monthly_total |> 
+  autoplot(monthly_total_cyclists) +
+  #autoplot(ts_monthly_total$monthly_total_cyclists) +
+  autolayer(fct_ETS_AAdA, size=0.7)+
+  autolayer(test)
+```
+
+Takeaway:  This model seems to adequately keep the summer peaks steady while slowly increasing the winter lull.  This fits our eda.  
