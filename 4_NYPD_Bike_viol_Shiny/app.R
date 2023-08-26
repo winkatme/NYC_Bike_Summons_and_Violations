@@ -9,7 +9,9 @@
 
 library(shiny)
 ui <- fluidPage(
-  "Hello, world!"
+  selectInput("Data/Processed/df_bike_violations_2023-08-05.csv", label = "Dataset", choices = ls("Dataset")),
+  verbatimTextOutput("summary"),
+  tableOutput("table")
 )
 server <- function(input, output, session) {
 }
