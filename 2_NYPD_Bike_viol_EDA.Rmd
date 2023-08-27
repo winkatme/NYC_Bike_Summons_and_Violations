@@ -235,7 +235,7 @@ mapview(ppp_test, xcol = ppp_test$x, ycol = ppp_test$y, crs = 4269, grid = FALSE
 
 ```
 
-```{r}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 # WORK IN PROGRESS
 
 # cluster test with regular data
@@ -250,7 +250,7 @@ distances <- df_bike_violations_1111D1C |>
   select(longitude, latitude) |> 
   dist(method='euclidean')
 
-distances
+#distances
 
 
 clust = hclust(distances,method = "ward.D2")

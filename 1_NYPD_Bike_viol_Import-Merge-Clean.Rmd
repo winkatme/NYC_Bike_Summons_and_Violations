@@ -289,11 +289,17 @@ df_bicycle_counters
 # install.packages('tidygeocoder')
 # library(tidygeocoder)
 
+df_bicycle_counters
+
 df_bicycle_counters_boroughs <- df_bicycle_counters |>
   reverse_geocode(
     lat = latitude, long = longitude, method = "osm",
     address = address_found, full_results = TRUE
-  ) |>
+  )
+
+
+df_bicycle_counters_boroughs <- df_bicycle_counters_boroughs |> 
+  rename("name" = "name...2") |> 
   select(id, name, latitude, longitude, suburb) |>
   rename("borough" = "suburb") |>
   mutate(borough = gsub("Richmond County", "Staten Island", borough)) |>
@@ -690,6 +696,6 @@ Takeaway: We are left with 8 entries that have NA values for their coordinates o
 # file is approx 25mb. That exceeds limit for uploading via browser, but it is able to upload to git via push
 # install.packages("glue")
 todays_date <- Sys.Date()
-path_name <- glue("Data/Processed/df_bike_violations_{todays_date}.csv")
-write.csv(df_bike_violations, path_name, row.names = FALSE)
+#path_name <- glue("Data/Processed/df_bike_violations_{todays_date}.csv")
+#write.csv(df_bike_violations, path_name, row.names = FALSE)
 ```
