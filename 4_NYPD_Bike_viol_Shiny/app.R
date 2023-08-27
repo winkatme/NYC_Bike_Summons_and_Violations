@@ -8,11 +8,27 @@
 #
 
 library(shiny)
+library(dplyr, warn.conflicts = FALSE)
+library(ggplot2)
+
+#df <-read.csv('Data/Processed/df_bike_violations_2023-08-05.csv')
+
+
 ui <- fluidPage(
-  selectInput("Data/Processed/df_bike_violations_2023-08-05.csv", label = "Dataset", choices = ls("Dataset")),
-  verbatimTextOutput("summary"),
-  tableOutput("table")
+  tableOutput("summary")
+
 )
 server <- function(input, output, session) {
+  df <- reactive({
+    url = 'https://raw.githubusercontent.com/winkatme/NYC_Bike_Summons_and_Violations/main/Data/Processed/df_bike_violations_2023-08-05.csv'
+    read.csv(url)
+  })
+  
+  output$summary <- renderTable({
+    summary(df())
+  })
+  
 }
+
 shinyApp(ui, server)
+
