@@ -19,26 +19,21 @@ df_bike_violations<-df_bike_violations |>
   mutate(city_nm = as.factor(city_nm)) |>
   mutate(rpt_owning_cmd = as.factor(rpt_owning_cmd)) |>
   mutate(violation_date = as.POSIXct(violation_date))
-description_list = as.list(levels(df_bike_violations$description))
 
 
 
 ui <- fluidPage(
-  selectizeInput(inputId="description_list", label="Violation Description", choices = colnames(df_bike_violations)),
-  #tableOutput("head")
-  plotOutput("plot")
+  selectizeInput(inputId="description_list", label="Violation Description", choices = levels(df_bike_violations$description)),
+  tableOutput("head")
+  #plotOutput("plot")
 
 )
 server <- function(input, output, session) {
-  #df_bike_violations <- reactive({
-  #  url = 'https://raw.githubusercontent.com/winkatme/NYC_Bike_Summons_and_Violations/main/Data/Processed/df_bike_violations_2023-08-05.csv'
-  #  read.csv(url) 
-  #})
-  
 
-  output$head <- renderTable({
-    head(description_list)
-  })
+  df_head <- reactive(df_bike_violations |> filter(.data$description==.env$input$description_list))
+  output$head <- renderTable(
+    head(df_head())
+  )
   
 }
 
