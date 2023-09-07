@@ -26,10 +26,22 @@ df_bike_violations<-df_bike_violations |>
 
 
 ui <- fluidPage(
-  selectizeInput(inputId="description_input", label="Violation Description", choices = c("Choose one" = "", levels(fct_infreq(df_bike_violations$description))), selected="OPER BICYCLE WITH MORE 1 EARPHONE",  width='600px'),
-  #tableOutput("head")
-  plotOutput("map")
+  titlePanel('Bike/E-vehicle violations geomap'),
+  sidebarLayout(
+    sidebarPanel(
+      selectInput(inputId="description_input", 
+                  label="Violation Description", 
+                  choices = c("Choose one" = "", levels(fct_infreq(df_bike_violations$description))), 
+                  selected="OPER BICYCLE WITH MORE 1 EARPHONE",  
+                  width='600px')
+      ),
+    mainPanel(
+      leafletOutput("map")
+    )
+  )
 
+  #tableOutput("head")
+  
 )
 server <- function(input, output, session) {
 
@@ -42,7 +54,7 @@ server <- function(input, output, session) {
   #m <- mapview(na.omit(df_bike_violations |> filter(description=="IMPROPER TURN")), xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)
   #output$map <- renderLeaflet(m@map)
   
-  # works in html
+  # works in shiny:
   df_plot <- reactive(df_bike_violations |> filter(.data$description==.env$input$description_input)) 
   #m <- reactive(mapview(df_plot(), xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE))
   output$map <- renderLeaflet((mapview(df_plot(), xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)@map))
