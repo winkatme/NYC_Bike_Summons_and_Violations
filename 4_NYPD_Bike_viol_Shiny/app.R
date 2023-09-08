@@ -25,6 +25,12 @@ df_bike_violations<-df_bike_violations |>
   drop_na()
 
 
+df_bike_violations |> 
+  filter(description  == 'OPER BICYCLE WITH MORE 1 EARPHONE') |> 
+  slice(which.min(violation_date)) |> 
+  select(violation_date)
+
+
 ui <- fluidPage(
   titlePanel('Bike/E-vehicle violations geomap'),
   sidebarLayout(
