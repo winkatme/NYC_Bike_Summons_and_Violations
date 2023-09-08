@@ -33,16 +33,23 @@ ui <- fluidPage(
                   label="Violation Description", 
                   choices = c("Choose one" = "", levels(fct_infreq(df_bike_violations$description))), 
                   selected="OPER BICYCLE WITH MORE 1 EARPHONE",  
-                  width='600px')
+                  width='600px'),
+      
+      sliderInput(inputId = "distribution", 
+                  label = "Dates",
+                  min = as.Date("2016-01-24","%Y-%m-%d"),
+                  max = as.Date("2016-04-02","%Y-%m-%d"),
+                  value = c(as.Date("2016-02-01"), as.Date("2016-03-21"))
+                  ),
       ),
     mainPanel(
       leafletOutput("map")
+      #tableOutput("head")
     )
   )
-
-  #tableOutput("head")
-  
 )
+
+
 server <- function(input, output, session) {
 
   # test - successful - just show head from input  
