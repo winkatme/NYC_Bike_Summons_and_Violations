@@ -56,7 +56,10 @@ ui <- fluidPage(
       
       dateRangeInput("date_range", "Date range test",
                      start="2020-03-30", 
-                     end="2023-03-30")
+                     end="2023-03-30"),
+      
+      textOutput("date_min_as_text")
+      
       ),
     mainPanel(
       leafletOutput("map")
@@ -82,20 +85,24 @@ server <- function(input, output, session) {
   #m <- reactive(mapview(df_plot(), xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE))
   output$map <- renderLeaflet((mapview(df_plot(), xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)@map))
   
-  date_min<- reactive(df_bike_violations |> 
-                        filter(description== '.env$input$descrpition_input') |> 
-                        slice(which.min(violation_date)) |> 
-                        mutate(violation_date = as.Date(violation_date)) |> 
-                        pull(violation_date))
+  date_min <- reactive(df_bike_violations |> 
+                        filter(.data$description== .env$input$description_input) |> 
+                        slice(which.min(.data$violation_date)) |> 
+                        mutate(violation_date = as.Date(.data$violation_date)) |> 
+                        pull(.data$violation_date))
   
-  date_max<- reactive(df_bike_violations |> 
-                        filter(description== '.env$input$descrpition_input') |> 
-                        slice(which.max(violation_date)) |> 
-                        mutate(violation_date = as.Date(violation_date)) |> 
-                        pull(violation_date))
+  date_max <- reactive(df_bike_violations |> 
+                        filter(.data$description== .env$input$description_input) |> 
+                        slice(which.max(.data$violation_date)) |> 
+                        mutate(violation_date = as.Date(.data$violation_date)) |> 
+                        pull(.data$violation_date))
   
-  observeEvent(input$date_range, {
+  observeEvent(input$description_input, {
     updateDateRangeInput(session, "date_range", start=date_min(), end = date_max())
+  })
+  
+  output$date_min_as_text <- renderText({ 
+    paste(date_min())
   })
   
 }
