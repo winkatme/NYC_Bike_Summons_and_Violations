@@ -25,11 +25,6 @@ df_bike_violations<-df_bike_violations |>
   drop_na()
 
 
-df_bike_violations |> 
-  filter(description  == 'OPER BICYCLE WITH MORE 1 EARPHONE') |> 
-  slice(which.min(violation_date)) |> 
-  select(violation_date)
-
 
 # date_min test
 df_bike_violations |> 
@@ -57,15 +52,11 @@ ui <- fluidPage(
                   max = as.Date("2016-04-02","%Y-%m-%d"),
                   value = c(as.Date("2016-02-01"), as.Date("2016-03-21"))
                   ),
+    
       
-      #date_min<- reactive(df_bike_violations |> 
-      #  filter(description== .env$input$descrpition_input) |> 
-      #  slice(which.min(violation_date)) |> 
-      #  mutate(violation_date = as.Date(violation_date)) |> 
-      #  pull(violation_date)
-      #    ),
-      
-      dateRangeInput("date_range", "Date range test", start="2020-03-30", end="2023-03-30")
+      dateRangeInput("date_range", "Date range test",
+                     start="2020-03-30", 
+                     end="2023-03-30")
       ),
     mainPanel(
       leafletOutput("map")
@@ -91,8 +82,21 @@ server <- function(input, output, session) {
   #m <- reactive(mapview(df_plot(), xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE))
   output$map <- renderLeaflet((mapview(df_plot(), xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)@map))
   
-  #updateDateRangeInput(session, "date_range", )
+  date_min<- reactive(df_bike_violations |> 
+                        filter(description== '.env$input$descrpition_input') |> 
+                        slice(which.min(violation_date)) |> 
+                        mutate(violation_date = as.Date(violation_date)) |> 
+                        pull(violation_date))
   
+  date_max<- reactive(df_bike_violations |> 
+                        filter(description== '.env$input$descrpition_input') |> 
+                        slice(which.max(violation_date)) |> 
+                        mutate(violation_date = as.Date(violation_date)) |> 
+                        pull(violation_date))
+  
+  observeEvent(input$date_range, {
+    updateDateRangeInput(session, "date_range", start=date_min(), end = date_max())
+  })
   
 }
 
