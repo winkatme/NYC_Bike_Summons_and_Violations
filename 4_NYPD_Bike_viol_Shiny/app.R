@@ -1,3 +1,7 @@
+
+
+
+
 library(shiny)
 library(tidyverse, warn.conflicts = FALSE)
 library(mapview, warn.conflicts = FALSE)
@@ -25,7 +29,7 @@ ui <- fluidPage(
   sidebarLayout(
     sidebarPanel(
       selectInput(inputId="description_input", 
-                  label="Violations, in descending order of frequency", 
+                  label="Violation Description, sorted in descending order of frequency", 
                   choices = c("Choose one" = "", levels(fct_infreq(df_bike_violations$description))), 
                   selected="OPER BICYCLE WITH MORE 1 EARPHONE",  
                   width='600px'),
@@ -95,5 +99,3 @@ server <- function(input, output, session) {
 
 shinyApp(ui, server)
 
-
-?dateRangeInput
