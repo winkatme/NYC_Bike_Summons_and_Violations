@@ -1,0 +1,13 @@
+name: 4_NYPD_Bike_viol_Shiny
+title: 4_NYPD_Bike_viol_Shiny
+username:
+account: dov-winkleman
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 9816848
+bundleId: 7665214
+url: https://dov-winkleman.shinyapps.io/4_NYPD_Bike_viol_Shiny/
+when: 1694310354.35952
+lastSyncTime: 1694310354.35953
+asMultiple: FALSE
+asStatic: FALSE
