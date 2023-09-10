@@ -22,17 +22,10 @@ df_bike_violations<-df_bike_violations |>
   mutate(city_nm = as.factor(city_nm)) |>
   mutate(rpt_owning_cmd = as.factor(rpt_owning_cmd)) |>
   mutate(violation_date = as.POSIXct(violation_date)) |> 
+  select(-c(evnt_key, rpt_owning_cmd, x_coord_cd, y_coord_cd, location)) |> 
   drop_na()
 
-
-
-# date_min test
-df_bike_violations |> 
-                      filter(description== 'OPER BICYCLE WITH MORE 1 EARPHONE') |> 
-                      slice(which.max(violation_date)) |> 
-                      mutate(violation_date = as.Date(violation_date)) |> 
-                      pull(violation_date)
-
+#colnames(df_bike_violations)
 
 
 ui <- fluidPage(
@@ -46,19 +39,20 @@ ui <- fluidPage(
                   selected="OPER BICYCLE WITH MORE 1 EARPHONE",  
                   width='600px'),
       
-      sliderInput(inputId = "distribution", 
-                  label = "Dates",
-                  min = as.Date("2016-01-24","%Y-%m-%d"),
-                  max = as.Date("2016-04-02","%Y-%m-%d"),
-                  value = c(as.Date("2016-02-01"), as.Date("2016-03-21"))
-                  ),
+      #sliderInput(inputId = "distribution", 
+      #            label = "Dates",
+      #            min = as.Date("2016-01-24","%Y-%m-%d"),
+      #            max = as.Date("2016-04-02","%Y-%m-%d"),
+      #            value = c(as.Date("2016-02-01"), as.Date("2016-03-21"))
+      #            ),
     
       
-      dateRangeInput("date_range", "Date range test",
+      dateRangeInput("date_range", "Date range",
                      start="2020-03-30", 
                      end="2023-03-30"),
       
-      textOutput("date_min_as_text")
+      textOutput("date_min_as_text"),
+      textOutput("date_max_as_text")
       
       ),
     mainPanel(
@@ -81,10 +75,15 @@ server <- function(input, output, session) {
   #output$map <- renderLeaflet(m@map)
   
   # works in shiny:
-  df_plot <- reactive(df_bike_violations |> filter(.data$description==.env$input$description_input)) 
+  df_plot <- reactive(df_bike_violations |> 
+                        filter(.data$description==.env$input$description_input) |> 
+                        filter(.data$violation_date >= .env$input$date_range[1] & .data$violation_date <= .env$input$date_range[2])
+                        ) 
   #m <- reactive(mapview(df_plot(), xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE))
   output$map <- renderLeaflet((mapview(df_plot(), xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)@map))
   
+  
+  # to update the date range on new descriptions from drop down
   date_min <- reactive(df_bike_violations |> 
                         filter(.data$description== .env$input$description_input) |> 
                         slice(which.min(.data$violation_date)) |> 
@@ -101,12 +100,19 @@ server <- function(input, output, session) {
     updateDateRangeInput(session, "date_range", start=date_min(), end = date_max())
   })
   
+  
+  
+  
   output$date_min_as_text <- renderText({ 
-    paste(date_min())
+    paste("Earliest date for this violation: ", date_min())
   })
   
+  output$date_max_as_text <- renderText({ 
+    paste("Most recent date for this violation: ", date_max())
+  })
 }
 
 shinyApp(ui, server)
 
 
+?dateRangeInput
