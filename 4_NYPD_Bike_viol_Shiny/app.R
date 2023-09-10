@@ -19,7 +19,7 @@ df_bike_violations <- df_bike_violations |>
 
 
 ui <- fluidPage(
-  titlePanel("Bike/E-Vehicle Violations Geomap"),
+  titlePanel(" NYC Bike/E-Vehicle Violations Geomap"),
   sidebarLayout(
     sidebarPanel(
       selectInput(
@@ -29,7 +29,8 @@ ui <- fluidPage(
         selected = "OPER BICYCLE WITH MORE 1 EARPHONE",
         width = "600px"
       ),
-
+      
+      ## To Do: A date slider input might look better. 
       # sliderInput(inputId = "distribution",
       #            label = "Dates",
       #            min = as.Date("2016-01-24","%Y-%m-%d"),
@@ -37,13 +38,11 @@ ui <- fluidPage(
       #            value = c(as.Date("2016-02-01"), as.Date("2016-03-21"))
       #            ),
 
-
       dateRangeInput("date_range", "Date range",
         start = "2018-01-07",
         end = "2023-03-30"
       ),
-      htmlOutput("date_min_as_text"),
-      textOutput("date_max_as_text")
+      htmlOutput("date_start_end_as_text")
     ),
     mainPanel(
       leafletOutput("map")
@@ -80,7 +79,7 @@ server <- function(input, output, session) {
   })
 
   # display min and max dates to user
-  output$date_min_as_text <- renderUI({
+  output$date_start_end_as_text <- renderUI({
     HTML(paste(
       "Earliest date for this violation: ", date_min(), "<br/>",
       "Most recent date for this violation: ", date_max()
