@@ -43,7 +43,7 @@ ui <- fluidPage(
     
       
       dateRangeInput("date_range", "Date range",
-                     start="2020-03-30", 
+                     start="2018-01-07", 
                      end="2023-03-30"),
       
       textOutput("date_min_as_text"),
