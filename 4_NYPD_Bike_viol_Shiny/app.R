@@ -1,12 +1,3 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
-
 library(shiny)
 library(tidyverse, warn.conflicts = FALSE)
 library(mapview, warn.conflicts = FALSE)
@@ -29,12 +20,12 @@ df_bike_violations<-df_bike_violations |>
 
 
 ui <- fluidPage(
-  titlePanel('Bike/E-vehicle violations geomap'),
+  titlePanel('Bike/E-Vehicle Violations Geomap'),
   
   sidebarLayout(
     sidebarPanel(
       selectInput(inputId="description_input", 
-                  label="Violation Description", 
+                  label="Violations, in descending order of frequency", 
                   choices = c("Choose one" = "", levels(fct_infreq(df_bike_violations$description))), 
                   selected="OPER BICYCLE WITH MORE 1 EARPHONE",  
                   width='600px'),
@@ -65,25 +56,16 @@ ui <- fluidPage(
 
 server <- function(input, output, session) {
 
-  # test - successful - just show head from input  
-  #df_head <- reactive(df_bike_violations |> filter(.data$description==.env$input$description_input))
-  # note: Since reactive turns it into a function, '()' are required after.
-  #output$head <- renderTable(head(df_head()))
-  
-  # test - success, but just in html: show mapview of just IMPROPER TURN
-  #m <- mapview(na.omit(df_bike_violations |> filter(description=="IMPROPER TURN")), xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)
-  #output$map <- renderLeaflet(m@map)
-  
-  # works in shiny:
+  # geomap:
   df_plot <- reactive(df_bike_violations |> 
                         filter(.data$description==.env$input$description_input) |> 
                         filter(.data$violation_date >= .env$input$date_range[1] & .data$violation_date <= .env$input$date_range[2])
                         ) 
-  #m <- reactive(mapview(df_plot(), xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE))
+
   output$map <- renderLeaflet((mapview(df_plot(), xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)@map))
   
   
-  # to update the date range on new descriptions from drop down
+  # update the dateRangeInput values after choosing a new descriptions from selectInput drop down:
   date_min <- reactive(df_bike_violations |> 
                         filter(.data$description== .env$input$description_input) |> 
                         slice(which.min(.data$violation_date)) |> 
@@ -101,8 +83,7 @@ server <- function(input, output, session) {
   })
   
   
-  
-  
+
   output$date_min_as_text <- renderText({ 
     paste("Earliest date for this violation: ", date_min())
   })
