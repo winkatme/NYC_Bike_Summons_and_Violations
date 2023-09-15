@@ -30,11 +30,13 @@ library(styler)
 
 ## Violation Codes data
 
+This data set contains textual descriptions of each violation code.
+
 ### Import violations xlsx
 
 ```{r}
 # import Code Violations xlsx
-# After cleaning, his file will contain the violation code numbers and their corresponding descriptions.
+# After cleaning, this file will contain the violation code numbers and their corresponding descriptions.
 
 # source:  https://dmv.ny.gov/e-data/violationcodes.xlsx
 # library(readxl)
@@ -54,15 +56,15 @@ df_violation_codes <- df_violation_codes |>
 ### Clean violations codes
 
 ```{r}
-# Remove duplicates
-
-# VIOLATION_CODE duplicates found: (1110A and 1151A)
-
-# This step proved to be necessary, as merging the two documents would duplicate the number of rows of any violation code in df to match any duplicates in violations.  This caused the # of rows of df to be over 200,000, when it should have remained the same (184770)
+# Clean duplicate codes
 
 df_violation_codes |>
   count(violation_code) |>
   arrange(desc(n))
+
+# VIOLATION_CODE duplicates found: 1110A and 1151A
+
+# This step proved to be necessary, as merging the two documents would duplicate the number of rows of any violation code in df to match any duplicates in violations.  This caused the # of rows of df to be over 200,000, when it should have remained the same (184770)
 
 # view descriptions for 1110A
 df_violation_codes |>
@@ -87,23 +89,27 @@ df_violation_codes_no_dupes <- df_violation_codes |>
   distinct(violation_code, .keep_all = TRUE) |>
   mutate(description = case_when(violation_code == "1151A" ~ "FAILED TO YIELD RIGHT-OF-WAY TO PEDESTRIAN ON SIDEWALK OR CROSSWALK", TRUE ~ description)) |>
   mutate(description = case_when(violation_code == "1110A" ~ "DISOBEYED TRAFFIC DEVICE - PAVEMENT MARKINGS", TRUE ~ description))
+```
 
+
+```{r}
 # OPTIONAL double-check no dupes
-# df_violation_codes_no_dupes |>
-#   count(violation_code) |>
-#   distinct(n)
+df_violation_codes_no_dupes |>
+  count(violation_code) |>
+  distinct(n)
 
 # OPTIONAL double-check that 1110A and 1151A read what they are supposed to
-# df_violation_codes_no_dupes |>
-#   filter(violation_code=='1151A'|violation_code=='1110A')
+df_violation_codes_no_dupes |>
+  filter(violation_code == "1151A" | violation_code == "1110A")
 
-dim(df_violation_codes_no_dupes)
-# View(violations_no_dupes)
+# dim(df_violation_codes_no_dupes)
 ```
 
 ## NYPD Violations data
 
 ### Import current violations data
+
+Contains all NYPD violation records from Jan 1, 2023 to Mar 30, 2023.
 
 ```{r}
 # only run once
@@ -134,6 +140,8 @@ str(df_current_violations)
 ```
 
 ### Import historic violations data
+
+Contains all NYPD violation data from Jan 1, 2018 to Dec 31, 2022.
 
 ```{r}
 # source: https://data.cityofnewyork.us/Public-Safety/NYPD-B-Summons-Historic-/bme5-7ty4
@@ -298,8 +306,8 @@ df_bicycle_counters_boroughs <- df_bicycle_counters |>
   )
 
 
-df_bicycle_counters_boroughs <- df_bicycle_counters_boroughs |> 
-  rename("name" = "name...2") |> 
+df_bicycle_counters_boroughs <- df_bicycle_counters_boroughs |>
+  rename("name" = "name...2") |>
   select(id, name, latitude, longitude, suburb) |>
   rename("borough" = "suburb") |>
   mutate(borough = gsub("Richmond County", "Staten Island", borough)) |>
@@ -402,8 +410,8 @@ dim(df_bicycle_counters_boroughs)
 
 
 # Optional:  Save to csv
-#path_name<-'Data/Processed/df_bicycle_counters_boroughs.csv'
-#write.csv(df_bicycle_counters_boroughs, path_name, row.names=FALSE)
+# path_name<-'Data/Processed/df_bicycle_counters_boroughs.csv'
+# write.csv(df_bicycle_counters_boroughs, path_name, row.names=FALSE)
 # df_bicycle_counters_boroughs
 ```
 
@@ -641,7 +649,7 @@ df_bike_violations <- df_bike_violations |>
   mutate(city_nm = case_when(city_nm == "Kings County" ~ "BROOKLYN", .default = city_nm)) |>
   mutate(city_nm = case_when(city_nm == "Queens County" ~ "QUEENS", .default = city_nm)) |>
   mutate(city_nm = case_when(city_nm == "Brooklyn" ~ "BROOKLYN", .default = city_nm)) |>
-  mutate(city_nm = case_when(city_nm == "Queens" ~ "QUEENS", .default = city_nm)) |> 
+  mutate(city_nm = case_when(city_nm == "Queens" ~ "QUEENS", .default = city_nm)) |>
   select(-suburb)
 
 # check again for city_nm == 'New York' values
@@ -655,15 +663,14 @@ Takeaway: better - now only 3 NEW YORK values
 Let's view the remaining New York ones
 
 ```{r}
-df_bike_violations |> 
-  filter(city_nm=='NEW YORK')
-
+df_bike_violations |>
+  filter(city_nm == "NEW YORK")
 ```
 
 Takeaway:  these dont have longitudinal or latitudinal info.  We may therefore remove them.  And since filter in dplyr automatically removes NAs, the rest of the NA's are removed as well.  So that is 92 NA's + 3 city_nm=='New York' = 95 removed values.  We are left with 122,509 rows, when we started with 122,604.
 
 ```{r remove city_nm==NewYork}
-df_bike_violations <- df_bike_violations |> 
+df_bike_violations <- df_bike_violations |>
   filter(city_nm != "NEW YORK")
 
 # to double check:
@@ -696,6 +703,6 @@ Takeaway: We are left with 8 entries that have NA values for their coordinates o
 # file is approx 25mb. That exceeds limit for uploading via browser, but it is able to upload to git via push
 # install.packages("glue")
 todays_date <- Sys.Date()
-#path_name <- glue("Data/Processed/df_bike_violations_{todays_date}.csv")
-#write.csv(df_bike_violations, path_name, row.names = FALSE)
+# path_name <- glue("Data/Processed/df_bike_violations_{todays_date}.csv")
+# write.csv(df_bike_violations, path_name, row.names = FALSE)
 ```
