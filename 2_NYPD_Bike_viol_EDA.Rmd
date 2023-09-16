@@ -516,7 +516,7 @@ df_counts_wburg_bridge_winter <- df_counts |>
   filter(id==100009427) |> 
   filter(year(date) >= 2018) |> 
   mutate(date = yearweek(date)) |> 
-  filter(week(date) == c(44:52, 1:9))
+  filter(week(date) == c(48:52, 1:9))
 
 df_counts_wburg_bridge_winter
 
@@ -525,7 +525,7 @@ mod_winter <- lm(weekly_total ~ date, data=df_counts_wburg_bridge_winter)
 mod_winter
 summary(mod_winter)
 
-# slope: 37.66
+# slope: 36.87
 
 ```
 
@@ -534,15 +534,16 @@ attempt to plot winter and summer slopes
 ```{r}
 df_counts |> 
   filter(id==100009427) |> 
-  mutate(date = week(date)) |> 
+  mutate(date = date(date)) |> 
   filter(year(date) >= 2018) |> 
   distinct(date, .keep_all = TRUE) |> 
-  ggplot(aes(x=date, y=daily_total))+
+  ggplot(aes(x=date, y=weekly_total))+
   geom_line()+
   geom_abline(slope=mod_winter[1]$coefficients[2], intercept = mod_winter[1]$coefficients[1])+
+    geom_abline(slope=mod_summer[1]$coefficients[2], intercept = mod_summer[1]$coefficients[1])+
   geom_smooth(method = lm)+
   #geom_abline(slope = coef(lm(daily_total ~  date(date), data=df_counts))[2], intercept = coef(lm(daily_total ~  date(date), data=df_counts))[1])+
-  labs(title="Williamsburg bridge bike path daily counts since 2018")
+  labs(title="Williamsburg bridge bike path weekly counts since 2018")
 
 
 ```

@@ -465,7 +465,9 @@ df_counts |>
 
 # optional: save csv to desktop, to upload to dropbox.  It is too large for github
 # last saved: 9/16/23
-#write.csv(df_counts, '/Users/<username>/Desktop/df_counts.csv', row.names=FALSE)
+write.csv(df_counts, '/Users/<username>/Desktop/df_counts.csv', row.names=FALSE)
+
+getwd()
 ```
 
 
