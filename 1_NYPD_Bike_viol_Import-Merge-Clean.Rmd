@@ -109,7 +109,7 @@ df_violation_codes_no_dupes |>
 
 ### Import current violations data
 
-Contains all NYPD violation records from Jan 1, 2023 to Mar 30, 2023.
+Contains all NYPD violation records from Jan 1, 2023 to June 30, 2023.
 
 ```{r}
 # only run once
@@ -118,7 +118,7 @@ Contains all NYPD violation records from Jan 1, 2023 to Mar 30, 2023.
 
 # source: https://data.cityofnewyork.us/Public-Safety/NYPD-B-Summons-Year-to-Date-/57p3-pdcj
 
-df_current_violations <- readr::read_csv("Data/Raw/NYPD_B_Summons__Year_to_Date_.csv")
+df_current_violations <- readr::read_csv("Data/Raw/NYPD_B_Summons__Year_to_Date_dnld091523.csv")
 
 # Remove unneeded columns.  update column types as needed
 # CHG_LAW_CD - can be removed.  It just states whether the violation was NY state or local NYC law
@@ -138,6 +138,13 @@ df_current_violations <- df_current_violations |>
 
 str(df_current_violations)
 ```
+
+Date range
+
+```{r date-range-current-viol}
+date(range(df_current_violations$violation_date))
+```
+
 
 ### Import historic violations data
 
@@ -234,6 +241,13 @@ df_counts_raw |>
   distinct(id) |>
   arrange(id)
 ```
+
+Date range
+
+```{r}
+date(range(df_counts$date))
+```
+
 
 
 ### Create daily and weekly rider total columns
