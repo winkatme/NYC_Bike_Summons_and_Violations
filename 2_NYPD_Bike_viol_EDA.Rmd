@@ -21,7 +21,8 @@ library(glue)
 library(corrr)
 library(slider)
 library(forcats)
-# devtools::install_github('smin95/smplot2', force = TRUE)
+#install.packages('devtools')
+devtools::install_github('smin95/smplot2', force = TRUE)
 library(smplot2)
 # install.packages('sf')
 library(sf)
@@ -39,7 +40,7 @@ library(patchwork)
 # Import Data
 
 ```{r import, include=FALSE}
-df_bike_violations <- readr::read_csv("Data/Processed/df_bike_violations_2023-08-05.csv")
+df_bike_violations <- readr::read_csv("Data/Processed/df_bike_violations_2023-09-16.csv")
 
 df_bike_violations <- df_bike_violations |>
   mutate(violation_code = as.factor(violation_code)) |>
@@ -66,27 +67,36 @@ ts_daily_total |>
   nrow()
 ```
 
-```{r clean2, eval=FALSE}
-# are the days missing from df_counts?  # ans: no.
-# df_counts |>
-#  filter(is.na(daily_total))
-```
 
 Fill gaps in dates and re-join with df_counts data, so that gapped dates now have total cyclists columns. Replace violation na's with 0's.
 
 ```{r clean3, warning=FALSE, message=FALSE}
 # import df_counts:
-path3 <- "https://www.dropbox.com/s/nffkpwuz1u6kd5t/df_counts.csv?dl=1"
-df_counts <- readr::read_csv(path3)
+path2 <- "https://www.dropbox.com/scl/fi/oh8sa17211rh5ktc62paz/Bicycle_Counts_dnld_091623.csv?rlkey=uh5ba4cmzy57s09wjmlzym1x6&dl=1"
+df_counts <- readr::read_csv(path2)
+
+df_counts <-df_counts |> 
+  mutate(date = mdy_hms(date)) |> 
+  group_by(date(date)) |>
+  mutate(daily_total = sum(counts)) |>
+  ungroup() |>
+  group_by(yearweek(date)) |>
+  mutate(weekly_total = sum(counts)) |>
+  ungroup() |>
+  arrange(date) |>
+  select(!c("date(date)", "yearweek(date)", countid, status))
+  
+
+head(df_counts)
 
 # fill date gaps for ts_daily_total and join with df_counts
-ts_daily_total <- ts_daily_total |>
+ts_daily_total<-ts_daily_total |>
   fill_gaps() |>
   select(-daily_total_cyclists) |>
   mutate(date = violation_date) |>
   left_join(y = df_counts, by = "date", multiple = "any") |>
   rename(daily_total_cyclists = daily_total) |>
-  select(-c("date", "counts", "weekly_total")) |>
+  select(-c("date", "weekly_total")) |>
   mutate_at("daily_total_violations", ~ replace_na(., 0))
 
 # double check for na's:
@@ -393,7 +403,7 @@ df_counts |>
   summarise(n=n()) 
 ```
 
-Takeway: It looks like max per year is 14. so not all are 18 used at once.
+Takeway: It looks like max per year is ?. so not all are 18 used at once.
 
 ## Which bike counters counted the most cyclists in 2022?
 
@@ -405,6 +415,8 @@ df_counts |>
   summarize(sum = sum(counts)) |> 
   arrange(desc(sum))
   
+df_counts
+
 # geoplot
 #df_bike_violations_bicycle_counters |> filter(id==300020904) |> mapview(xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)  
 ```
