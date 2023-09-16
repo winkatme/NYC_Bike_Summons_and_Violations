@@ -228,8 +228,14 @@ max(date(df_merged$violation_date)) - min(date(df_merged$violation_date))
 ```{r}
 # https://data.cityofnewyork.us/Transportation/Bicycle-Counts/uczf-rk3c
 
-path2 <- "https://www.dropbox.com/s/oaklaldm8td9wem/Bicycle_Counts.csv?dl=1"
+# older dataset:
+#path2 <- "https://www.dropbox.com/s/oaklaldm8td9wem/Bicycle_Counts.csv?dl=1"
+
+# dataset downloaed 091623
+path2 <- "https://www.dropbox.com/scl/fi/oh8sa17211rh5ktc62paz/Bicycle_Counts_dnld_091623.csv?rlkey=uh5ba4cmzy57s09wjmlzym1x6&dl=1"
 df_counts_raw <- read.csv(path2)
+
+head(df_counts_raw)
 
 df_counts <- df_counts_raw |>
   mutate(date = mdy_hms(date))
@@ -424,9 +430,9 @@ dim(df_bicycle_counters_boroughs)
 
 
 # Optional:  Save to csv
-# path_name<-'Data/Processed/df_bicycle_counters_boroughs.csv'
-# write.csv(df_bicycle_counters_boroughs, path_name, row.names=FALSE)
-# df_bicycle_counters_boroughs
+#path_name<-'Data/Processed/df_bicycle_counters_boroughs.csv'
+#write.csv(df_bicycle_counters_boroughs, path_name, row.names=FALSE)
+#df_bicycle_counters_boroughs
 ```
 
 ### Update df_counts by removing duplicate counters
@@ -716,7 +722,7 @@ Takeaway: We are left with 8 entries that have NA values for their coordinates o
 # optional: write to csv
 # file is approx 25mb. That exceeds limit for uploading via browser, but it is able to upload to git via push
 # install.packages("glue")
-todays_date <- Sys.Date()
-# path_name <- glue("Data/Processed/df_bike_violations_{todays_date}.csv")
-# write.csv(df_bike_violations, path_name, row.names = FALSE)
+#todays_date <- Sys.Date()
+#path_name <- glue("Data/Processed/df_bike_violations_{todays_date}.csv")
+#write.csv(df_bike_violations, path_name, row.names = FALSE)
 ```
