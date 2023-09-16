@@ -72,11 +72,18 @@ Fill gaps in dates and re-join with df_counts data, so that gapped dates now hav
 
 ```{r clean3, warning=FALSE, message=FALSE}
 # import df_counts:
-path2 <- "https://www.dropbox.com/scl/fi/oh8sa17211rh5ktc62paz/Bicycle_Counts_dnld_091623.csv?rlkey=uh5ba4cmzy57s09wjmlzym1x6&dl=1"
-df_counts <- readr::read_csv(path2)
+path3 <- "https://www.dropbox.com/s/nffkpwuz1u6kd5t/df_counts.csv?dl=1"
+df_counts_dl <- readr::read_csv(path3)
 
-df_counts <-df_counts |> 
-  mutate(date = mdy_hms(date)) |> 
+str(df_counts_dl)
+
+
+# double-check 18 distinct counter ids.  I was having issues saving 
+# df_counts and opening it without duplicate bike counters.
+df_counts_dl |> 
+  distinct(id)
+
+df_counts <-df_counts_dl |> 
   group_by(date(date)) |>
   mutate(daily_total = sum(counts)) |>
   ungroup() |>
@@ -403,7 +410,7 @@ df_counts |>
   summarise(n=n()) 
 ```
 
-Takeway: It looks like max per year is ?. so not all are 18 used at once.
+Takeway: It looks like max per year is 14. so not all are 18 used at once.
 
 ## Which bike counters counted the most cyclists in 2022?
 
@@ -414,8 +421,7 @@ df_counts |>
   group_by(id, year(date)) |> 
   summarize(sum = sum(counts)) |> 
   arrange(desc(sum))
-  
-df_counts
+
 
 # geoplot
 #df_bike_violations_bicycle_counters |> filter(id==300020904) |> mapview(xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)  
@@ -458,10 +464,15 @@ df_counts |>
   mutate(date = date(date)) |> 
   filter(year(date) >= 2018) |> 
   group_map(~ broom::tidy(lm(daily_total ~ date, data = .x))) 
+
+df_counts_wburg_bridge <-df_counts |> filter(id==100009427)
+
+mod <- lm(daily_total ~ date(date), data=df_counts_wburg_bridge)
   
+mod
 ```
 
-Takeaway: 6.5 riders per day increase for wburg bridge.
+Takeaway: 4.9 riders per day increase for wburg bridge since 2018
 
 Plot:
 
@@ -479,6 +490,64 @@ df_counts |>
 ```
 
 Takeaways: \* Seasonality trend - fewer riders in the colder months, more in the summer months. (Note that when graphing all time points since 2014, there was a big increase in the winter of 2016. This was due to the new citibikes, as well as an unusually warm winter). \* Ridership growth since 2018 is \~6.5 increase per day. \* Big bump in the fall of 2019. Bump in the summer after covid lockdown, Slight dip in the summr of 2021, but rising again in 2022.
+
+
+#### test: slopes for summer and winter
+
+```{r}
+# summer (~W18 to ~W35): 
+df_counts_wburg_bridge_summer <- df_counts |> 
+  filter(id==100009427) |> 
+  filter(year(date) >= 2018) |> 
+  mutate(date = yearweek(date)) |> 
+  filter(week(date) == 17:35)
+
+df_counts_wburg_bridge_summer
+
+mod_summer <- lm(weekly_total ~ date, data=df_counts_wburg_bridge_summer)
+  
+mod_summer
+
+
+# slope is 46.64
+
+# winter:
+df_counts_wburg_bridge_winter <- df_counts |> 
+  filter(id==100009427) |> 
+  filter(year(date) >= 2018) |> 
+  mutate(date = yearweek(date)) |> 
+  filter(week(date) == c(44:52, 1:9))
+
+df_counts_wburg_bridge_winter
+
+mod_winter <- lm(weekly_total ~ date, data=df_counts_wburg_bridge_winter)
+  
+mod_winter
+summary(mod_winter)
+
+# slope: 37.66
+
+```
+
+attempt to plot winter and summer slopes
+
+```{r}
+df_counts |> 
+  filter(id==100009427) |> 
+  mutate(date = week(date)) |> 
+  filter(year(date) >= 2018) |> 
+  distinct(date, .keep_all = TRUE) |> 
+  ggplot(aes(x=date, y=daily_total))+
+  geom_line()+
+  geom_abline(slope=mod_winter[1]$coefficients[2], intercept = mod_winter[1]$coefficients[1])+
+  geom_smooth(method = lm)+
+  #geom_abline(slope = coef(lm(daily_total ~  date(date), data=df_counts))[2], intercept = coef(lm(daily_total ~  date(date), data=df_counts))[1])+
+  labs(title="Williamsburg bridge bike path daily counts since 2018")
+
+
+```
+
+
 
 # EDA: Violation Codes
 

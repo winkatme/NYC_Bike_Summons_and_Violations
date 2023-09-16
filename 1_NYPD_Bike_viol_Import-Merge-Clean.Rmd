@@ -22,7 +22,7 @@ library(mapview)
 # install.packages('tidygeocoder')
 library(tidygeocoder)
 library(janitor)
-install.packages("styler")
+#install.packages("styler")
 library(styler)
 ```
 
@@ -464,7 +464,8 @@ df_counts |>
 
 
 # optional: save csv to desktop, to upload to dropbox.  It is too large for github
-# write.csv(df_counts, '/Users/<username>/Desktop/df_counts.csv', row.names=FALSE)
+# last saved: 9/16/23
+#write.csv(df_counts, '/Users/<username>/Desktop/df_counts.csv', row.names=FALSE)
 ```
 
 
