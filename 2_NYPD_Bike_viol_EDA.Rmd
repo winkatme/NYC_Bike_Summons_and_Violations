@@ -496,11 +496,13 @@ Takeaways: \* Seasonality trend - fewer riders in the colder months, more in the
 
 ```{r}
 # summer (~W18 to ~W35): 
+
+# but just July was easier.  weeks 27-31
 df_counts_wburg_bridge_summer <- df_counts |> 
   filter(id==100009427) |> 
   filter(year(date) >= 2018) |> 
   mutate(date = yearweek(date)) |> 
-  filter(week(date) == 17:35)
+  filter(week(date) == 27:31)
 
 df_counts_wburg_bridge_summer
 
@@ -509,14 +511,16 @@ mod_summer <- lm(weekly_total ~ date, data=df_counts_wburg_bridge_summer)
 mod_summer
 
 
-# slope is 46.64
+# slope is 42.71 
 
 # winter:
+
+# Just Jan was easiest, weeks 1-5
 df_counts_wburg_bridge_winter <- df_counts |> 
   filter(id==100009427) |> 
   filter(year(date) >= 2018) |> 
   mutate(date = yearweek(date)) |> 
-  filter(week(date) == c(48:52, 1:9))
+  filter(week(date) == 1:5)
 
 df_counts_wburg_bridge_winter
 
@@ -528,6 +532,7 @@ summary(mod_winter)
 # slope: 36.87
 
 ```
+So Summer is increasing on average at a faster rate than winter, since 2018.  
 
 attempt to plot winter and summer slopes
 
@@ -555,13 +560,13 @@ df_counts |>
 ## How many unique violations were handed out to cyclist?
 
 ```{r}
-length(fct_unique(df_bike_violations$violation_code))
+length(fct_unique(df_bike_violations$violation_code)). # 188
 ```
 
 ## How many total violations were handed out to cyclists since 2018?
 
 ```{r}
-length(df_bike_violations$violation_code)
+length(df_bike_violations$violation_code)  # 1226701
 ```
 
 ## What were the most common violations?
@@ -581,7 +586,7 @@ df_bike_violations |>
 # note:  12332: ATTACHING SELF TO MOVING MOTOR VEHICLE a/k/a, the Marty McFly rule
 ```
 
-Takeaway: 44.1% + 5.2% ≈ 50% were for failing to stop at a red light.
+Takeaway: 44.1% + 5.3% ≈ 50% were for failing to stop at a red light.
 
 ### Unique violation: code 12332: Marty McFly
 
@@ -654,14 +659,14 @@ df_bike_violations |>
   nrow()
 ```
 
-For the sake of clustering, let's just view the most common violation, 11111D1C, for the previous year of data (since April of 2022):
+For the sake of clustering, let's just view the most common violation, 11111D1C, for the previous year of data (since June of 2022):
 
 ```{r geomap-most-common-voilation-past-year}
 # Let's just view fct_lump==1111D1C for the previous year:
 df_bike_violations |>
   mutate(fct_lump = fct_lump(f = df_bike_violations$violation_code, n = 9)) |>
   mutate(date = date(violation_date)) |>
-  filter(date >= "2022-04-01") |>
+  filter(date >= "2022-06-01") |>
   filter(fct_lump == "1111D1C") |>
   mapview(xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE, alpha.regions = 0.2)
 
@@ -673,7 +678,7 @@ What were the total number of 1111D1C violations in this time frame?
 df_bike_violations |> 
   mutate(fct_lump = fct_lump(f = df_bike_violations$violation_code, n = 9)) |>
   mutate(date = date(violation_date)) |>
-  filter(date >= "2022-04-01") |>
+  filter(date >= "2022-06-01") |>
   filter(fct_lump == "1111D1C") |>
   nrow()
 ```
@@ -908,7 +913,7 @@ df_bike_violations |>
   correlate() 
 ```
 
-Takeway: cor: 0.0768097 So no, as the number of riders increases, the number of violations does not.
+Takeway: cor: 0.05554951 So no, as the number of riders increases, the number of violations does not.
 
 ## However, Does this differ for pre-covid and post-lockdown?
 
