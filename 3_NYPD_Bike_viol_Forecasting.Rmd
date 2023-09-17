@@ -17,7 +17,7 @@ library(fpp3)
 ```{r}
 # import bike violations
 
-df_bike_violations <- readr::read_csv("Data/Processed/df_bike_violations_2023-08-05.csv")
+df_bike_violations <- readr::read_csv("Data/Processed/df_bike_violations_2023-09-16.csv")
 
 df_bike_violations <- df_bike_violations |>
   mutate(violation_code = as.factor(violation_code)) |>
@@ -79,16 +79,31 @@ ts_monthly_total |>
 
 ## Train and test sets for monthly data
 
-Training set is through the end of 2021.  Test set is from Jan 2022 until March 2023.
+Training set is through May of 2022.  Test set is from June 2022 through June 2023.
 
 ```{r}
 train<-ts_monthly_total |> 
   select(!monthly_total_violations) |> 
-  filter_index(~"2021-12")
+  filter_index(~"2022-05")
 
 test<-ts_monthly_total |> 
   select(!monthly_total_violations) |> 
-  filter_index("2022-01"~.)
+  filter_index("2022-06"~.)
+
+range(train$date)
+range(test$date)
+
+range(test_daily$date)
+
+train_daily<-ts_daily_total |> 
+  rename(date=violation_date) |> 
+  select(!c(countid, id, status)) |> 
+  filter_index(~"2022-05")
+
+test_daily<-ts_daily_total |> 
+  rename(date=violation_date) |> 
+  select(!c(countid, id, status)) |> 
+  filter_index("2022-06"~.)
 ```
 
 ## Seasonal Naive forecast on monthly totals
@@ -101,7 +116,6 @@ ts_fc <- ts_monthly_snaive_mod|> forecast(h = "2 years")
 
 ts_fc |> 
   autoplot(ts_monthly_total)
-
 ```
 
 
@@ -137,7 +151,7 @@ fct <-train |>
 
 ```
 
-RMSE 131213.6	
+RMSE 139936.1	
 
 ### Visualize the Seasonal Naive forecast:
 
@@ -148,6 +162,23 @@ autoplot(train) +
 ```
 
 Takeaway:  Errors can get extreme (less than 0 at one point). Does not take into account the trend of the data.  Let's compare to other methods.
+
+
+## Seasonal Naive daily 
+
+```{r}
+ts_daily_snaive_mod <- ts_daily_total |> 
+  model(model = NAIVE(daily_total_cyclists ~ lag(12)))
+
+ts_fc <- ts_daily_snaive_mod|> forecast(h = "1 month")
+
+ts_fc |> 
+  autoplot(ts_daily_total)
+```
+
+It's much more difficult to predict daily due to smaller period. Although it might be more accurate for forecast smaller time periods, like a single month, I would like to predict in yearly terms, so let's stick to monthly.
+
+
 
 Since there is clear seasonality, let's try ETS
 
