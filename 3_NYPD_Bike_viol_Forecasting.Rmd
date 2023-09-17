@@ -10,6 +10,8 @@ output:
 library(knitr)
 library(tidyverse)
 library(fpp3)
+#install.packages("urca")
+library(urca)
 ```
 
 # Import daily and monthly tsibbles
@@ -179,7 +181,6 @@ ts_fc |>
 It's much more difficult to predict daily due to smaller period. Although it might be more accurate for forecast smaller time periods, like a single month, I would like to predict in yearly terms, so let's stick to monthly.
 
 
-
 Since there is clear seasonality, let's try ETS
 
 ## ETS Forecast on monthly data (ETS_AAA)
@@ -200,7 +201,7 @@ fc |>
 How does it perform on the test set?
 
 ```{r}
-fct <- train %>%
+fct <- train |> 
   model(ETS(monthly_total_cyclists ~ error("A") + trend("A") + season("A"))) |> 
   forecast(test)
 
@@ -209,7 +210,7 @@ fct <- train %>%
 fct
 ```
 
-RMSE = 131517.  Worse than seasonal naive.  
+RMSE = 86248.05.  Better
 
 ### Visualize ETS_AAA
 
@@ -225,14 +226,14 @@ Maybe the trend was too strong.  I wonder if we can do damping
 ## ETS with trend damping (ETS_AAdA)
 
 ```{r}
-fct_ETS_AAdA <- train %>%
+fct_ETS_AAdA <- train |> 
   model(ETS(monthly_total_cyclists ~ error("A") + trend("Ad") + season("A"))) |> 
   forecast(test)
 
 (RMSE_ETS_AAdA <-accuracy(fct_ETS_AAdA, ts_monthly_total)$RMSE)
 ```
 
-RMSE: 86652.98.  Much better.  Let's visualize it:
+RMSE: 94780.86
 
 ### Vusialize ETS with trend damping
 
@@ -268,16 +269,16 @@ mod_Auto_ETS <-train |>
 report(mod_Auto_ETS)
 ```
 
-It has chosen a different model, ANA.  Let's see how it does on the test data
+It has chosen a much different model, MNM.  Let's see how it does on the test data
 
 ```{r}
-fct_ETS_ANA <- mod_Auto_ETS |> 
+fct_ETS_MNM <- mod_Auto_ETS |> 
   forecast(test)
 
-(RMSE_ETS_ANA <-accuracy(fct_ETS_ANA, ts_monthly_total)$RMSE)
+(RMSE_ETS_MNM <-accuracy(fct_ETS_MNM, ts_monthly_total)$RMSE)
 ```
 
-The RMSE is 103125.5.  Not the best.  
+The RMSE is 116723.8.  Not the best.  
 
 How would an ARIMA model fare?
 
@@ -301,7 +302,7 @@ fct_Auto_ARIMA <- mod_Auto_ARIMA |>
 (RMSE_ARIMA_100_110_12 <-accuracy(fct_Auto_ARIMA, ts_monthly_total)$RMSE)
 ```
 
-138587.7.  Not nearly as good as out best ETS.
+114677.4.  Not nearly as good as out best ETS.
 
 Let's see what it's forecast looks like:
 
@@ -311,13 +312,13 @@ autoplot(train) +
   autolayer(test)
 ```
 
-## Model Summations
+# Model Summations
 
 ```{r}
 cat('seasonal Naive:\t\t\t', RMSE_seasonal_naive_monthly, '\n', 
     'ETS_AAA:\t\t\t', RMSE_ETS_AAA_monthly, '\n',
     'ETS_AAdA:\t\t\t', RMSE_ETS_AAdA, '\n',
-    'ETS_ANA:\t\t\t', RMSE_ETS_ANA, '\n',
+    'ETS_ANA:\t\t\t', RMSE_ETS_MNM, '\n',
     'ARIMA (1,0,0)(1,1,0)[12]\t', RMSE_ARIMA_100_110_12)
 ```
 
@@ -354,7 +355,7 @@ ts_monthly_total |>
   correlate()
 ```
 
-The correlation is now 0.5012866.  Much better.
+The correlation is now 0.5053488  Much better.
 
 Post covid plot:
 
@@ -402,7 +403,7 @@ report(ts_reg_mod1)
 ```
 
 
-Terrible R-squared.
+Terrible adjusted R-square (0.2353)
 
 With slope and season:
 
@@ -415,7 +416,7 @@ report(ts_reg_mod2)
 
 ```
 
-Takeaway:  The adjusted R^2 is 0.9008, which is very good. June seems to have the highest beta value.  monthly total violations has a tiny beta value, by far.  This shows that seasonality has a larger impact on total cyclists than monthly total violations.
+Takeaway:  The adjusted R^2 is 0.8984, which is very good. June-Sept seems to have the highest beta values.  monthly total violations has a tiny beta value, by far.  This shows that seasonality has a larger impact on total cyclists than monthly total violations.
 
 
 Is monthly total cyclists normally distributed?  
@@ -434,20 +435,20 @@ Ans: Not perfect, but, it's normal enough.
 
 ```
 
-# ETS_AAdA (best model) evaluation
+# ETS_AAA (best model) evaluation
 
 ```{r}
-mod_ETS_AAdA <- train %>%
-  model(ETS(monthly_total_cyclists ~ error("A") + trend("Ad") + season("A")))
+mod_ETS_AAA <- train %>%
+  model(ETS(monthly_total_cyclists ~ error("A") + trend("A") + season("A")))
 
-gg_tsresiduals(mod_ETS_AAdA)
+gg_tsresiduals(mod_ETS_AAA)
 ```
 
 Takeaway: resids look normal enough.  possible autocorrelation. Tests:
 
 ```{r}
-augment(mod_ETS_AAdA) |> features(.innov, box_pierce, lag = 12)
-augment(mod_ETS_AAdA) |> features(.innov, ljung_box, lag = 12)
+augment(mod_ETS_AAA) |> features(.innov, box_pierce, lag = 12)
+augment(mod_ETS_AAA) |> features(.innov, ljung_box, lag = 12)
 ```
 
 Both tests fail to reject null.  We may safely conclude that residuals are white noise.
@@ -455,15 +456,15 @@ Both tests fail to reject null.  We may safely conclude that residuals are white
 Let's forecast through 2025
 
 ```{r}
-fct_ETS_AAdA <- train |> 
-  model(ETS(monthly_total_cyclists ~ error("A") + trend("Ad") + season("A"))) |> 
+fct_ETS_AAA <- train |> 
+  model(ETS(monthly_total_cyclists ~ error("A") + trend("A") + season("A"))) |> 
   forecast(h=36)
 
 ts_monthly_total |> 
   autoplot(monthly_total_cyclists) +
   #autoplot(ts_monthly_total$monthly_total_cyclists) +
-  autolayer(fct_ETS_AAdA, size=0.7)+
+  autolayer(fct_ETS_AAA, size=0.7)+
   autolayer(test)
 ```
 
-Takeaway:  This model seems to adequately keep the summer peaks steady while slowly increasing the winter lull.  This fits our eda.  
+Takeaway:  This model seems to adequately increase the summer peaks while slowly increasing the winter lulls.  This fits our eda.  
