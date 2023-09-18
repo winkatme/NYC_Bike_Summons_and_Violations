@@ -5,7 +5,7 @@ library(mapview, warn.conflicts = FALSE)
 library(leaflet)
 
 # import and quickly clean the data
-df_bike_violations <- read.csv("https://raw.githubusercontent.com/winkatme/NYC_Bike_Summons_and_Violations/main/Data/Processed/df_bike_violations_2023-08-05.csv")
+df_bike_violations <- read.csv("https://raw.githubusercontent.com/winkatme/NYC_Bike_Summons_and_Violations/main/Data/Processed/df_bike_violations_2023-09-16.csv")
 
 df_bike_violations <- df_bike_violations |>
   mutate(description = as.factor(description)) |>
