@@ -40,7 +40,7 @@ ui <- fluidPage(
 
       dateRangeInput("date_range", "Date range",
         start = "2018-01-07",
-        end = "2023-03-30"
+        end = "2023-06-22"
       ),
       htmlOutput("date_start_end_as_text")
     ),
