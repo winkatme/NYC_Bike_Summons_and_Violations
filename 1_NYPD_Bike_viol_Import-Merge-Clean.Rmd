@@ -169,6 +169,11 @@ df_historic <- df_historic |>
 str(df_historic)
 ```
 
+```{r}
+date(range(df_historic$violation_date))
+```
+
+
 ### Merge historic with current
 
 ```{r}
@@ -358,7 +363,7 @@ df_bicycle_counters_boroughs |>
 # observations:
 
 ## 1. willis ave has 3
-# according to metadata file (DataDictionary-BicycleCounters.xlsx on web page with original dataset), the willis ave station counts bikes (300029647), pedestrians (300029648) and has the sume of those (300028963).  Therefore, let's remove the two that are not exclusively bikes (removed below).
+# according to metadata file (DataDictionary-BicycleCounters.xlsx on web page with original dataset), the willis ave station counts bikes (300029647), pedestrians (300029648) and has the sums of those (300028963).  Therefore, let's remove the two that are not exclusively bikes (removed below).
 
 ## 2. amsterdam/columbus has 2 at the same lat/lon.  should one be deleted?  the streets are a block away and run in different directions. Check to see if totals are equal.
 # test to see if counts for a single day are the same:
