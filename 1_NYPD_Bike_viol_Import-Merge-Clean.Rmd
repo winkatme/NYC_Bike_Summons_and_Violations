@@ -204,7 +204,6 @@ df_merged <- df_merged |>
 #   filter(violation_code=='1110A')
 
 str(df_merged)
-tail(df_merged)
 ```
 
 ### Clean merged data
@@ -251,6 +250,9 @@ str(df_counts)
 df_counts_raw |>
   distinct(id) |>
   arrange(id)
+
+df_counts |> 
+  distinct(id)
 ```
 
 Date range
@@ -258,8 +260,6 @@ Date range
 ```{r}
 date(range(df_counts$date))
 ```
-
-
 
 ### Create daily and weekly rider total columns
 
@@ -545,7 +545,7 @@ Takeaway 1: there are 103 'na' entries for location coordinate data.  We can ign
 
 Takeaway 2: 92 for city_nm to be removed/cleaned.
 
-Takeaway 3: 2068 for description to be filled in.
+Takeaway 3: 2075 for description to be filled in.
 
 ### 'description' NA's
 
@@ -695,7 +695,7 @@ df_bike_violations |>
   filter(city_nm == "NEW YORK")
 ```
 
-Takeaway:  these dont have longitudinal or latitudinal info.  We may therefore remove them.  And since filter in dplyr automatically removes NAs, the rest of the NA's are removed as well.  So that is 92 NA's + 3 city_nm=='New York' = 95 removed values.  We are left with 122,509 rows, when we started with 122,604.
+Takeaway:  these dont have longitudinal or latitudinal info.  We may therefore remove them.  And since filter in dplyr automatically removes NAs, the rest of the NA's are removed as well.  So that is 92 NA's + 3 city_nm=='New York' = 95 removed values.  We are left with 126,701 rows, when we started with ?.
 
 ```{r remove city_nm==NewYork}
 df_bike_violations <- df_bike_violations |>

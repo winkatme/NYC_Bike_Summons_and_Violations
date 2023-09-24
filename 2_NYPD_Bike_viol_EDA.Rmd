@@ -347,7 +347,7 @@ date(range(df_bike_violations$violation_date))
 
 ## Which dates had the highest rider counts?
 
-```{r top-10-daily-total-cyclist-days}
+```{r top-10-busiest-cyclist-days}
 df_bike_violations |>
   mutate(violation_date = date(violation_date)) |>
   arrange(desc(daily_total_cyclists)) |>
@@ -360,7 +360,7 @@ Takeaway: Busiest single days were mostly in the autumn of 2019.
 
 ## Which dates had the highest number of violations, and how many violations?
 
-```{r}
+```{r top-10-busiest-violation-days}
 df_bike_violations |>
   mutate(violation_date = date(violation_date)) |>
   summarize(
@@ -566,7 +566,7 @@ length(fct_unique(df_bike_violations$violation_code)). # 188
 ## How many total violations were handed out to cyclists since 2018?
 
 ```{r}
-length(df_bike_violations$violation_code)  # 1226701
+length(df_bike_violations$violation_code)  # 126701
 ```
 
 ## What were the most common violations?
@@ -602,7 +602,7 @@ df_bike_violations |>
 
 ## Plot: Total violations per year, per borough.
 
-```{r plot-Yearly-Cyclist-Violations}
+```{r plot-Yearly-Cyclist-Violations-per-borough}
 df_bike_violations |> 
   group_by(year=year(violation_date), city_nm) |> 
   ggplot(aes(x=year, fill=city_nm))+
@@ -661,7 +661,7 @@ df_bike_violations |>
 
 For the sake of clustering, let's just view the most common violation, 11111D1C, for the previous year of data (since June of 2022):
 
-```{r geomap-most-common-voilation-past-year}
+```{r geomap-most-common-violation-past-year}
 # Let's just view fct_lump==1111D1C for the previous year:
 df_bike_violations |>
   mutate(fct_lump = fct_lump(f = df_bike_violations$violation_code, n = 9)) |>
