@@ -35,6 +35,8 @@ library(janitor)
 library(styler)
 #install.packages('patchwork')
 library(patchwork)
+#install.packages('kableExtra')
+library(kableExtra)
 ```
 
 # Import Data
@@ -347,20 +349,29 @@ date(range(df_bike_violations$violation_date))
 
 ## Which dates had the highest rider counts?
 
-```{r top-10-busiest-cyclist-days}
+```{r table-top-10-busiest-cyclist-days}
+install.packages("finalfit")
+library(finalfit)
+
 df_bike_violations |>
   mutate(violation_date = date(violation_date)) |>
   arrange(desc(daily_total_cyclists)) |>
   distinct(violation_date, daily_total_cyclists) |>
   slice(1:10) |>
-  kable(caption = "Top 10 busiest cyclist days", align = "c")
+  kable(caption = "Top 10 busiest cyclist days", align = "c") |> 
+  kable_classic(full_width = F, html_font = "Cambria", position = "left")
+
 ```
 
 Takeaway: Busiest single days were mostly in the autumn of 2019.
 
 ## Which dates had the highest number of violations, and how many violations?
 
-```{r top-10-busiest-violation-days}
+```{r table-top-10-busiest-violation-days}
+install.packages('kableExtra')
+library(kableExtra)
+# Source: https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_html.html
+
 df_bike_violations |>
   mutate(violation_date = date(violation_date)) |>
   summarize(
@@ -369,7 +380,8 @@ df_bike_violations |>
   ) |>
   arrange(desc(daily_total_violations)) |>
   slice(1:10) |>
-  kable(caption = "Top 10 busiest violation days", align = "c")
+  kable(caption = "Top 10 busiest violation days", align = "c") |> 
+  kable_classic(full_width = F, html_font = "Cambria", position = "left")
 ```
 
 Takeaway: mostly warmer days in 2018 and 2019, pre-pandemic.
@@ -392,10 +404,12 @@ mapview(na.omit(df_bicycle_counters_boroughs), xcol = "longitude", ycol = "latit
 
 ## Bike counters per borough
 
-```{r bike-counters-per-borough}
+```{r table-bike-counters-per-borough}
 df_bicycle_counters_boroughs |> 
   group_by(borough) |> 
-  count()
+  count() |> 
+  kable(caption = 'Bike Counters per borough') |> 
+  kable_classic(full_width = F, html_font = "Cambria", position = "left")
 ```
 
 Takeaway: mostly in Manhattan. Even the ones in the Bronx and SI are located near Manhattan access points.
