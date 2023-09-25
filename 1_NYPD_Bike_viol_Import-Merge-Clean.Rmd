@@ -470,9 +470,7 @@ df_counts |>
 
 # optional: save csv to desktop, to upload to dropbox.  It is too large for github
 # last saved: 9/16/23
-write.csv(df_counts, '/Users/<username>/Desktop/df_counts.csv', row.names=FALSE)
-
-getwd()
+#write.csv(df_counts, '/Users/<username>/Desktop/df_counts.csv', row.names=FALSE)
 ```
 
 
@@ -532,6 +530,8 @@ Total rows before NA cleaning:
 ```{r}
 dim(df_bike_violations)
 ```
+
+126812.
 
 Total NA's per column:
 
@@ -617,6 +617,14 @@ df_bike_violations |>
 
 No. 
 
+How many items are remaining?
+
+```{r}
+dim(df_bike_violations)
+```
+
+126796.  This verifies that 16 NAs have been removed.
+
 ### 'city_nm' NAs
 
 ```{r}
@@ -695,7 +703,7 @@ df_bike_violations |>
   filter(city_nm == "NEW YORK")
 ```
 
-Takeaway:  these dont have longitudinal or latitudinal info.  We may therefore remove them.  And since filter in dplyr automatically removes NAs, the rest of the NA's are removed as well.  So that is 92 NA's + 3 city_nm=='New York' = 95 removed values.  We are left with 126,701 rows, when we started with ?.
+Takeaway:  These dont have longitudinal or latitudinal info.  We may therefore remove them.  And since filter() in dplyr automatically removes NAs, the rest of the NA's are removed as well.  So that is 92 NA's + 3 city_nm=='New York' = 95 removed values.  We are left with 126,701 rows, when we started with 126812.
 
 ```{r remove city_nm==NewYork}
 df_bike_violations <- df_bike_violations |>
@@ -705,13 +713,18 @@ df_bike_violations <- df_bike_violations |>
 # df_bike_violations |>
 #   filter(city_nm == "NEW YORK")
 
-
-dim(df_bike_violations)
-
 df_bike_violations |>
   group_by(city_nm) |>
   summarize(sum = sum(n()))
 ```
+
+Double check rows remaining:
+
+```{r}
+dim(df_bike_violations)
+```
+
+126701.
 
 View the remaining na's
 
@@ -722,6 +735,13 @@ df_bike_violations |>
 ```
 
 Takeaway: We are left with 8 entries that have NA values for their coordinates only.  We may leave these in, as there is still valuable information for their violation dates and codes.  These can easily be dropped for any geo mapping, if required.
+
+
+### Total NAs removed
+
+```{r}
+16 + 95
+```
 
 
 ## Optional - save csv
