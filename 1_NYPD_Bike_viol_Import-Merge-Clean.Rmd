@@ -541,13 +541,11 @@ df_bike_violations |>
   t()
 ```
 
-Takeaway 1: there are 103 'na' entries for location coordinate data.  We can ignore these for now, and remove them when data location is required.  There is no sense in discarding useful information, like violation codes and violation dates.
-
+Takeaway 1: there are 103 'na' entries for location coordinate data.
 Takeaway 2: 92 for city_nm to be removed/cleaned.
-
 Takeaway 3: 2075 for description to be filled in.
 
-### 'description' NA's
+### 'description' NA's (16)
 
 ```{r}
 # check to see which Violation codes correspond to empty description cells
@@ -608,7 +606,7 @@ df_bike_violations <- df_bike_violations |>
   filter(!is.na(description))
 ```
 
-Are there any NA's remaining for 'description'?
+Double-check: Are there any NA's remaining for 'description'?
 
 ```{r}
 df_bike_violations |>
@@ -625,7 +623,7 @@ dim(df_bike_violations)
 
 126796.  This verifies that 16 NAs have been removed.
 
-### 'city_nm' NAs
+### 'city_nm' NAs (95)
 
 ```{r}
 df_bike_violations |>
@@ -633,9 +631,33 @@ df_bike_violations |>
   summarize(sum = sum(n()))
 ```
 
+First, let's examine the head and tail of the 92 city_nm na's:
+
+```{r}
+df_bike_violations |> 
+  filter(is.na(city_nm)) |> 
+  head()
+
+df_bike_violations |> 
+  filter(is.na(city_nm)) |> 
+  tail()
+```
+
+There is no logitudinal or latitudinal data.  
+
+Can we verify that there is no long-lat in all 92 city_nm NA entries?
+
+```{r}
+df_bike_violations |> 
+  filter(is.na(city_nm)&is.na(latitude)) |> 
+  count()
+```
+
+92.  Since all 92 NA values do not have any longitudinal or latitudinal data either, we may remove them.  They will be removed further down when we use the filter() command. 
+
 Since "New York" is not a borough, let's first examine and then change the city_nm == 'New York' values to their specific boroughs.
 
-We then remove any unchanged city_nm == 'New York' rows.  Because we use dplyr::filter(), this has the effect of also removing any NAs.
+We then remove any unchanged city_nm == 'New York' rows, and also any NAs
 
 Since New York is colloquially synonymous with Manhattan, let's view the city_nm == 'New York' values on a map to see if there are any outside of Manhattan:
 
