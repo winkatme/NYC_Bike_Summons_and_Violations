@@ -358,7 +358,7 @@ df_bike_violations |>
   arrange(desc(daily_total_cyclists)) |>
   distinct(violation_date, daily_total_cyclists) |>
   slice(1:10) |>
-  kable(caption = "Top 10 busiest cyclist days", align = "c") |> 
+  kable(caption = "Top 10 Busiest Cycling Days", col.names = linebreak(c('Violation Date', 'Daily Total Cyclists'), align = "l")) |> 
   kable_classic(full_width = F, html_font = "Cambria", position = "left")
 
 ```
@@ -380,7 +380,7 @@ df_bike_violations |>
   ) |>
   arrange(desc(daily_total_violations)) |>
   slice(1:10) |>
-  kable(caption = "Top 10 busiest violation days", align = "c") |> 
+  kable(caption = "Top 10 busiest violation days", col.names = linebreak(c('Violation Date', 'Daily Total Violations'), align = "l")) |> 
   kable_classic(full_width = F, html_font = "Cambria", position = "left")
 ```
 
@@ -408,7 +408,7 @@ mapview(na.omit(df_bicycle_counters_boroughs), xcol = "longitude", ycol = "latit
 df_bicycle_counters_boroughs |> 
   group_by(borough) |> 
   count() |> 
-  kable(caption = 'Bike Counters per borough') |> 
+  kable(caption = 'Bike Counters per borough', col.names = linebreak(c('Borough', 'Number'), align = "l")) |> 
   kable_classic(full_width = F, html_font = "Cambria", position = "left")
 ```
 
@@ -585,7 +585,7 @@ length(df_bike_violations$violation_code)  # 126701
 
 ## What were the most common violations?
 
-```{r 10-most-common-violations-table, message=FALSE}
+```{r table-10-most-common-violations-table, message=FALSE}
 df_bike_violations |>
   mutate(violation_date = date(violation_date)) |>
   summarize(
@@ -595,7 +595,8 @@ df_bike_violations |>
   arrange(desc(total)) |>
   mutate(percent = 100 * round(total / sum(total), 3)) |>
   slice(1:10) |>
-  kable()
+    kable(caption = 'Top 10 Violations', col.names = linebreak(c('Violation Code', 'Description', 'Total', 'Percent'), align = "l")) |> 
+  kable_classic(full_width = F, html_font = "Cambria", position = "left")
 
 # note:  12332: ATTACHING SELF TO MOVING MOTOR VEHICLE a/k/a, the Marty McFly rule
 ```
