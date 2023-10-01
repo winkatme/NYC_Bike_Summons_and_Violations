@@ -22,7 +22,7 @@ library(corrr)
 library(slider)
 library(forcats)
 #install.packages('devtools')
-devtools::install_github('smin95/smplot2', force = TRUE)
+#devtools::install_github('smin95/smplot2', force = TRUE)
 library(smplot2)
 # install.packages('sf')
 library(sf)
@@ -54,26 +54,11 @@ df_bike_violations <- df_bike_violations |>
 
 # Create and clean daily tsibble for time series analysis
 
+Fill date gaps, count total violations per day, and re-join daily counts data to fill in missing daily rider count from the former date gaps.
+
 ```{r daily-tsibble, message=FALSE, warning=FALSE}
-ts_daily_total <- df_bike_violations |>
-  mutate(violation_date = as_date(violation_date)) |>
-  group_by(violation_date, daily_total_cyclists) |>
-  summarize(daily_total_violations = sum(n())) |>
-  ungroup() |>
-  as_tsibble(index = violation_date)
 
-# check for missing dates  # ans: 24
-ts_daily_total |>
-  # filter(is.na(daily_total_cyclists)) |>
-  count_gaps() |> 
-  nrow()
-```
-
-
-Fill gaps in dates and re-join with df_counts data, so that gapped dates now have total cyclists columns. Replace violation na's with 0's.
-
-```{r clean3, warning=FALSE, message=FALSE}
-# import df_counts:
+# import and clean df_counts:
 path3 <- "https://www.dropbox.com/s/nffkpwuz1u6kd5t/df_counts.csv?dl=1"
 df_counts_dl <- readr::read_csv(path3)
 
@@ -94,28 +79,24 @@ df_counts <-df_counts_dl |>
   ungroup() |>
   arrange(date) |>
   select(!c("date(date)", "yearweek(date)", countid, status))
-  
 
-head(df_counts)
 
-# fill date gaps for ts_daily_total and join with df_counts
-ts_daily_total<-ts_daily_total |>
-  fill_gaps() |>
-  select(-daily_total_cyclists) |>
-  mutate(date = violation_date) |>
-  left_join(y = df_counts, by = "date", multiple = "any") |>
-  rename(daily_total_cyclists = daily_total) |>
-  select(-c("date", "weekly_total")) |>
-  mutate_at("daily_total_violations", ~ replace_na(., 0))
+# create the daily counts tsibble
+ts_daily_total <- df_bike_violations |> 
+  group_by(violation_date = as_date(violation_date)) |> 
+  summarise(daily_total_violations = n()) |> 
+  as_tsibble(index = violation_date) |> 
+  fill_gaps() |> 
+  mutate(date = violation_date) |> 
+  left_join(y = df_counts, by = "date", multiple = "any") |> 
+  rename(daily_total_cyclists = daily_total)|> 
+  select(-c(date, id, counts, weekly_total))
 
-# double check for na's:
-# ts_daily_total |>
-#  filter(is.na(daily_total_cyclists))
-
-# double check for gaps:
 ts_daily_total |> 
-  count_gaps()
+  autoplot(daily_total_violations)
+
 ```
+
 
 ## Optional: Create st/sf for spatial analysis
 
@@ -718,13 +699,13 @@ Takeaway: the trend does not look out of the ordinary.
 
 ## Plot: daily total cyclists over time
 
-```{r message=FALSE }
+```{r plot-total-daily-cyclists-over-time, message=FALSE }
 ts_daily_total |>
   autoplot(daily_total_cyclists) +
   geom_smooth(method = "lm")
 ```
 
-Takeaway: ridership did not change much pre vs. post pandemic. not even during lockdown, although possible hiccup. However, ridership seems to be increasing in the colder months while remaining level in the warmer months. Since the ridership is clearly cyclical, an average won't tell us as much as we like. But we can still see an increase over time. However, this could be influence by less ridership earlier on (in 2018).  
+Takeaway: ridership did not change much pre vs. post pandemic. not even during lockdown, although possible hiccup. However, ridership seems to be increasing in the colder months while remaining level in the warmer months (This was shown to be false when analyzing slope). Since the ridership is clearly cyclical, an average won't tell us as much as we like. But we can still see an increase over time. However, this could be influence by less ridership earlier on (in 2018).  
 
 ### Slope: Daily increase in number of cyclists
 
@@ -764,7 +745,7 @@ This isn't too accurate early on, as there were fewer bike counters used.
 
 ## Histogram: daily total cyclists
 
-```{r}
+```{r hist-daily-total-cyclists}
 ts_daily_total |>
   ggplot(aes(x = daily_total_cyclists)) +
   geom_histogram(bins = 80)
