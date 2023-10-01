@@ -597,6 +597,51 @@ df_bike_violations |>
   mapview(xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)
 ```
 
+
+
+## Did the type of violations change after covid?
+
+Let's look at top 10 before lockdown and top 10 after.
+
+Before: 
+
+```{r}
+
+df_bike_violations |>
+  mutate(violation_date = date(violation_date)) |>
+  filter(violation_date < '2020-04-01') |> 
+  summarise(
+    total = sum(n()),
+    .by = c(violation_code, description)
+  ) |>
+  arrange(desc(total)) |>
+  mutate(percent = 100 * round(total / sum(total), 3)) |>
+  slice(1:10) |>
+    kable(caption = 'Top 10 Violations, pre-Covid lockdown', col.names = linebreak(c('Violation Code', 'Description', 'Total', 'Percent'), align = "l")) |> 
+  kable_classic(full_width = F, html_font = "Cambria", position = "left")
+```
+
+After
+
+```{r}
+df_bike_violations |>
+  mutate(violation_date = date(violation_date)) |>
+  filter(violation_date > '2020-04-01') |> 
+  summarise(
+    total = sum(n()),
+    .by = c(violation_code, description)
+  ) |>
+  arrange(desc(total)) |>
+  mutate(percent = 100 * round(total / sum(total), 3)) |>
+  slice(1:10) |>
+    kable(caption = 'Top 10 Violations, post-Covid lockdown', col.names = linebreak(c('Violation Code', 'Description', 'Total', 'Percent'), align = "l")) |> 
+  kable_classic(full_width = F, html_font = "Cambria", position = "left")
+```
+
+Takeaway:  Post-covid lockdown, you are more likely to get a ticket by disobeying a red light.
+
+
+
 ## Plot: Total violations per year, per borough.
 
 ```{r plot-Yearly-Cyclist-Violations-per-borough}
@@ -695,6 +740,8 @@ df_bike_violations |>
 ```
 
 Takeaway: the trend does not look out of the ordinary.
+
+
 
 # EDA: Daily Cyclists
 
@@ -1042,16 +1089,6 @@ ts_daily_total |>
 ```
 
 Takeaway: Setting window to 90 looks better.  Takes into account increase in 2023.  Looking at season_year, we see that the ratio peaks in Feb-March or so, then dips, slowly increases until around Nov, then dips the most around New Years. 
-
-
-
-
-
-## To Do: Did the type of violations change after covid?
-
-```{r}
-
-```
 
 
 
