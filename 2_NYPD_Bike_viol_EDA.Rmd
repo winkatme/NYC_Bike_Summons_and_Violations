@@ -37,6 +37,8 @@ library(styler)
 library(patchwork)
 #install.packages('kableExtra')
 library(kableExtra)
+#install.packages("finalfit")
+library(finalfit)
 ```
 
 # Import Data
@@ -304,19 +306,19 @@ class(nyc)
 
 ```{r monthly-tsibble}
 # create a monthly data tsibble from cleaned daily tsibble
-ts_monthly_total <- ts_daily_total |>
-  index_by(yearmonth(violation_date)) |>
-  summarize(across(c("daily_total_violations", "daily_total_cyclists"), ~ sum(.x, na.rm = TRUE))) |>
-  rename(monthly_total_cyclists = daily_total_cyclists) |>
-  rename(monthly_total_violations = daily_total_violations) |>
-  rename(date = "yearmonth(violation_date)")
 
-ts_yearly_total <- ts_daily_total |>
-  index_by(year(violation_date)) |>
-  summarize(across(c("daily_total_violations", "daily_total_cyclists"), ~ sum(.x, na.rm = TRUE))) |>
-  rename(yearly_total_cyclists = daily_total_cyclists) |>
-  rename(yearly_total_violations = daily_total_violations) |>
-  rename(date = "year(violation_date)")
+ts_monthly_total <- ts_daily_total |> 
+  index_by(year_month = ~ yearmonth(.)) |> 
+  summarise(monthly_total_cyclists = sum(daily_total_cyclists),
+            monthly_total_violations = sum(daily_total_violations, na.rm = TRUE)) |> 
+  rename(violation_date = year_month)
+
+
+ts_yearly_total <- ts_daily_total |> 
+  index_by(year = ~ year(.)) |> 
+  summarise(yearly_total_cyclists = sum(daily_total_cyclists),
+            yearly_total_violations = sum(daily_total_violations, na.rm = TRUE)) |> 
+  rename(violation_date = year)
 
 ```
 
@@ -331,8 +333,7 @@ date(range(df_bike_violations$violation_date))
 ## Which dates had the highest rider counts?
 
 ```{r table-top-10-busiest-cyclist-days}
-install.packages("finalfit")
-library(finalfit)
+#library(finalfit)
 
 df_bike_violations |>
   mutate(violation_date = date(violation_date)) |>
