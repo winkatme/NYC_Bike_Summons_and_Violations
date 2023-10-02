@@ -29,36 +29,54 @@ df_bike_violations <- df_bike_violations |>
   mutate(violation_date = as.POSIXct(violation_date))
 
 # creat daily tsibble
-ts_daily_total <- df_bike_violations |>
-  mutate(violation_date = as_date(violation_date)) |>
-  group_by(violation_date, daily_total_cyclists) |>
-  summarize(daily_total_violations = sum(n())) |>
-  ungroup() |>
-  as_tsibble(index = violation_date)
 
-# fill date gaps
-# import df_counts
+# import and clean df_counts:
 path3 <- "https://www.dropbox.com/s/nffkpwuz1u6kd5t/df_counts.csv?dl=1"
-df_counts <- readr::read_csv(path3)
+df_counts_dl <- readr::read_csv(path3)
 
-# fill date gaps for ts_daily_total and join with df_counts
-ts_daily_total <- ts_daily_total |>
-  fill_gaps() |>
-  select(-daily_total_cyclists) |>
-  mutate(date = violation_date) |>
-  left_join(y = df_counts, by = "date", multiple = "any") |>
-  rename(daily_total_cyclists = daily_total) |>
-  select(-c("date", "counts", "weekly_total")) |>
-  mutate_at("daily_total_violations", ~ replace_na(., 0))
 
-# create a monthly data tsibble from cleaned daily tsibble
-ts_monthly_total <- ts_daily_total |>
-  index_by(yearmonth(violation_date)) |>
-  summarize(across(c("daily_total_violations", "daily_total_cyclists"), ~ sum(.x, na.rm = TRUE))) |>
-  rename(monthly_total_cyclists = daily_total_cyclists) |>
-  rename(monthly_total_violations = daily_total_violations) |>
-  rename(date = "yearmonth(violation_date)")
+df_counts <-df_counts_dl |> 
+  group_by(date(date)) |>
+  mutate(daily_total = sum(counts)) |>
+  ungroup() |>
+  group_by(yearweek(date)) |>
+  mutate(weekly_total = sum(counts)) |>
+  ungroup() |>
+  arrange(date) |>
+  select(!c("date(date)", "yearweek(date)", countid, status))
 
+
+# create the daily counts tsibble
+ts_daily_total <- df_bike_violations |> 
+  group_by(violation_date = as_date(violation_date)) |> 
+  summarise(daily_total_violations = n()) |> 
+  as_tsibble(index = violation_date) |> 
+  fill_gaps() |> 
+  mutate(date = violation_date) |> 
+  left_join(y = df_counts, by = "date", multiple = "any") |> 
+  rename(daily_total_cyclists = daily_total)|> 
+  select(-c(date, id, counts, weekly_total))
+
+ts_daily_total |> 
+  count_gaps()
+```
+
+create a monthly data tsibble from cleaned daily tsibble
+
+```{r}
+
+ts_monthly_total <- ts_daily_total |> 
+  index_by(year_month = ~ yearmonth(.)) |> 
+  summarise(monthly_total_cyclists = sum(daily_total_cyclists),
+            monthly_total_violations = sum(daily_total_violations, na.rm = TRUE)) |> 
+  rename(violation_date = year_month)
+
+
+ts_yearly_total <- ts_daily_total |> 
+  index_by(year = ~ year(.)) |> 
+  summarise(yearly_total_cyclists = sum(daily_total_cyclists),
+            yearly_total_violations = sum(daily_total_violations, na.rm = TRUE)) |> 
+  rename(violation_date = year)
 ```
 
 
@@ -84,28 +102,20 @@ ts_monthly_total |>
 Training set is through May of 2022.  Test set is from June 2022 through June 2023.
 
 ```{r}
-train<-ts_monthly_total |> 
-  select(!monthly_total_violations) |> 
-  filter_index(~"2022-05")
+set.seed(99)
 
-test<-ts_monthly_total |> 
-  select(!monthly_total_violations) |> 
-  filter_index("2022-06"~.)
+train_monthly<-ts_monthly_total |> select(monthly_total_cyclists) |> filter_index(~"2022-05")
+test_monthly<-ts_monthly_total |> select(monthly_total_cyclists) |> filter_index("2022-06"~.)
 
-range(train$date)
-range(test$date)
+(range(train_monthly$violation_date))
+(range(test_monthly$violation_date))
 
-range(test_daily$date)
 
-train_daily<-ts_daily_total |> 
-  rename(date=violation_date) |> 
-  select(!c(countid, id, status)) |> 
-  filter_index(~"2022-05")
+train_daily<-ts_daily_total |> select(daily_total_cyclists) |> filter_index(~"2022-05")
+test_daily<-ts_daily_total |> select(daily_total_cyclists) |> filter_index("2022-06"~.)
 
-test_daily<-ts_daily_total |> 
-  rename(date=violation_date) |> 
-  select(!c(countid, id, status)) |> 
-  filter_index("2022-06"~.)
+(range(train_daily$violation_date))
+(range(test_daily$violation_date))
 ```
 
 ## Seasonal Naive forecast on monthly totals
@@ -123,11 +133,13 @@ ts_fc |>
 
 ### Seasonal naive monthly residuals
 
+lag = 12
+
 ```{r, warning=FALSE}
-train_snaive_mod <- train |> 
+train_snaive_mod <- train_monthly |> 
   model(model = NAIVE(monthly_total_cyclists ~ lag(12)))
 
-mean(augment(train_snaive_mod)$.resid, na.rm=TRUE)  # 85885.5
+mean(augment(train_snaive_mod)$.resid, na.rm=TRUE)  # 70130.59 (changes each time?)
 
 gg_tsresiduals(train_snaive_mod)
 ```
@@ -139,28 +151,28 @@ augment(train_snaive_mod) %>% features(.innov, box_pierce, lag = 12)
 augment(train_snaive_mod) %>% features(.innov, ljung_box, lag = 12)
 ```
 
-Takeaways: passes box_pierce, but almost passes ljung_box.  Resids don't look close to normal.  
+Takeaways: passes box_pierce, but fails ljung_box.  Resids don't seem normal.  
 
 ### Seasonal Naive RMSE
 
 ```{r}
 
-fct <-train |> 
+fct <-train_monthly |> 
   model(model = NAIVE(monthly_total_cyclists ~ lag(12))) |> 
-  forecast(test)
+  forecast(test_monthly)
 
 (RMSE_seasonal_naive_monthly <-accuracy(fct, ts_monthly_total)$RMSE)
 
 ```
 
-RMSE 139936.1	
+RMSE 139936.1
 
 ### Visualize the Seasonal Naive forecast:
 
 ```{r message=FALSE, warning=FALSE}
-autoplot(train) +
+autoplot(train_monthly) +
   autolayer(fct, PI = F, size=0.7)+
-  autolayer(test)
+  autolayer(test_monthly)
 ```
 
 Takeaway:  Errors can get extreme (less than 0 at one point). Does not take into account the trend of the data.  Let's compare to other methods.
@@ -170,9 +182,13 @@ Takeaway:  Errors can get extreme (less than 0 at one point). Does not take into
 
 ```{r}
 ts_daily_snaive_mod <- ts_daily_total |> 
-  model(model = NAIVE(daily_total_cyclists ~ lag(12)))
+  model(model = NAIVE(daily_total_cyclists ~ lag(365)))
 
-ts_fc <- ts_daily_snaive_mod|> forecast(h = "1 month")
+
+ts_daily_total |> 
+  count_gaps()
+
+ts_fc <- ts_daily_snaive_mod|> forecast(h = "1 year")
 
 ts_fc |> 
   autoplot(ts_daily_total)
@@ -201,9 +217,9 @@ fc |>
 How does it perform on the test set?
 
 ```{r}
-fct <- train |> 
+fct <- train_monthly |> 
   model(ETS(monthly_total_cyclists ~ error("A") + trend("A") + season("A"))) |> 
-  forecast(test)
+  forecast(test_monthly)
 
 (RMSE_ETS_AAA_monthly <-accuracy(fct, ts_monthly_total)$RMSE)
 
@@ -214,10 +230,10 @@ RMSE = 86248.05.  Better
 
 ### Visualize ETS_AAA
 
-```{r}
-autoplot(train) +
+```{r plot-ets-aaa}
+autoplot(train_monthly) +
   autolayer(fct, PI = F, size=0.7)+
-  autolayer(test)
+  autolayer(test_monthly)
 ```
 
 
@@ -226,9 +242,9 @@ Maybe the trend was too strong.  I wonder if we can do damping
 ## ETS with trend damping (ETS_AAdA)
 
 ```{r}
-fct_ETS_AAdA <- train |> 
+fct_ETS_AAdA <- train_monthly |> 
   model(ETS(monthly_total_cyclists ~ error("A") + trend("Ad") + season("A"))) |> 
-  forecast(test)
+  forecast(test_monthly)
 
 (RMSE_ETS_AAdA <-accuracy(fct_ETS_AAdA, ts_monthly_total)$RMSE)
 ```
@@ -238,9 +254,9 @@ RMSE: 94780.86
 ### Vusialize ETS with trend damping
 
 ```{r message=FALSE, warnings=FALSE}
-autoplot(train) +
+autoplot(train_monthly) +
   autolayer(fct_ETS_AAdA, size=0.7)+
-  autolayer(test)
+  autolayer(test_monthly)
 ```
 
 Does it look different when we train it on all of the data and forecast 2 years?
@@ -263,7 +279,7 @@ Just by looking at it, the peak in the summer of 2024 doesn't reach as high.  It
 What does the ETS command itself decide to be the best model for the training data?
 
 ```{r}
-mod_Auto_ETS <-train |> 
+mod_Auto_ETS <-train_monthly |> 
   model(ETS(monthly_total_cyclists))
 
 report(mod_Auto_ETS)
@@ -273,7 +289,8 @@ It has chosen a much different model, MNM.  Let's see how it does on the test da
 
 ```{r}
 fct_ETS_MNM <- mod_Auto_ETS |> 
-  forecast(test)
+  forecast(test_monthly)
+
 
 (RMSE_ETS_MNM <-accuracy(fct_ETS_MNM, ts_monthly_total)$RMSE)
 ```
@@ -287,7 +304,7 @@ How would an ARIMA model fare?
 Let's see what ARIMA model the auto-ARIMA chooses.
 
 ```{r}
-mod_Auto_ARIMA <- train |> 
+mod_Auto_ARIMA <- train_monthly |> 
   model(ARIMA(monthly_total_cyclists)) 
 
 report(mod_Auto_ARIMA)
@@ -297,7 +314,7 @@ report(mod_Auto_ARIMA)
 
 ```{r}
 fct_Auto_ARIMA <- mod_Auto_ARIMA |> 
-  forecast(test)
+  forecast(test_monthly)
 
 (RMSE_ARIMA_100_110_12 <-accuracy(fct_Auto_ARIMA, ts_monthly_total)$RMSE)
 ```
@@ -307,9 +324,9 @@ fct_Auto_ARIMA <- mod_Auto_ARIMA |>
 Let's see what it's forecast looks like:
 
 ```{r message=FALSE, warning=FALSE}
-autoplot(train) +
+autoplot(train_monthly) +
   autolayer(fct_Auto_ARIMA, size=0.7)+
-  autolayer(test)
+  autolayer(test_monthly)
 ```
 
 # Model Summations
@@ -372,9 +389,11 @@ Looks better.  What if we color it by month?
 ```{r}
 ts_monthly_total |> 
   filter_index('2020-04' ~.) |> 
-  mutate(month=as.factor(month(date))) |> 
+  mutate(month=as.factor(month(violation_date))) |> 
   ggplot(aes(x=monthly_total_violations, y=monthly_total_cyclists, col=month))+
   geom_point()
+
+ts_monthly_total
 ```
 
 Takeaway: Visually, the months do seem to cluster together.  
@@ -422,10 +441,14 @@ Takeaway:  The adjusted R^2 is 0.8984, which is very good. June-Sept seems to ha
 Is monthly total cyclists normally distributed?  
 
 ```{r}
+shapiro.test(ts_monthly_total$monthly_total_cyclists) # no:  p-value = 0.0079
+
 qqnorm(ts_monthly_total$monthly_total_cyclists)
 ```
 
-Ans: Not perfect, but, it's normal enough.
+
+
+Ans: NO
 
 
 ## To do: Can we foreast daily violations?
@@ -438,7 +461,7 @@ Ans: Not perfect, but, it's normal enough.
 # ETS_AAA (best model) evaluation
 
 ```{r}
-mod_ETS_AAA <- train %>%
+mod_ETS_AAA <- train_monthly %>%
   model(ETS(monthly_total_cyclists ~ error("A") + trend("A") + season("A")))
 
 gg_tsresiduals(mod_ETS_AAA)
@@ -456,7 +479,7 @@ Both tests fail to reject null.  We may safely conclude that residuals are white
 Let's forecast through 2025
 
 ```{r}
-fct_ETS_AAA <- train |> 
+fct_ETS_AAA <- train_monthly |> 
   model(ETS(monthly_total_cyclists ~ error("A") + trend("A") + season("A"))) |> 
   forecast(h=36)
 
@@ -464,7 +487,7 @@ ts_monthly_total |>
   autoplot(monthly_total_cyclists) +
   #autoplot(ts_monthly_total$monthly_total_cyclists) +
   autolayer(fct_ETS_AAA, size=0.7)+
-  autolayer(test)
+  autolayer(test_monthly)
 ```
 
 Takeaway:  This model seems to adequately increase the summer peaks while slowly increasing the winter lulls.  This fits our eda.  
