@@ -337,8 +337,19 @@ cat('seasonal Naive:\t\t\t', RMSE_seasonal_naive_monthly, '\n',
     'ETS_AAdA:\t\t\t', RMSE_ETS_AAdA, '\n',
     'ETS_ANA:\t\t\t', RMSE_ETS_MNM, '\n',
     'ARIMA (1,0,0)(1,1,0)[12]\t', RMSE_ARIMA_100_110_12)
+
 ```
 
+```{r table-forecasting-methods}
+tests <- c('Seasonal Naive', 'ETS_AAA', 'ETS_AAdA', 'ETS_ANA',  'ARIMA (1,0,0)(1,1,0)[12]')
+RMSE <- c(RMSE_seasonal_naive_monthly, RMSE_ETS_AAA_monthly, RMSE_ETS_AAdA, RMSE_ETS_MNM, RMSE_ARIMA_100_110_12)
+
+df_forecasting <- data.frame(tests, RMSE)
+
+df_forecasting |> 
+  kable(caption = "Forecasts", col.names = linebreak(c('Forecasting Method', 'RMSE'), align = "l")) |> 
+  kable_classic(full_width = F, html_font = "Cambria", position = "left")
+```
 
 
 
