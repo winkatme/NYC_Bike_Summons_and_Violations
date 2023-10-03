@@ -12,6 +12,8 @@ library(tidyverse)
 library(fpp3)
 #install.packages("urca")
 library(urca)
+library(kableExtra)
+library(corrr)
 ```
 
 # Import daily and monthly tsibbles
@@ -222,8 +224,6 @@ fct <- train_monthly |>
   forecast(test_monthly)
 
 (RMSE_ETS_AAA_monthly <-accuracy(fct, ts_monthly_total)$RMSE)
-
-fct
 ```
 
 RMSE = 86248.05.  Better
@@ -341,7 +341,7 @@ cat('seasonal Naive:\t\t\t', RMSE_seasonal_naive_monthly, '\n',
 ```
 
 ```{r table-forecasting-methods}
-tests <- c('Seasonal Naive', 'ETS_AAA', 'ETS_AAdA', 'ETS_ANA',  'ARIMA (1,0,0)(1,1,0)[12]')
+tests <- c('Seasonal Naive', 'ETS_AAA', 'ETS_AAdA', 'ETS_MNM',  'ARIMA (1,0,0)(1,1,0)[12]')
 RMSE <- c(RMSE_seasonal_naive_monthly, RMSE_ETS_AAA_monthly, RMSE_ETS_AAdA, RMSE_ETS_MNM, RMSE_ARIMA_100_110_12)
 
 df_forecasting <- data.frame(tests, RMSE)
@@ -376,11 +376,12 @@ Takeway:  it looks like there might be two separate groups here.  My guess is th
 
 Post covid cor:
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 ts_monthly_total |> 
   filter_index('2020-04'~.) |> 
   select(monthly_total_violations, monthly_total_cyclists) |> 
   correlate()
+
 ```
 
 The correlation is now 0.5053488  Much better.
@@ -404,7 +405,6 @@ ts_monthly_total |>
   ggplot(aes(x=monthly_total_violations, y=monthly_total_cyclists, col=month))+
   geom_point()
 
-ts_monthly_total
 ```
 
 Takeaway: Visually, the months do seem to cluster together.  
@@ -467,15 +467,18 @@ Ans: NO
 
 ```{r}
 
+
+
 ```
 
 # ETS_AAA (best model) evaluation
 
-```{r}
+```{r plot-ets-aaa-resids, message=FALSE, warning=FALSE}
 mod_ETS_AAA <- train_monthly %>%
   model(ETS(monthly_total_cyclists ~ error("A") + trend("A") + season("A")))
 
-gg_tsresiduals(mod_ETS_AAA)
+gg_tsresiduals(mod_ETS_AAA)+
+  ggtitle('ETS AAA Residuals')
 ```
 
 Takeaway: resids look normal enough.  possible autocorrelation. Tests:
@@ -487,9 +490,14 @@ augment(mod_ETS_AAA) |> features(.innov, ljung_box, lag = 12)
 
 Both tests fail to reject null.  We may safely conclude that residuals are white noise.
 
+```{r ets-aaa-shapiro-wilks}
+shapiro.test(residuals(mod_ETS_AAA)$.resid)
+```
+
+
 Let's forecast through 2025
 
-```{r}
+```{r plot-ets-aaa-fct-2025, message=FALSE, warning=FALSE}
 fct_ETS_AAA <- train_monthly |> 
   model(ETS(monthly_total_cyclists ~ error("A") + trend("A") + season("A"))) |> 
   forecast(h=36)
@@ -500,5 +508,11 @@ ts_monthly_total |>
   autolayer(fct_ETS_AAA, size=0.7)+
   autolayer(test_monthly)
 ```
+
+```{r}
+tidy(mod_ETS_AAA)
+```
+
+
 
 Takeaway:  This model seems to adequately increase the summer peaks while slowly increasing the winter lulls.  This fits our eda.  
