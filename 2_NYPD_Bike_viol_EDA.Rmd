@@ -207,10 +207,6 @@ plot(ppp_test)
 
 
 
-st_bike_violations_1111D1C
-
-ppp_test
-
 # work:
 ggplot() + 
   geom_sf(data = st_bike_violations_1111D1C, size=0.1)
@@ -237,7 +233,7 @@ mapview(ppp_test, xcol = ppp_test$x, ycol = ppp_test$y, crs = 4269, grid = FALSE
 
 ```
 
-```{r message=FALSE, warning=FALSE, include=FALSE}
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
 # WORK IN PROGRESS
 
 # cluster test with regular data
@@ -291,7 +287,7 @@ ggmap(map)+geom_point(data = dat2,aes(x=longitude,y=latitude,size=Magnitude))
 
 ggplot(data=density$v)
 
-install.packages('rgdal')
+#install.packages('rgdal')
 library(rgdal)
 
 class(nyc)
