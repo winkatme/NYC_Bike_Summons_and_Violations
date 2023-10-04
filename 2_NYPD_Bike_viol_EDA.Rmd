@@ -94,9 +94,6 @@ ts_daily_total <- df_bike_violations |>
   rename(daily_total_cyclists = daily_total)|> 
   select(-c(date, id, counts, weekly_total))
 
-ts_daily_total |> 
-  autoplot(daily_total_violations)
-
 ```
 
 
