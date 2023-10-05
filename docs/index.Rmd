@@ -1,15 +1,63 @@
 ---
-title: "index"
+title: "NYC Bike Ridership and Violation Data Analysis"
 output: html_document
 date: "2023-10-05"
 ---
 
-```{r setup, include=FALSE}
+```{r libraries, include=FALSE}
 library(knitr)
 library(tidyverse)
 library(rmarkdown)
 library(fpp3)
 library(mapview)
+library(kableExtra)
+```
+
+
+```{r meta-info-for-future-me, eval=FALSE, include=FALSE}
+# This source was essential in helping me post this to github:
+# Source: https://mbounthavong.com/blog/2022/7/30/hosting-a-r-markdown-html-file-on-a-github-page
+```
+
+
+```{r load-data, include=FALSE}
+df_bicycle_counters_boroughs <- readr::read_csv("/Users/dovwinkleman/Documents/R_Files/NYC_Bike_Summons_and_Violations/Data/Processed/df_bicycle_counters_boroughs.csv")
+
+df_bike_violations <- readr::read_csv("/Users/dovwinkleman/Documents/R_Files/NYC_Bike_Summons_and_Violations/Data/Processed/df_bike_violations_2023-09-16.csv")
+
+df_bike_violations <- df_bike_violations |>
+  mutate(violation_code = as.factor(violation_code)) |>
+  mutate(veh_category = as.factor(veh_category)) |>
+  mutate(city_nm = as.factor(city_nm)) |>
+  mutate(rpt_owning_cmd = as.factor(rpt_owning_cmd)) |>
+  mutate(violation_date = as.POSIXct(violation_date))
+
+path3 <- "https://www.dropbox.com/s/nffkpwuz1u6kd5t/df_counts.csv?dl=1"
+df_counts <- readr::read_csv(path3)
+
+df_counts <-df_counts |> 
+  group_by(date(date)) |>
+  mutate(daily_total = sum(counts)) |>
+  ungroup() |>
+  group_by(yearweek(date)) |>
+  mutate(weekly_total = sum(counts)) |>
+  ungroup() |>
+  arrange(date) |>
+  select(!c("date(date)", "yearweek(date)", countid, status))
+
+
+# create the daily counts tsibble
+ts_daily_total <- df_bike_violations |> 
+  group_by(violation_date = as_date(violation_date)) |> 
+  summarise(daily_total_violations = n()) |> 
+  as_tsibble(index = violation_date) |> 
+  fill_gaps() |> 
+  mutate(date = violation_date) |> 
+  left_join(y = df_counts, by = "date", multiple = "any") |> 
+  rename(daily_total_cyclists = daily_total)|> 
+  select(-c(date, id, counts, weekly_total))
+
+rm(df_counts)
 ```
 
 # NYC Bike Violations 
@@ -27,10 +75,6 @@ The datasets used were all taken from the NYC Open Data website, except the viol
 
 ## test mapview plot
 ```{r echo=FALSE}
-df_bicycle_counters_boroughs <- readr::read_csv("/Users/dovwinkleman/Documents/R_Files/NYC_Bike_Summons_and_Violations/Data/Processed/df_bicycle_counters_boroughs.csv")
-
-
-
 mapview(na.omit(df_bicycle_counters_boroughs), xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)
 ```
 
