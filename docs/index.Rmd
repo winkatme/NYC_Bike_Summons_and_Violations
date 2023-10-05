@@ -51,8 +51,17 @@ Throughout this report, I will use the term 'cyclist' to refer to regular bike r
 The datasets used were all taken from the NYC Open Data website, except the violation code description data, which was taken from the NY DMV website. The violation data was merged from two different datasets, a 'year to date' dataset spanning Jan 1, 2023 to June 30th, 2023, and a 'historical' dataset dating from Jan 1, 2018 to December 31, 2022. These datasets contained all violations issued by the NYPD, but only the violations labeled 'Bike', 'Ebike', and 'Escooter' were chosen for this report. The bicycle count data was agglomerated per day and per week, and these values were appended to the merged violations dataset. The violation code description data was also merged with the violations dataset, so that a textual description of the violation code could easily be accessed.
 
 
-## test mapview plot
+## Bike Counters
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 mapview(na.omit(df_bicycle_counters_boroughs), xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)
+
 ```
+*Bicycle counter locations throughout the 5 boroughs.  Note that two on Amserdam Ave on the west side of Central Park have the exact same latitude and longitude in the .csv file, but in reality one is on Amsterdam ave collecting uptown traffic and the other is an avenue over on Columbus Ave, counting downtown traffic.*
+
+The bicycle count data were taken from 18 separate bike counters, spread throughought the 5 boroughs, as can be seen in the map above.  Although a total of 29 were listed in the .csv file, some of those were either duplicates or not applicable (ie - they only counted pedestrians) and were removed from consideration.  The majority of these counters could be considered ‘Manhattan-centric.’ For instance, there is only one counter in Staten Island by the ferry access to Manhattan, one in a single area in the south Bronx, and only three in Queens, with one of those placed near the Queensboro bridge to Manhattan.  Based on this unequal representation, I chose not to perform any borough specific analyses involving rider count data (however, violation data was not dependent on bike counters), and any generalizations or take-aways from this report should keep these limitations in mind.
+The bike counters acted by counting the number of cyclists that crossed them, and recording this aggregation every 15 minutes.  The bike counter data ranged from 2012 to present, but only the data from 2018 to present were used. 
+
+
+
 
