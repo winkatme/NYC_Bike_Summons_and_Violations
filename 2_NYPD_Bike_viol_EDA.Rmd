@@ -100,7 +100,7 @@ ts_daily_total <- df_bike_violations |>
 
 ## Optional: Create st/sf for spatial analysis
 
-```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, echo=FALSE}
 # WORK IN PROGRESS
 
 # import df
@@ -185,7 +185,7 @@ nb_soi |> plot(coords = coords, add = TRUE,
 ```
 
 
-```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, echo=FALSE}
 # WORK IN PROGRESS
 # test for ppp point pattern analysis 
 # source: https://cran.r-project.org/web/packages/spatstat/vignettes/getstart.pdf
@@ -231,7 +231,7 @@ mapview(ppp_test, xcol = ppp_test$x, ycol = ppp_test$y, crs = 4269, grid = FALSE
 
 ```
 
-```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE}
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, echo=FALSE}
 # WORK IN PROGRESS
 
 # cluster test with regular data
