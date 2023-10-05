@@ -17,6 +17,7 @@ library(fpp3)
 library(urca)
 library(kableExtra)
 library(corrr)
+library(glue)
 ```
 
 # Import daily and monthly tsibbles
@@ -62,6 +63,14 @@ ts_daily_total <- df_bike_violations |>
   rename(daily_total_cyclists = daily_total)|> 
   select(-c(date, id, counts, weekly_total))
 
+# optional: save ts_daily_total
+#todays_date <- Sys.Date()
+#path_name <- glue("Data/Processed/ts_daily_total_{todays_date}.csv")
+#write.csv(ts_daily_total, path_name, row.names = FALSE)
+```
+
+
+```{r}
 ts_daily_total |> 
   count_gaps()
 ```
