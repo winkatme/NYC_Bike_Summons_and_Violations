@@ -20,44 +20,22 @@ library(kableExtra)
 ```
 
 
-```{r load-data, include=FALSE}
+```{r load-data, message=FALSE, warning=FALSE, include=FALSE}
 df_bicycle_counters_boroughs <- readr::read_csv("/Users/dovwinkleman/Documents/R_Files/NYC_Bike_Summons_and_Violations/Data/Processed/df_bicycle_counters_boroughs.csv")
 
 df_bike_violations <- readr::read_csv("/Users/dovwinkleman/Documents/R_Files/NYC_Bike_Summons_and_Violations/Data/Processed/df_bike_violations_2023-09-16.csv")
 
 df_bike_violations <- df_bike_violations |>
-  mutate(violation_code = as.factor(violation_code)) |>
-  mutate(veh_category = as.factor(veh_category)) |>
-  mutate(city_nm = as.factor(city_nm)) |>
-  mutate(rpt_owning_cmd = as.factor(rpt_owning_cmd)) |>
-  mutate(violation_date = as.POSIXct(violation_date))
+  mutate(violation_code = as.factor(violation_code),
+         veh_category = as.factor(veh_category),
+         city_nm = as.factor(city_nm),
+         rpt_owning_cmd = as.factor(rpt_owning_cmd)
+         )
 
-path3 <- "https://www.dropbox.com/s/nffkpwuz1u6kd5t/df_counts.csv?dl=1"
-df_counts <- readr::read_csv(path3)
+ts_daily_total <- readr::read_csv("/Users/dovwinkleman/Documents/R_Files/NYC_Bike_Summons_and_Violations/Data/Processed/ts_daily_total_2023-10-05.csv")
 
-df_counts <-df_counts |> 
-  group_by(date(date)) |>
-  mutate(daily_total = sum(counts)) |>
-  ungroup() |>
-  group_by(yearweek(date)) |>
-  mutate(weekly_total = sum(counts)) |>
-  ungroup() |>
-  arrange(date) |>
-  select(!c("date(date)", "yearweek(date)", countid, status))
-
-
-# create the daily counts tsibble
-ts_daily_total <- df_bike_violations |> 
-  group_by(violation_date = as_date(violation_date)) |> 
-  summarise(daily_total_violations = n()) |> 
-  as_tsibble(index = violation_date) |> 
-  fill_gaps() |> 
-  mutate(date = violation_date) |> 
-  left_join(y = df_counts, by = "date", multiple = "any") |> 
-  rename(daily_total_cyclists = daily_total)|> 
-  select(-c(date, id, counts, weekly_total))
-
-rm(df_counts)
+ts_daily_total<-ts_daily_total |> 
+  as_tsibble()
 ```
 
 # NYC Bike Violations 
