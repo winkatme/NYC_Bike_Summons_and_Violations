@@ -74,7 +74,7 @@ The datasets used were all taken from the NYC Open Data website, except the viol
 
 
 ## test mapview plot
-```{r echo=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 mapview(na.omit(df_bicycle_counters_boroughs), xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)
 ```
 
