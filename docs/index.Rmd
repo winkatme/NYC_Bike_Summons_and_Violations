@@ -79,13 +79,21 @@ Of  the 126,812 initial violation entries in the specified time frame, 111 total
 
 ### Daily Total Cyclists
 
-```{r hist-daily-total-cyclists, echo=FALSE, message=FALSE, warning=FALSE}
+```{r hist-daily-total-cyclists, echo=FALSE, message=FALSE, warning=FALSE, fig.show="hold", out.width="75%"}
 ts_daily_total |>
   ggplot(aes(x = daily_total_cyclists)) +
   geom_histogram(bins = 80)+
   labs(title='Daily Total Cyclists')+
   xlab('Cyclists Per Day')+
   ylab('Count')
+
+df_bike_violations |>
+  mutate(violation_date = date(violation_date)) |>
+  arrange(desc(daily_total_cyclists)) |>
+  distinct(violation_date, daily_total_cyclists) |>
+  slice(1:10) |>
+  kable(caption = "Top 10 Busiest Cycling Days", col.names = linebreak(c('Violation Date', 'Daily Total Cyclists'), align = "l")) |> 
+  kable_classic(full_width = F, html_font = "Cambria", position = "left")
 ```
 
 
@@ -111,13 +119,13 @@ ts_daily_total |>
 ```
 From the plot of daily total cyclists a general increasing trend can be seen, as well as strong seasonality.  There are more cyclists in the warmer summer months than in the colder months.  The slope for the regression line is 6.537613, which indicates that there are on average approximately 6.5 new riders per day.  
 
-Let's further explore the seasonality.  It's easier to view this with monthly totals.
+Let's further explore the seasonality.  It's easier to view this with monthly totals:
 
 ```{r echo=FALSE, fig.show="hold", message=FALSE, warning=FALSE, out.width="50%"}
 ts_monthly_total |>
   gg_season(monthly_total_cyclists)+
   ggtitle('Seasonal plot of total monthly ridership')+
-  xlab('Violation Date')+
+  xlab('Violation Month')+
   ylab('Monthly Total Cyclists')
 
 
@@ -129,3 +137,19 @@ ts_monthly_total |>
 
 ```
 
+The increase in ridership in the warmer months can clearly be seen.  Also note the yearly increase, as well as the dip in April of 2020 during covid lockdown. 
+
+#### Busiest Bike Counters
+
+Busiest Bike Counters in 2022  
+
+1. Williamsburg side of Williamsburg bridge with 1964902
+2. Queens side of Queensboro Bridge with 1818163: 
+3. Manhattan side of Manhattan bridge with 1584788: 
+4. Kent ave in Wburg with 1066870: 
+5. Brooklyn Bridge with 1002070: 
+
+The busiest bike counters in 2022 were at bridge access points as well as Kent ave in Williamsburg, which feeds onto the Wburg bridge.  For 2023, up until June 30th, the order is mostly the same, with Kent ave and Brooklyn Bridge switching places.  An analysis of daily total count data from just the Williamsburg bridge counter revealed similar trends to the total count data from all counters.
+
+
+f
