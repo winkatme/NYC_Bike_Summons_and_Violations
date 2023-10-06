@@ -18,6 +18,8 @@ library(kableExtra)
 ```{r meta-info-for-future-me, eval=FALSE, include=FALSE}
 # This source was essential in helping me post this to github:
 # Source: https://mbounthavong.com/blog/2022/7/30/hosting-a-r-markdown-html-file-on-a-github-page
+
+# Source for two plots side by side: https://bookdown.org/yihui/rmarkdown-cookbook/figures-side.html
 ```
 
 
@@ -79,7 +81,7 @@ Of  the 126,812 initial violation entries in the specified time frame, 111 total
 
 ### Daily Total Cyclists
 
-```{r hist-daily-total-cyclists, echo=FALSE, message=FALSE, warning=FALSE, fig.show="hold", out.width="75%"}
+```{r hist-daily-total-cyclists, echo=FALSE, message=FALSE, warning=FALSE, fig.show="hold", out.width="25%"}
 ts_daily_total |>
   ggplot(aes(x = daily_total_cyclists)) +
   geom_histogram(bins = 80)+
@@ -151,5 +153,3 @@ Busiest Bike Counters in 2022
 
 The busiest bike counters in 2022 were at bridge access points as well as Kent ave in Williamsburg, which feeds onto the Wburg bridge.  For 2023, up until June 30th, the order is mostly the same, with Kent ave and Brooklyn Bridge switching places.  An analysis of daily total count data from just the Williamsburg bridge counter revealed similar trends to the total count data from all counters.
 
-
-f
