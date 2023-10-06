@@ -81,7 +81,7 @@ Of  the 126,812 initial violation entries in the specified time frame, 111 total
 
 ### Daily Total Cyclists
 
-```{r hist-daily-total-cyclists, echo=FALSE, message=FALSE, warning=FALSE, fig.show="hold", out.width="25%"}
+```{r hist-daily-total-cyclists, echo=FALSE, message=FALSE, warning=FALSE, fig.show="hold", out.width="50%"}
 ts_daily_total |>
   ggplot(aes(x = daily_total_cyclists)) +
   geom_histogram(bins = 80)+
@@ -100,13 +100,13 @@ df_bike_violations |>
 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
-df_bike_violations |>
-  mutate(violation_date = date(violation_date)) |>
-  arrange(desc(daily_total_cyclists)) |>
-  distinct(violation_date, daily_total_cyclists) |>
-  slice(1:10) |>
-  kable(caption = "Top 10 Busiest Cycling Days", col.names = linebreak(c('Violation Date', 'Daily Total Cyclists'), align = "l")) |> 
-  kable_classic(full_width = F, html_font = "Cambria", position = "left")
+#df_bike_violations |>
+#  mutate(violation_date = date(violation_date)) |>
+#  arrange(desc(daily_total_cyclists)) |>
+#  distinct(violation_date, daily_total_cyclists) |>
+#  slice(1:10) |>
+#  kable(caption = "Top 10 Busiest Cycling Days", col.names = linebreak(c('Violation Date', 'Daily Total Cyclists'), align = "l")) |> 
+#  kable_classic(full_width = F, html_font = "Cambria", position = "left")
 ```
 
 The amount of total cyclists per day ranged from 1665 to almost 60,000.  The busiest days tended to be in late October/November of 2019/2020, with a few in the middle of summer and a few in September. Further investigation would help uncover why this is, but my guess is that people might be trying to squeeze in one last ride in before winter.
@@ -152,4 +152,39 @@ Busiest Bike Counters in 2022
 5. Brooklyn Bridge with 1002070: 
 
 The busiest bike counters in 2022 were at bridge access points as well as Kent ave in Williamsburg, which feeds onto the Wburg bridge.  For 2023, up until June 30th, the order is mostly the same, with Kent ave and Brooklyn Bridge switching places.  An analysis of daily total count data from just the Williamsburg bridge counter revealed similar trends to the total count data from all counters.
+
+## Violations
+
+#### Violations over time
+
+```{r}
+ts_daily_total |>
+  autoplot(daily_total_violations)+
+  ggtitle("Totaly Daily Violations")+
+  xlab('Violation Date')+
+  ylab('Violation Count')
+```
+
+There were 126,701 total violations consisting of 188 different types of violations handed out to cyclists during the time frame this data was collected. As we can see from the daily violations plot, there was a sharp drop-off in violations handed out after covid lockdown.
+
+```{r}
+df_bike_violations |>
+  mutate(violation_date = date(violation_date)) |>
+  summarise(
+    total = sum(n()),
+    .by = c(violation_code, description)
+  ) |>
+  arrange(desc(total)) |>
+  mutate(percent = 100 * round(total / sum(total), 3)) |>
+  slice(1:10) |>
+    kable(caption = 'Top 10 Violations', col.names = linebreak(c('Violation Code', 'Description', 'Total', 'Percent'), align = "l")) |> 
+  kable_classic(full_width = F, html_font = "Cambria", position = "left")
+```
+
+From this table, we can see that improper traffic behavior at red lights (1111D1C, 403A3IX), account for ~50% of all bicycle violations.  Other common violations include driving in the wrong direction, operating a bicycle with more than 1 earphone, not having a bell, and riding on the sidewalk. 
+
+
+
+
+
 
