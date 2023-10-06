@@ -37,6 +37,12 @@ ts_daily_total <- readr::read_csv("/Users/dovwinkleman/Documents/R_Files/NYC_Bik
 
 ts_daily_total<-ts_daily_total |> 
   as_tsibble()
+
+ts_monthly_total <- ts_daily_total |> 
+  index_by(year_month = ~ yearmonth(.)) |> 
+  summarise(monthly_total_cyclists = sum(daily_total_cyclists),
+            monthly_total_violations = sum(daily_total_violations, na.rm = TRUE)) |> 
+  rename(violation_date = year_month)
 ```
 
 # NYC Bike Violations 
@@ -99,11 +105,27 @@ The amount of total cyclists per day ranged from 1665 to almost 60,000.  The bus
 ### Daily Totaly Cyclists over Time
 
 ```{r}
-
+ts_daily_total |>
+  autoplot(daily_total_cyclists) +
+  geom_smooth(method = "lm")
 ```
+From the plot of daily total cyclists a general increasing trend can be seen, as well as strong seasonality.  There are more cyclists in the warmer summer months than in the colder months.  The slope for the regression line is 6.537613, which indicates that there are on average approximately 6.5 new riders per day.  
+
+Let's further explore the seasonality.  It's easier to view this with monthly totals.
+
+```{r echo=FALSE, fig.show="hold", message=FALSE, warning=FALSE, out.width="50%"}
+ts_monthly_total |>
+  gg_season(monthly_total_cyclists)+
+  ggtitle('Seasonal plot of total monthly ridership')+
+  xlab('Violation Date')+
+  ylab('Monthly Total Cyclists')
 
 
-```{r}
+ts_monthly_total |>
+  gg_subseries(monthly_total_cyclists)+
+  ggtitle('Subseries plot of total monthly ridership')+
+  xlab('Violation Month')+
+  ylab('Monthly Total Cyclists')
 
 ```
 
