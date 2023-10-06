@@ -81,7 +81,7 @@ Of  the 126,812 initial violation entries in the specified time frame, 111 total
 
 ### Daily Total Cyclists
 
-```{r hist-daily-total-cyclists, echo=FALSE, message=FALSE, warning=FALSE, fig.show="hold", out.width="50%"}
+```{r hist-daily-total-cyclists, echo=FALSE, fig.show="hold", message=FALSE, warning=FALSE, out.width="60%"}
 ts_daily_total |>
   ggplot(aes(x = daily_total_cyclists)) +
   geom_histogram(bins = 80)+
@@ -121,6 +121,8 @@ ts_daily_total |>
 ```
 From the plot of daily total cyclists a general increasing trend can be seen, as well as strong seasonality.  There are more cyclists in the warmer summer months than in the colder months.  The slope for the regression line is 6.537613, which indicates that there are on average approximately 6.5 new riders per day.  
 
+#### Seasonality
+
 Let's further explore the seasonality.  It's easier to view this with monthly totals:
 
 ```{r echo=FALSE, fig.show="hold", message=FALSE, warning=FALSE, out.width="50%"}
@@ -141,7 +143,7 @@ ts_monthly_total |>
 
 The increase in ridership in the warmer months can clearly be seen.  Also note the yearly increase, as well as the dip in April of 2020 during covid lockdown. 
 
-#### Busiest Bike Counters
+### Busiest Bike Counters
 
 Busiest Bike Counters in 2022  
 
@@ -155,7 +157,7 @@ The busiest bike counters in 2022 were at bridge access points as well as Kent a
 
 ## Violations
 
-#### Violations over time
+### Violations over time
 
 ```{r}
 ts_daily_total |>
@@ -166,6 +168,8 @@ ts_daily_total |>
 ```
 
 There were 126,701 total violations consisting of 188 different types of violations handed out to cyclists during the time frame this data was collected. As we can see from the daily violations plot, there was a sharp drop-off in violations handed out after covid lockdown.
+
+### Most Common Violations
 
 ```{r}
 df_bike_violations |>
@@ -183,8 +187,41 @@ df_bike_violations |>
 
 From this table, we can see that improper traffic behavior at red lights (1111D1C, 403A3IX), account for ~50% of all bicycle violations.  Other common violations include driving in the wrong direction, operating a bicycle with more than 1 earphone, not having a bell, and riding on the sidewalk. 
 
+```{r}
+df_bike_violations |>
+  mutate(fct_lump = fct_lump(f = df_bike_violations$violation_code, n = 9)) |>
+  mutate(date = date(violation_date)) |>
+  filter(date >= "2022-06-01") |>
+  filter(fct_lump == "1111D1C") |>
+  mapview(xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE, alpha.regions = 0.2)
+```
 
+Just looking at one years worth of the most common violation (1111D1C, since June 2022), we can see a few cluster areas emerge:
+- Upper West and Upper East sides of Manhattan (and their corresponding avenues up through Harlem), 
+- Up and down 1st and 2nd aves, especially in the East Village, 
+- On the Brooklyn side of the Williamsburg Bridge, 
+- Up and down 4th and 5th aves in Brooklyn, 
+- Liberty Ave in Ozone park/ Richmond Hill, 
+- The East side of Prospect Park on Bedford Ave 
+- Bensonhurst, Brooklyn.
 
+If you are riding through these areas, please be extra careful about stopping at stop signs and red lights, as these areas are where more bike tickets are administered to cyclists.
 
+### Violations per borough
+
+```{r}
+df_bike_violations |> 
+  group_by(year=year(violation_date), city_nm) |> 
+  ggplot(aes(x=year, fill=city_nm))+
+  geom_bar()+
+  labs(title="Yearly Cyclist Violations", fill="Borough")+
+  scale_fill_brewer()+
+  xlab('Year')+
+  ylab('Violations')
+```
+
+Yearly violations per borough, 2018-2023.  Note large drop-off in violations handed out after covid lockdown.
+
+Per borough, we can see the Manhattan had the  most violations, by far, with Brooklyn coming in second.  More information is required as to determine why.  It’s possible that the police presence in Manhattan is higher.  It is also possible that there are far more cyclists in Manhattan than in the other boroughs, although this can not be determined from the current data due to the dispoportional bike counter placement. 
 
 
