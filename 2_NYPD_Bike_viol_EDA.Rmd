@@ -341,6 +341,16 @@ df_bike_violations |>
 
 Takeaway: Busiest single days were mostly in the autumn of 2019.
 
+Rider count minimum:
+
+```{r}
+df_bike_violations |>
+  mutate(violation_date = date(violation_date)) |>
+  slice(which.min(daily_total_cyclists)) |> 
+  select(violation_date, daily_total_cyclists)
+```
+
+
 ## Which dates had the highest number of violations, and how many violations?
 
 ```{r table-top-10-busiest-violation-days}
