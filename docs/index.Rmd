@@ -227,6 +227,19 @@ Just looking at one years worth of the most common violation (1111D1C, since Jun
 
 If you are riding through these areas, please be extra careful about stopping at stop signs and red lights, as these areas are where more bike tickets are administered to cyclists.
 
+### Notable Violation
+
+This specific violation - Code 12332, ATTACHING SELF TO MOVING MOTOR VEHICLE which occurred only once on May 1 2018 at 15:07:17 - is highly notable, as it is direct proof that at least one [famous time traveller](https://youtu.be/5Y1ka1-KFFY?si=UPZ06y5Tj57Ay3cT&t=103) graced us with his presence near West 57th st and 9th Ave:
+
+```{r}
+df_bike_violations |> 
+  filter(violation_code==12332) |> 
+  mapview(xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)
+```
+
+
+
+
 ## Busiest Violation Days
 
 ```{r}
@@ -239,7 +252,7 @@ df_bike_violations |>
   kable(caption = "Top 10 busiest violation days", 
         col.names = linebreak(c('Violation Date', 'Daily Total Violations'), align = "l")
         ) |> 
-  kable_classic(full_width = F, html_font = "Cambria", position = "left")
+  kable_classic(full_width = F, html_font = "Cambria", position = "center")
 ```
 
 The busiest violation days were mostly on summer days in 2018 and 2019.  This is consistent with our data that shows that there was a sharp dropoff in violations after covid lockdown, and that more ridership and violations are handed out in the summer months than in the colder months.
@@ -247,6 +260,8 @@ The busiest violation days were mostly on summer days in 2018 and 2019.  This is
 # Forecasting: Rider Counts
 
 Since the seasonality for rider counts is yearly, I used monthly total ridership instead of daily total ridership for modeling.  Daily total ridership proved to be too noisy.  
+
+The training set was from the beginning of the data set, Jan 2018, to May 2022.  The test set contained the data from June 2022 to June 2023.  
 
 Five different models for monthly bike counts were attempted:  A seasonal naive forecast, three Exponential smoothing models (ETS AAA, ETS AAdA, and the ETS function’s choice (ETS MNM)) as well as the ARIMA function’s choice (ARIMA (1,0,0)(1,1,0)[12]).  
 
@@ -262,10 +277,30 @@ df_forecasting <- data.frame(tests, RMSE)
 
 df_forecasting |> 
   kable(caption = "Forecasts", 
-        col.names = linebreak(c('Forecasting Method', 'RMSE'), align = "l")
+        col.names = linebreak(c('Forecasting Method', 'RMSE on Test Set'), align = "l")
         ) |> 
-  kable_classic(full_width = F, html_font = "Cambria", position = "left") |> 
+  kable_classic(full_width = F, html_font = "Cambria", position = "center") |> 
   row_spec(2, bold=T)
 ```
 
 From the table, we can see that ETS_AAA fit the test dataset the best.    Originally, I expected a model with damping to outperform one without damping as there was a slight trend.
+
+## Model Diagnostics
+
+```{r}
+set.seed(99)
+
+train_monthly<-ts_monthly_total |> select(monthly_total_cyclists) |> filter_index(~"2022-05")
+test_monthly<-ts_monthly_total |> select(monthly_total_cyclists) |> filter_index("2022-06"~.)
+
+mod_ETS_AAA <- train_monthly %>%
+  model(ETS(monthly_total_cyclists ~ error("A") + trend("A") + season("A")))
+
+gg_tsresiduals(mod_ETS_AAA)+
+  ggtitle('ETS AAA Residuals')
+```
+
+The residuals for this model do not show anything out of the ordinary. Additionally, it fails to reject the null for the box pierce (p = 0.3329984) and ljung-box (p =  0.1743495) tests, indicating that the residuals are white noise.  The residuals also fail to reject the Shapiro-Wilks test (p = 0.1783), indicating that the they are normally distributed.
+
+Lastly, here is a plot utilizing our ETS_AAA model to predict ridership into 2025, with 80% and 95% errors being shown:
+
