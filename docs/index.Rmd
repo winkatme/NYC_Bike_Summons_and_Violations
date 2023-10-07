@@ -7,6 +7,7 @@ output:
     toc_float: true
     theme: flatly
     code_folding: hide
+    highlight: haddock
 date: "2023-10-05"
 ---
 
@@ -87,7 +88,7 @@ Of  the 126,812 initial violation entries in the specified time frame, 111 total
 
 ## Daily Total Cyclists
 
-```{r hist-daily-total-cyclists, echo=FALSE, fig.show="hold", message=FALSE, warning=FALSE, out.width="50%"}
+```{r hist-daily-total-cyclists, fig.show="hold", message=FALSE, warning=FALSE, out.width="50%"}
 ts_daily_total |>
   ggplot(aes(x = daily_total_cyclists)) +
   geom_histogram(bins = 80)+
@@ -97,7 +98,7 @@ ts_daily_total |>
 ```
 
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE}
 df_bike_violations |>
   mutate(violation_date = date(violation_date)) |>
   arrange(desc(daily_total_cyclists)) |>
@@ -127,7 +128,7 @@ From the plot of daily total cyclists a general increasing trend can be seen, as
 
 Let's further explore the seasonality.  It's easier to view this with monthly totals:
 
-```{r echo=FALSE, fig.show="hold", message=FALSE, warning=FALSE, out.width="50%"}
+```{r fig.show="hold", message=FALSE, warning=FALSE, out.width="50%"}
 ts_monthly_total |>
   gg_season(monthly_total_cyclists)+
   ggtitle('Seasonal plot of total monthly ridership')+
@@ -311,6 +312,8 @@ gg_tsresiduals(mod_ETS_AAA)+
 
 The residuals for this model do not show anything out of the ordinary. Additionally, it fails to reject the null for the box pierce (p = 0.3329984) and ljung-box (p =  0.1743495) tests, indicating that the residuals are white noise.  The residuals also fail to reject the Shapiro-Wilks test (p = 0.1783), indicating that the they are normally distributed.
 
+## Forecast Plot to 2025
+
 Lastly, here is a plot utilizing our ETS_AAA model to predict ridership into 2025, with 80% and 95% errors being shown:
 
 ```{r}
@@ -320,9 +323,11 @@ fct_ETS_AAA <- train_monthly |>
 
 ts_monthly_total |> 
   autoplot(monthly_total_cyclists) +
-  #autoplot(ts_monthly_total$monthly_total_cyclists) +
   autolayer(fct_ETS_AAA, size=0.7)+
-  autolayer(test_monthly)
+  autolayer(test_monthly)+
+  ggtitle('ETS AAA Forecast of Total Monthly Cyclists to 2025')+
+  xlab('Month')+
+  ylab('Monthly Total Cyclists')
 ```
 
 # Important Takeaways
