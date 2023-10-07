@@ -88,25 +88,17 @@ ts_daily_total |>
   labs(title='Daily Total Cyclists')+
   xlab('Cyclists Per Day')+
   ylab('Count')
+```
 
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 df_bike_violations |>
   mutate(violation_date = date(violation_date)) |>
   arrange(desc(daily_total_cyclists)) |>
   distinct(violation_date, daily_total_cyclists) |>
   slice(1:10) |>
   kable(caption = "Top 10 Busiest Cycling Days", col.names = linebreak(c('Violation Date', 'Daily Total Cyclists'), align = "l")) |> 
-  kable_classic(full_width = F, html_font = "Cambria", position='right')
-```
-
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
-#df_bike_violations |>
-#  mutate(violation_date = date(violation_date)) |>
-#  arrange(desc(daily_total_cyclists)) |>
-#  distinct(violation_date, daily_total_cyclists) |>
-#  slice(1:10) |>
-#  kable(caption = "Top 10 Busiest Cycling Days", col.names = linebreak(c('Violation Date', 'Daily Total Cyclists'), align = "l")) |> 
-#  kable_classic(full_width = F, html_font = "Cambria", position = "left")
+  kable_classic(full_width = F, html_font = "Cambria", position = "left")
 ```
 
 The amount of total cyclists per day ranged from 1665 to almost 60,000.  The busiest days tended to be in late October/November of 2019/2020, with a few in the middle of summer and a few in September. Further investigation would help uncover why this is, but my guess is that people might be trying to squeeze in one last ride in before winter.
@@ -326,6 +318,7 @@ ts_monthly_total |>
   autolayer(fct_ETS_AAA, size=0.7)+
   autolayer(test_monthly)
 ```
+
 # Important Takeaways
 
 ...
