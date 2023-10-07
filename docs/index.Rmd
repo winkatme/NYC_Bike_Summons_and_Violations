@@ -49,19 +49,19 @@ ts_monthly_total <- ts_daily_total |>
 
 # NYC Bike Violations 
 
-## Introduction
+# Introduction
 
 Cycling is... While one can find a great deal of information about general cycling in NYC, it is harder to find information specifically about bike tickets.
 
 Throughout this report, I will use the term 'cyclist' to refer to regular bike riders, ebike riders, and escooter riders and 'bicycle' to refer to any of the vehicles that falls under these labels.
 
-## Data
+# Data
 
-### Datasets
+## Datasets
 
 The datasets used were all taken from the NYC Open Data website, except the violation code description data, which was taken from the NY DMV website. The violation data was merged from two different datasets, a 'year to date' dataset spanning Jan 1, 2023 to June 30th, 2023, and a 'historical' dataset dating from Jan 1, 2018 to December 31, 2022. These datasets contained all violations issued by the NYPD, but only the violations labeled 'Bike', 'Ebike', and 'Escooter' were chosen for this report. The bicycle count data was agglomerated per day and per week, and these values were appended to the merged violations dataset. The violation code description data was also merged with the violations dataset, so that a textual description of the violation code could easily be accessed.
 
-### Bike Counters
+## Bike Counters
 
 ```{r}
 mapview(na.omit(df_bicycle_counters_boroughs), xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)
@@ -72,14 +72,14 @@ mapview(na.omit(df_bicycle_counters_boroughs), xcol = "longitude", ycol = "latit
 The bicycle count data were taken from 18 separate bike counters, spread throughought the 5 boroughs, as can be seen in the map above.  Although a total of 29 were listed in the .csv file, some of those were either duplicates or not applicable (ie - they only counted pedestrians) and were removed from consideration.  The majority of these counters could be considered ‘Manhattan-centric.’ For instance, there is only one counter in Staten Island by the ferry access to Manhattan, one in a single area in the south Bronx, and only three in Queens, with one of those placed near the Queensboro bridge to Manhattan.  Based on this unequal representation, I chose not to perform any borough specific analyses involving rider count data (however, violation data was not dependent on bike counters), and any generalizations or take-aways from this report should keep these limitations in mind.
 The bike counters acted by counting the number of cyclists that crossed them, and recording this aggregation every 15 minutes.  The bike counter data ranged from 2012 to present, but only the data from 2018 to present were used. 
 
-### Removal of NA values
+## Removal of NA values
 
 Of  the 126,812 initial violation entries in the specified time frame, 111 total entries were removed, leaving 126,701.  Sixteen rows did not contain violations codes, 92 rows did not contain city name or location information, and 3 rows did not contain location information.
 
 
-## EDA
+# EDA: Cyclist Counts
 
-### Daily Total Cyclists
+## Daily Total Cyclists
 
 ```{r hist-daily-total-cyclists, echo=FALSE, fig.show="hold", message=FALSE, warning=FALSE, out.width="60%"}
 ts_daily_total |>
@@ -112,7 +112,7 @@ df_bike_violations |>
 The amount of total cyclists per day ranged from 1665 to almost 60,000.  The busiest days tended to be in late October/November of 2019/2020, with a few in the middle of summer and a few in September. Further investigation would help uncover why this is, but my guess is that people might be trying to squeeze in one last ride in before winter.
 
 
-### Daily Totaly Cyclists over Time
+## Daily Totaly Cyclists over Time
 
 ```{r}
 ts_daily_total |>
@@ -121,7 +121,7 @@ ts_daily_total |>
 ```
 From the plot of daily total cyclists a general increasing trend can be seen, as well as strong seasonality.  There are more cyclists in the warmer summer months than in the colder months.  The slope for the regression line is 6.537613, which indicates that there are on average approximately 6.5 new riders per day.  
 
-#### Seasonality
+### Seasonality
 
 Let's further explore the seasonality.  It's easier to view this with monthly totals:
 
@@ -143,7 +143,7 @@ ts_monthly_total |>
 
 The increase in ridership in the warmer months can clearly be seen.  Also note the yearly increase, as well as the dip in April of 2020 during covid lockdown. 
 
-### Busiest Bike Counters
+## Busiest Bike Counters
 
 Busiest Bike Counters in 2022  
 
@@ -155,9 +155,9 @@ Busiest Bike Counters in 2022
 
 The busiest bike counters in 2022 were at bridge access points as well as Kent ave in Williamsburg, which feeds onto the Wburg bridge.  For 2023, up until June 30th, the order is mostly the same, with Kent ave and Brooklyn Bridge switching places.  An analysis of daily total count data from just the Williamsburg bridge counter revealed similar trends to the total count data from all counters.
 
-## Violations
+# EDA: Violations
 
-### Violations over time
+## Violations over time
 
 ```{r}
 ts_daily_total |>
@@ -169,7 +169,25 @@ ts_daily_total |>
 
 There were 126,701 total violations consisting of 188 different types of violations handed out to cyclists during the time frame this data was collected. As we can see from the daily violations plot, there was a sharp drop-off in violations handed out after covid lockdown.
 
-### Most Common Violations
+## Violations per borough
+
+```{r}
+df_bike_violations |> 
+  group_by(year=year(violation_date), city_nm) |> 
+  ggplot(aes(x=year, fill=city_nm))+
+  geom_bar()+
+  labs(title="Yearly Cyclist Violations", 
+       subtitle = 'Through June 30, 2023',
+       fill="Borough"
+       )+
+  scale_fill_brewer()+
+  xlab('Year')+
+  ylab('Violations')
+```
+
+Per borough, we can see the Manhattan had the  most violations, by far, with Brooklyn coming in second.  More information is required as to determine why.  It’s possible that the police presence in Manhattan is higher.  It is also possible that there are far more cyclists in Manhattan than in the other boroughs, although this can not be determined from the current data due to the dispoportional bike counter placement. 
+
+## Most Common Violations
 
 ```{r}
 df_bike_violations |>
@@ -181,7 +199,9 @@ df_bike_violations |>
   arrange(desc(total)) |>
   mutate(percent = 100 * round(total / sum(total), 3)) |>
   slice(1:10) |>
-    kable(caption = 'Top 10 Violations', col.names = linebreak(c('Violation Code', 'Description', 'Total', 'Percent'), align = "l")) |> 
+    kable(caption = 'Top 10 Violations', 
+          col.names = linebreak(c('Violation Code', 'Description', 'Total', 'Percent'), align = "l")
+          ) |> 
   kable_classic(full_width = F, html_font = "Cambria", position = "left")
 ```
 
@@ -207,21 +227,45 @@ Just looking at one years worth of the most common violation (1111D1C, since Jun
 
 If you are riding through these areas, please be extra careful about stopping at stop signs and red lights, as these areas are where more bike tickets are administered to cyclists.
 
-### Violations per borough
+## Busiest Violation Days
 
 ```{r}
-df_bike_violations |> 
-  group_by(year=year(violation_date), city_nm) |> 
-  ggplot(aes(x=year, fill=city_nm))+
-  geom_bar()+
-  labs(title="Yearly Cyclist Violations", fill="Borough")+
-  scale_fill_brewer()+
-  xlab('Year')+
-  ylab('Violations')
+df_bike_violations |>
+  mutate(violation_date = date(violation_date)) |>
+  group_by(violation_date) |> 
+  summarise(daily_total_violations = n()) |> 
+  arrange(desc(daily_total_violations)) |>
+  slice(1:10) |>
+  kable(caption = "Top 10 busiest violation days", 
+        col.names = linebreak(c('Violation Date', 'Daily Total Violations'), align = "l")
+        ) |> 
+  kable_classic(full_width = F, html_font = "Cambria", position = "left")
 ```
 
-Yearly violations per borough, 2018-2023.  Note large drop-off in violations handed out after covid lockdown.
+The busiest violation days were mostly on summer days in 2018 and 2019.  This is consistent with our data that shows that there was a sharp dropoff in violations after covid lockdown, and that more ridership and violations are handed out in the summer months than in the colder months.
 
-Per borough, we can see the Manhattan had the  most violations, by far, with Brooklyn coming in second.  More information is required as to determine why.  It’s possible that the police presence in Manhattan is higher.  It is also possible that there are far more cyclists in Manhattan than in the other boroughs, although this can not be determined from the current data due to the dispoportional bike counter placement. 
+# Forecasting: Rider Counts
 
+Since the seasonality for rider counts is yearly, I used monthly total ridership instead of daily total ridership for modeling.  Daily total ridership proved to be too noisy.  
 
+Five different models for monthly bike counts were attempted:  A seasonal naive forecast, three Exponential smoothing models (ETS AAA, ETS AAdA, and the ETS function’s choice (ETS MNM)) as well as the ARIMA function’s choice (ARIMA (1,0,0)(1,1,0)[12]).  
+
+Since there was strong seasonality, I decided to focus on exponential smoothing models.  An ARIMA and seasonal naive forecast were modeled for comparison.  When allowing the ETS function to choose what it thought would be the best model, it chose a multiplicative ETS model (MNM). I do not know why the function chose this.  This highlights the importance of understanding analysis techniques when choosing the best model, and not leaving the decision up to an algorithm. 
+
+```{r}
+# These values were copied and pasted from 3_NYPD_Bike_viol_Forecasting.RMD.  If that file is updated, make sure to double-check these values:
+
+tests <- c('Seasonal Naive', 'ETS_AAA', 'ETS_AAdA', 'ETS_MNM',  'ARIMA (1,0,0)(1,1,0)[12]')
+RMSE <- c('139936.1', '86248.05', '94780.86', '116723.8', '114677.4')
+
+df_forecasting <- data.frame(tests, RMSE)
+
+df_forecasting |> 
+  kable(caption = "Forecasts", 
+        col.names = linebreak(c('Forecasting Method', 'RMSE'), align = "l")
+        ) |> 
+  kable_classic(full_width = F, html_font = "Cambria", position = "left") |> 
+  row_spec(2, bold=T)
+```
+
+From the table, we can see that ETS_AAA fit the test dataset the best.    Originally, I expected a model with damping to outperform one without damping as there was a slight trend.
