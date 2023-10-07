@@ -112,13 +112,17 @@ df_bike_violations |>
 The amount of total cyclists per day ranged from 1665 to almost 60,000.  The busiest days tended to be in late October/November of 2019/2020, with a few in the middle of summer and a few in September. Further investigation would help uncover why this is, but my guess is that people might be trying to squeeze in one last ride in before winter.
 
 
-## Daily Totaly Cyclists over Time
+## Daily Total Cyclists over Time
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 ts_daily_total |>
   autoplot(daily_total_cyclists) +
-  geom_smooth(method = "lm")
+  geom_smooth(method = "lm")+
+  ggtitle('Daily Total Cyclists Time Plot')+
+  xlab('Violation Date')+
+  ylab('Daily Totaly Cyclists')
 ```
+
 From the plot of daily total cyclists a general increasing trend can be seen, as well as strong seasonality.  There are more cyclists in the warmer summer months than in the colder months.  The slope for the regression line is 6.537613, which indicates that there are on average approximately 6.5 new riders per day.  
 
 ### Seasonality
@@ -132,13 +136,11 @@ ts_monthly_total |>
   xlab('Violation Month')+
   ylab('Monthly Total Cyclists')
 
-
 ts_monthly_total |>
   gg_subseries(monthly_total_cyclists)+
   ggtitle('Subseries plot of total monthly ridership')+
   xlab('Violation Month')+
   ylab('Monthly Total Cyclists')
-
 ```
 
 The increase in ridership in the warmer months can clearly be seen.  Also note the yearly increase, as well as the dip in April of 2020 during covid lockdown. 
@@ -147,11 +149,13 @@ The increase in ridership in the warmer months can clearly be seen.  Also note t
 
 Busiest Bike Counters in 2022  
 
-1. Williamsburg side of Williamsburg bridge with 1964902
-2. Queens side of Queensboro Bridge with 1818163: 
-3. Manhattan side of Manhattan bridge with 1584788: 
-4. Kent ave in Wburg with 1066870: 
-5. Brooklyn Bridge with 1002070: 
+Bike counter location | Number of Cyclists counted in 2022
+__________________________________________|_____________
+Williamsburg side of Williamsburg bridge | 1964902
+Queens side of Queensboro Bridge | 1818163
+Manhattan side of Manhattan bridge | 1584788
+Kent ave in Wburg | 1066870
+Brooklyn Bridge | 1002070
 
 The busiest bike counters in 2022 were at bridge access points as well as Kent ave in Williamsburg, which feeds onto the Wburg bridge.  For 2023, up until June 30th, the order is mostly the same, with Kent ave and Brooklyn Bridge switching places.  An analysis of daily total count data from just the Williamsburg bridge counter revealed similar trends to the total count data from all counters.
 
@@ -217,13 +221,13 @@ df_bike_violations |>
 ```
 
 Just looking at one years worth of the most common violation (1111D1C, since June 2022), we can see a few cluster areas emerge:
-- Upper West and Upper East sides of Manhattan (and their corresponding avenues up through Harlem), 
-- Up and down 1st and 2nd aves, especially in the East Village, 
-- On the Brooklyn side of the Williamsburg Bridge, 
-- Up and down 4th and 5th aves in Brooklyn, 
-- Liberty Ave in Ozone park/ Richmond Hill, 
-- The East side of Prospect Park on Bedford Ave 
-- Bensonhurst, Brooklyn.
+* Upper West and Upper East sides of Manhattan (and their corresponding avenues up through Harlem), 
+* Up and down 1st and 2nd aves, especially in the East Village, 
+* On the Brooklyn side of the Williamsburg Bridge, 
+* Up and down 4th and 5th aves in Brooklyn, 
+* Liberty Ave in Ozone park/ Richmond Hill, 
+* The East side of Prospect Park on Bedford Ave 
+* Bensonhurst, Brooklyn.
 
 If you are riding through these areas, please be extra careful about stopping at stop signs and red lights, as these areas are where more bike tickets are administered to cyclists.
 
@@ -252,7 +256,7 @@ df_bike_violations |>
   kable(caption = "Top 10 busiest violation days", 
         col.names = linebreak(c('Violation Date', 'Daily Total Violations'), align = "l")
         ) |> 
-  kable_classic(full_width = F, html_font = "Cambria", position = "center")
+  kable_classic(full_width = F, html_font = "Cambria", position = "left")
 ```
 
 The busiest violation days were mostly on summer days in 2018 and 2019.  This is consistent with our data that shows that there was a sharp dropoff in violations after covid lockdown, and that more ridership and violations are handed out in the summer months than in the colder months.
@@ -279,7 +283,7 @@ df_forecasting |>
   kable(caption = "Forecasts", 
         col.names = linebreak(c('Forecasting Method', 'RMSE on Test Set'), align = "l")
         ) |> 
-  kable_classic(full_width = F, html_font = "Cambria", position = "center") |> 
+  kable_classic(full_width = F, html_font = "Cambria", position = "left") |> 
   row_spec(2, bold=T)
 ```
 
@@ -304,3 +308,17 @@ The residuals for this model do not show anything out of the ordinary. Additiona
 
 Lastly, here is a plot utilizing our ETS_AAA model to predict ridership into 2025, with 80% and 95% errors being shown:
 
+```{r}
+fct_ETS_AAA <- train_monthly |> 
+  model(ETS(monthly_total_cyclists ~ error("A") + trend("A") + season("A"))) |> 
+  forecast(h=36)
+
+ts_monthly_total |> 
+  autoplot(monthly_total_cyclists) +
+  #autoplot(ts_monthly_total$monthly_total_cyclists) +
+  autolayer(fct_ETS_AAA, size=0.7)+
+  autolayer(test_monthly)
+```
+# Important Takeaways
+
+...
