@@ -5,12 +5,13 @@ output:
     toc: true
     toc_depth: 3
     toc_float: true
-    theme: Flatly
+    theme: flatly
+    code_folding: hide
 date: "2023-10-05"
 ---
 
 ```{r libraries, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, message=FALSE, warning=FALSE)
+knitr::opts_chunk$set(message=FALSE, warning=FALSE)
 library(knitr)
 library(tidyverse)
 library(rmarkdown)
