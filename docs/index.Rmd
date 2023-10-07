@@ -61,7 +61,7 @@ This report contains an exploratory data analysis of cyclist violations in NYC f
 # Introduction
 
 While one can find a great deal of information about general cycling in NYC, it is harder to find information specifically about bike violations.  This report aims to examine a few questions:  What are the most common violations?  Where are they most likely to occur? Have the violations changed over time?  Are there certain seasons where there are more or less violations handed out?
-This report also looks at rider count data, taken from bicycle counters strategically placed throughout the city, and examines the seasonal trens in ridership, as well as forecasts ridership to 2025, based on current data.  
+This report also looks at rider count data, taken from bicycle counters strategically placed throughout the city, and examines the seasonal trends in ridership, as well as forecasts ridership to 2025, based on current data.  
 
 Throughout this report, I will use the term 'cyclist' to refer to regular bike riders, e-bike riders, and e-scooter riders, and 'bicycle' to refer to any of the vehicles that fall under these labels.
 
@@ -69,7 +69,7 @@ Throughout this report, I will use the term 'cyclist' to refer to regular bike r
 
 ## Datasets
 
-The datasets used were all taken from the NYC Open Data website, except the violation code description data, which was taken from the NY DMV website. The violation data was merged from two different datasets, a 'year to date' dataset spanning Jan 1, 2023 to June 30th, 2023, and a 'historical' dataset dating from Jan 1, 2018 to December 31, 2022. These datasets contained all violations issued by the NYPD, but only the violations labeled 'Bike', 'Ebike', and 'Escooter' were chosen for this report. The bicycle count data was agglomerated per day and per week, and these values were appended to the merged violations dataset. The violation code description data was also merged with the violations dataset, so that a textual description of the violation code could easily be accessed.
+The datasets used were all taken from the NYC Open Data website, except the violation code description data, which was taken from the NY DMV website. The violation data was merged from two different datasets, a 'year to date' dataset spanning Jan 1, 2023 to June 30th, 2023, and a 'historical' dataset dating from Jan 1, 2018 to December 31, 2022. These datasets contained all violations issued by the NYPD, but only the violations labeled 'Bike', 'Ebike', and 'Escooter' were chosen for this report. The bicycle count data was agglomerated per day and per week, and these values were appended to the merged violations dataset. The violation code textual description data was also merged with the violations dataset, so that a description of the violation code could easily be accessed.
 
 ## Bike Counters
 
@@ -77,10 +77,10 @@ The datasets used were all taken from the NYC Open Data website, except the viol
 mapview(na.omit(df_bicycle_counters_boroughs), xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)
 
 ```
-*Bicycle counter locations throughout the 5 boroughs.  Note that two on Amserdam Ave on the west side of Central Park have the exact same latitude and longitude in the .csv file, but in reality one is on Amsterdam ave collecting uptown traffic and the other is an avenue over on Columbus Ave, counting downtown traffic.*
+*Bicycle counter locations throughout the 5 boroughs.  Note that two on Amserdam Ave on the west side of Central Park have the exact same latitude and longitude in the .csv file, but in reality one is on Amsterdam ave counting bike traffic in the uptown direction and the other is an avenue over on Columbus Ave, counting bike traffic flowing downtown.*
 
-The bicycle count data were taken from 18 separate bike counters, spread throughought the 5 boroughs, as can be seen in the map above.  Although a total of 29 were listed in the .csv file, some of those were either duplicates or not applicable (ie - they only counted pedestrians) and were removed from consideration.  The majority of these counters could be considered ‘Manhattan-centric.’ For instance, there is only one counter in Staten Island by the ferry access to Manhattan, one in a single area in the south Bronx, and only three in Queens, with one of those placed near the Queensboro bridge to Manhattan.  Based on this unequal representation, I chose not to perform any borough specific analyses involving rider count data (however, violation data was not dependent on bike counters), and any generalizations or take-aways from this report should keep these limitations in mind.
-The bike counters acted by counting the number of cyclists that crossed them, and recording this aggregation every 15 minutes.  The bike counter data ranged from 2012 to present, but only the data from 2018 to present were used. 
+The bicycle count data was taken from 18 separate bike counters, spread throughought the 5 boroughs, as can be seen in the map above.  Although a total of 29 were listed in the .csv file, some of those were either duplicates or not applicable (ie - they only counted pedestrians) and were removed from consideration.  The majority of these counters could be considered ‘Manhattan-centric.’ For instance, there is only one counter in Staten Island by the ferry access to Manhattan, one in a single area in the south Bronx, and only three in Queens, with one of those placed near the Queensboro bridge to Manhattan.  Based on this unequal representation, I chose not to perform any borough specific analyses involving rider count data (however, violation data was not dependent on bike counters), and any generalizations or take-aways from this report should keep these limitations in mind.
+The bike counters acted by counting the number of cyclists that crossed them, and recorded this aggregation every 15 minutes.  The bike counter data ranged from 2012 to present, but only the data from 2018 to present were used. 
 
 ## Removal of NA values
 
@@ -91,11 +91,11 @@ Of  the 126,812 initial violation entries in the specified time frame, 111 total
 
 ## Daily Total Cyclists
 
-```{r hist-daily-total-cyclists, fig.show="hold", message=FALSE, warning=FALSE, out.width="50%"}
+```{r hist-daily-total-cyclists, message=FALSE, warning=FALSE}
 ts_daily_total |>
   ggplot(aes(x = daily_total_cyclists)) +
   geom_histogram(bins = 80) +
-  labs(title='Daily Total Cyclists') +
+  labs(title='Daily Total Cyclists Histogram') +
   xlab('Cyclists Per Day') +
   ylab('Count')
 ```
@@ -174,7 +174,7 @@ df_busiest_counters |>
 ```
 
 
-The busiest bike counters in 2022 were at bridge access points as well as Kent ave in Williamsburg, which feeds onto the Wburg bridge.  For 2023, up until June 30th, the order is mostly the same, with Kent ave and Brooklyn Bridge switching places.  An analysis of daily total count data from just the Williamsburg bridge counter revealed similar trends to the total count data from all counters.
+The busiest bike counters in 2022 were at bridge access points as well as Kent Ave. in Williamsburg, which feeds onto the Williamsburg bridge.  For 2023 (through June 30th), the order is mostly the same, with Kent Ave. and Brooklyn Bridge switching places.  An analysis of daily total count data from just the Williamsburg bridge counter revealed similar seasonl trends to the total count data from all counters.
 
 # EDA: Violations
 
@@ -188,7 +188,7 @@ ts_daily_total |>
   ylab('Violation Count')
 ```
 
-There were 126,701 total violations consisting of 188 different types of violations handed out to cyclists during the time frame this data was collected. As we can see from the Total Daily Violations plot, there was a sharp drop-off in daily violations handed out after covid lockdown.
+There were 126,701 total violations consisting of 188 different types of violations handed out to cyclists during the time frame this data was collected. As we can see from the Total Daily Violations plot, there was a sharp drop-off in daily violations handed out after covid lockdown (April, 2020).  Some seasonality is present, as well, although not as pronounced as was seen in the count data.  Fewer violations were handed out around the Christmas and New Year's holidays, and more were handed out in the late summer/early autumn.
 
 ## Violations Per Borough
 
@@ -205,7 +205,7 @@ df_bike_violations |>
   ylab('Violations')
 ```
 
-Per borough, we can see the Manhattan had the  most violations, by far, with Brooklyn coming in second.  More information is required as to determine why.  It’s possible that the police presence in Manhattan is higher.  It is also possible that there are far more cyclists in Manhattan than in the other boroughs, although this can not be determined from the current data due to the dispoportional bike counter placement. 
+Per borough, we can see that Manhattan had the most violations, with Brooklyn coming in second.  More information is required as to determine why.  It’s possible that the police presence in Manhattan is higher.  It is also possible that there are far more cyclists in Manhattan than in the other boroughs, although this can not be determined from the current data due to the disproportional bike counter placement. 
 
 ## Most Common Violations
 
@@ -234,7 +234,7 @@ df_bike_violations |>
   mapview(xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE, alpha.regions = 0.2)
 ```
 
-Just looking at one years worth of the most common violation (1111D1C, since June 2022), we can see a few cluster areas emerge:
+Looking at one years worth of only the most common violation (1111D1C, since June 2022), we can see a few cluster areas emerge:
 
 - Upper West and Upper East sides of Manhattan (and their corresponding avenues up through Harlem) 
 - Up and down 1st and 2nd aves, especially in the East Village 
@@ -243,8 +243,6 @@ Just looking at one years worth of the most common violation (1111D1C, since Jun
 - Liberty Ave in Ozone park/ Richmond Hill 
 - The East side of Prospect Park on Bedford Ave 
 - Bensonhurst, Brooklyn.
-
-If you are riding through these areas, please be extra careful about stopping at stop signs and red lights, as these areas are where more bike tickets are administered to cyclists.
 
 ### Notable Violation
 
@@ -255,8 +253,6 @@ df_bike_violations |>
   filter(violation_code==12332) |> 
   mapview(xcol = "longitude", ycol = "latitude", crs = 4269, grid = FALSE)
 ```
-
-
 
 
 ## Busiest Violation Days
@@ -275,7 +271,7 @@ df_bike_violations |>
 
 The busiest violation days were mostly on summer days in 2018 and 2019.  This is consistent with our data that shows that there was a sharp dropoff in violations after covid lockdown, and that more ridership and violations are handed out in the summer months than in the colder months.
 
-# Forecasting: Rider Counts
+# Time Series Forecasting: Rider Counts
 
 Since the seasonality for rider counts is yearly, I used monthly total ridership instead of daily total ridership for modeling.  Daily total ridership proved to be too noisy.  
 
@@ -300,7 +296,7 @@ df_forecasting |>
   row_spec(2, bold=T)
 ```
 
-From the table, we can see that ETS_AAA fit the test dataset the best.    Originally, I expected a model with damping to outperform one without damping as there was a slight trend.
+From the Forecasts table, we can see that ETS AAA (Exponential Smoothing with additive errors, additive trend, and additive seasonality), also known as Holt-Winter's Additive forecasting, fit the test dataset the best when evaluating on RMSE.  This is consistent with the trends that we noticed.  The magnitude of the seasonality remains fairly constant, which would call for an additive seasonality in our model. If the seasonality fluctuated or grew in magnitude with time (for instance, if the difference between the winter ridership and summer ridership grew each year), then multiplicative seasonality might have performed better.  The magnitude of the trend also appears fairly constant (and linear), which would call for an additive trend in our model.  
 
 ## Model Diagnostics
 
@@ -340,5 +336,6 @@ ts_monthly_total |>
 ```
 
 # Important Takeaways
+
 
 ...
