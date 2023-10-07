@@ -1,6 +1,9 @@
 ---
 title: "NYC Bike Ridership and Violation Data Analysis"
-output: html_document
+output: 
+  html_document:
+    toc: true
+    toc_depth: 3
 date: "2023-10-05"
 ---
 
