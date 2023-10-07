@@ -358,7 +358,6 @@ df_bike_violations |>
 library(kableExtra)
 # Source: https://cran.r-project.org/web/packages/kableExtra/vignettes/awesome_table_in_html.html
 
-df_bike_violations
 
 df_bike_violations |>
   mutate(violation_date = date(violation_date)) |>

@@ -347,7 +347,7 @@ autoplot(train_monthly) +
 cat('seasonal Naive:\t\t\t', RMSE_seasonal_naive_monthly, '\n', 
     'ETS_AAA:\t\t\t', RMSE_ETS_AAA_monthly, '\n',
     'ETS_AAdA:\t\t\t', RMSE_ETS_AAdA, '\n',
-    'ETS_ANA:\t\t\t', RMSE_ETS_MNM, '\n',
+    'ETS_MNM:\t\t\t', RMSE_ETS_MNM, '\n',
     'ARIMA (1,0,0)(1,1,0)[12]\t', RMSE_ARIMA_100_110_12)
 
 ```
