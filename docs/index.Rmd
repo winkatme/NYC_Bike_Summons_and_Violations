@@ -90,9 +90,9 @@ Of  the 126,812 initial violation entries in the specified time frame, 111 total
 ```{r hist-daily-total-cyclists, fig.show="hold", message=FALSE, warning=FALSE, out.width="50%"}
 ts_daily_total |>
   ggplot(aes(x = daily_total_cyclists)) +
-  geom_histogram(bins = 80)+
-  labs(title='Daily Total Cyclists')+
-  xlab('Cyclists Per Day')+
+  geom_histogram(bins = 80) +
+  labs(title='Daily Total Cyclists') +
+  xlab('Cyclists Per Day') +
   ylab('Count')
 ```
 
@@ -103,7 +103,8 @@ df_bike_violations |>
   arrange(desc(daily_total_cyclists)) |>
   distinct(violation_date, daily_total_cyclists) |>
   slice(1:10) |>
-  kable(caption = "Top 10 Busiest Cycling Days", col.names = linebreak(c('Violation Date', 'Daily Total Cyclists'), align = "l")) |> 
+  kable(caption = "Top 10 Busiest Cycling Days", 
+        col.names = linebreak(c('Violation Date', 'Daily Total Cyclists'), align = "l")) |> 
   kable_classic(full_width = F, html_font = "Cambria", position = "left")
 ```
 
@@ -115,9 +116,9 @@ The amount of total cyclists per day ranged from 1665 to almost 60,000.  The bus
 ```{r message=FALSE, warning=FALSE}
 ts_daily_total |>
   autoplot(daily_total_cyclists) +
-  geom_smooth(method = "lm")+
-  ggtitle('Daily Total Cyclists Time Plot')+
-  xlab('Violation Date')+
+  geom_smooth(method = "lm") +
+  ggtitle('Daily Total Cyclists Time Plot') +
+  xlab('Violation Date') +
   ylab('Daily Totaly Cyclists')
 ```
 
@@ -129,15 +130,15 @@ Let's further explore the seasonality.  It's easier to view this with monthly to
 
 ```{r fig.show="hold", message=FALSE, warning=FALSE, out.width="50%"}
 ts_monthly_total |>
-  gg_season(monthly_total_cyclists)+
-  ggtitle('Seasonal plot of total monthly ridership')+
-  xlab('Violation Month')+
+  gg_season(monthly_total_cyclists) +
+  ggtitle('Seasonal plot of total monthly ridership') +
+  xlab('Violation Month') +
   ylab('Monthly Total Cyclists')
 
 ts_monthly_total |>
-  gg_subseries(monthly_total_cyclists)+
-  ggtitle('Subseries plot of total monthly ridership')+
-  xlab('Violation Month')+
+  gg_subseries(monthly_total_cyclists) +
+  ggtitle('Subseries plot of total monthly ridership') +
+  xlab('Violation Month') +
   ylab('Monthly Total Cyclists')
 ```
 
@@ -147,7 +148,14 @@ The increase in ridership in the warmer months can clearly be seen.  Also note t
 
 
 ```{r}
-location <- c('Williamsburg side of Williamsburg bridge', 'Queens side of Queensboro Bridge', 'Manhattan side of Manhattan bridge', 'Kent ave in Williamsburg', 'Brooklyn Bridge')
+# Note: Count values were copied and pasted from 2_NYPD_Bike_viol_EDA.rmd.  If that file is
+# updated, make sure to update these values.
+
+location <- c('Williamsburg side of Williamsburg bridge', 
+              'Queens side of Queensboro Bridge', 
+              'Manhattan side of Manhattan bridge', 
+              'Kent ave in Williamsburg', 
+              'Brooklyn Bridge')
 count_2022 <- c(1964902, 1818163, 1584788, 1066870, 1002070)
 
 df_busiest_counters <- data.frame(location, count_2022)
@@ -170,9 +178,9 @@ The busiest bike counters in 2022 were at bridge access points as well as Kent a
 
 ```{r}
 ts_daily_total |>
-  autoplot(daily_total_violations)+
-  ggtitle("Totaly Daily Violations")+
-  xlab('Violation Date')+
+  autoplot(daily_total_violations) +
+  ggtitle("Totaly Daily Violations") +
+  xlab('Violation Date') +
   ylab('Violation Count')
 ```
 
@@ -183,14 +191,14 @@ There were 126,701 total violations consisting of 188 different types of violati
 ```{r}
 df_bike_violations |> 
   group_by(year=year(violation_date), city_nm) |> 
-  ggplot(aes(x=year, fill=city_nm))+
-  geom_bar()+
+  ggplot(aes(x=year, fill=city_nm)) +
+  geom_bar() +
   labs(title="Yearly Cyclist Violations", 
        subtitle = 'Through June 30, 2023',
        fill="Borough"
-       )+
-  scale_fill_brewer()+
-  xlab('Year')+
+       ) +
+  scale_fill_brewer() +
+  xlab('Year') +
   ylab('Violations')
 ```
 
@@ -203,14 +211,12 @@ df_bike_violations |>
   mutate(violation_date = date(violation_date)) |>
   summarise(
     total = sum(n()),
-    .by = c(violation_code, description)
-  ) |>
+    .by = c(violation_code, description)) |>
   arrange(desc(total)) |>
   mutate(percent = 100 * round(total / sum(total), 3)) |>
   slice(1:10) |>
-    kable(caption = 'Top 10 Violations', 
-          col.names = linebreak(c('Violation Code', 'Description', 'Total', 'Percent'), align = "l")
-          ) |> 
+  kable(caption = 'Top 10 Violations', 
+          col.names = linebreak(c('Violation Code', 'Description', 'Total', 'Percent'))) |> 
   kable_classic(full_width = F, html_font = "Cambria", position = "left")
 ```
 
@@ -226,13 +232,14 @@ df_bike_violations |>
 ```
 
 Just looking at one years worth of the most common violation (1111D1C, since June 2022), we can see a few cluster areas emerge:
-* Upper West and Upper East sides of Manhattan (and their corresponding avenues up through Harlem), 
-* Up and down 1st and 2nd aves, especially in the East Village, 
-* On the Brooklyn side of the Williamsburg Bridge, 
-* Up and down 4th and 5th aves in Brooklyn, 
-* Liberty Ave in Ozone park/ Richmond Hill, 
-* The East side of Prospect Park on Bedford Ave 
-* Bensonhurst, Brooklyn.
+
+- Upper West and Upper East sides of Manhattan (and their corresponding avenues up through Harlem) 
+- Up and down 1st and 2nd aves, especially in the East Village 
+- On the Brooklyn side of the Williamsburg Bridge 
+- Up and down 4th and 5th aves in Brooklyn 
+- Liberty Ave in Ozone park/ Richmond Hill 
+- The East side of Prospect Park on Bedford Ave 
+- Bensonhurst, Brooklyn.
 
 If you are riding through these areas, please be extra careful about stopping at stop signs and red lights, as these areas are where more bike tickets are administered to cyclists.
 
@@ -259,8 +266,7 @@ df_bike_violations |>
   arrange(desc(daily_total_violations)) |>
   slice(1:10) |>
   kable(caption = "Top 10 busiest violation days", 
-        col.names = linebreak(c('Violation Date', 'Daily Total Violations'), align = "l")
-        ) |> 
+        col.names = linebreak(c('Violation Date', 'Daily Total Violations'))) |> 
   kable_classic(full_width = F, html_font = "Cambria", position = "left")
 ```
 
@@ -286,8 +292,7 @@ df_forecasting <- data.frame(tests, RMSE)
 
 df_forecasting |> 
   kable(caption = "Forecasts", 
-        col.names = linebreak(c('Forecasting Method', 'RMSE on Test Set'), align = "l")
-        ) |> 
+        col.names = linebreak(c('Forecasting Method', 'RMSE on Test Set'))) |> 
   kable_classic(full_width = F, html_font = "Cambria", position = "left") |> 
   row_spec(2, bold=T)
 ```
@@ -297,15 +302,17 @@ From the table, we can see that ETS_AAA fit the test dataset the best.    Origin
 ## Model Diagnostics
 
 ```{r}
+# separate train and test sets
 set.seed(99)
+train_monthly <- ts_monthly_total |> select(monthly_total_cyclists) |> filter_index(~"2022-05")
+test_monthly <- ts_monthly_total |> select(monthly_total_cyclists) |> filter_index("2022-06"~.)
 
-train_monthly<-ts_monthly_total |> select(monthly_total_cyclists) |> filter_index(~"2022-05")
-test_monthly<-ts_monthly_total |> select(monthly_total_cyclists) |> filter_index("2022-06"~.)
-
+# model train set
 mod_ETS_AAA <- train_monthly %>%
   model(ETS(monthly_total_cyclists ~ error("A") + trend("A") + season("A")))
 
-gg_tsresiduals(mod_ETS_AAA)+
+# plot residuals
+gg_tsresiduals(mod_ETS_AAA) +
   ggtitle('ETS AAA Residuals')
 ```
 
@@ -322,10 +329,10 @@ fct_ETS_AAA <- train_monthly |>
 
 ts_monthly_total |> 
   autoplot(monthly_total_cyclists) +
-  autolayer(fct_ETS_AAA, size=0.7)+
-  autolayer(test_monthly)+
-  ggtitle('ETS AAA Forecast of Total Monthly Cyclists to 2025')+
-  xlab('Month')+
+  autolayer(fct_ETS_AAA, size=0.7) +
+  autolayer(test_monthly) +
+  ggtitle('ETS AAA Forecast of Total Monthly Cyclists to 2025') +
+  xlab('Month') +
   ylab('Monthly Total Cyclists')
 ```
 
