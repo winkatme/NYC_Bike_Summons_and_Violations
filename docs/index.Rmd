@@ -95,7 +95,7 @@ df_bike_violations |>
   distinct(violation_date, daily_total_cyclists) |>
   slice(1:10) |>
   kable(caption = "Top 10 Busiest Cycling Days", col.names = linebreak(c('Violation Date', 'Daily Total Cyclists'), align = "l")) |> 
-  kable_classic(full_width = F, html_font = "Cambria")
+  kable_classic(full_width = F, html_font = "Cambria", position='right')
 ```
 
 
@@ -240,7 +240,7 @@ If you are riding through these areas, please be extra careful about stopping at
 
 ### Notable Violation
 
-This specific violation - Code 12332, ATTACHING SELF TO MOVING MOTOR VEHICLE which occurred only once on May 1 2018 at 15:07:17 - is highly notable, as it is direct proof that at least one [famous time traveller](https://youtu.be/5Y1ka1-KFFY?si=UPZ06y5Tj57Ay3cT&t=103) graced us with his presence near West 57th st and 9th Ave:
+This specific violation - Code 12332, ATTACHING SELF TO MOVING MOTOR VEHICLE, which occurred only once on May 1 2018 at 15:07:17 - is highly notable, as it is direct proof that at least one [famous time traveller](https://youtu.be/5Y1ka1-KFFY?si=UPZ06y5Tj57Ay3cT&t=103) graced us with his presence near West 57th st and 9th Ave:
 
 ```{r}
 df_bike_violations |> 
