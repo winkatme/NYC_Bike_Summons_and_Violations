@@ -149,13 +149,13 @@ The increase in ridership in the warmer months can clearly be seen.  Also note t
 
 Busiest Bike Counters in 2022  
 
-Bike counter location | Number of Cyclists counted in 2022
-__________________________________________|_____________
-Williamsburg side of Williamsburg bridge | 1964902
-Queens side of Queensboro Bridge | 1818163
-Manhattan side of Manhattan bridge | 1584788
-Kent ave in Wburg | 1066870
-Brooklyn Bridge | 1002070
+Bike counter location                     | Number of Cyclists counted in 2022
+_________________________________________ | ___________________________________
+Williamsburg side of Williamsburg bridge  | 1964902
+Queens side of Queensboro Bridge          | 1818163
+Manhattan side of Manhattan bridge        | 1584788
+Kent ave in Williamsburg                  | 1066870
+Brooklyn Bridge                           | 1002070
 
 The busiest bike counters in 2022 were at bridge access points as well as Kent ave in Williamsburg, which feeds onto the Wburg bridge.  For 2023, up until June 30th, the order is mostly the same, with Kent ave and Brooklyn Bridge switching places.  An analysis of daily total count data from just the Williamsburg bridge counter revealed similar trends to the total count data from all counters.
 
