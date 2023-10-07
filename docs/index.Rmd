@@ -8,6 +8,9 @@ output:
     code_folding: hide
     highlight: haddock
 date: "2023-10-05"
+author: Dov Winkleman
+url: https://github.com/winkatme/NYC_Bike_Summons_and_Violations
+email: winkatme@gmail.com
 ---
 
 ```{r libraries, include=FALSE}
@@ -53,13 +56,14 @@ ts_monthly_total <- ts_daily_total |>
   rename(violation_date = year_month)
 ```
 
-# NYC Bike Violations 
+This report contains an exploratory data analysis of cyclist violations in NYC from 2018 to June 30, 2023, as well as a forecast for cyclist counts to 2025. Everything was coded in R markdown files which can be viewed in the [github repo](https://github.com/winkatme/NYC_Bike_Summons_and_Violations) for this report.  There is a supplemental [R Shiny Dashboard](https://dov-winkleman.shinyapps.io/4_NYPD_Bike_viol_Shiny/) that contains selectable maps and time-frames for all violations.
 
 # Introduction
 
-Cycling is... While one can find a great deal of information about general cycling in NYC, it is harder to find information specifically about bike tickets.
+While one can find a great deal of information about general cycling in NYC, it is harder to find information specifically about bike violations.  This report aims to examine a few questions:  What are the most common violations?  Where are they most likely to occur? Have the violations changed over time?  Are there certain seasons where there are more or less violations handed out?
+This report also looks at rider count data, taken from bicycle counters strategically placed throughout the city, and examines the seasonal trens in ridership, as well as forecasts ridership to 2025, based on current data.  
 
-Throughout this report, I will use the term 'cyclist' to refer to regular bike riders, ebike riders, and escooter riders and 'bicycle' to refer to any of the vehicles that falls under these labels.
+Throughout this report, I will use the term 'cyclist' to refer to regular bike riders, e-bike riders, and e-scooter riders, and 'bicycle' to refer to any of the vehicles that fall under these labels.
 
 # Data
 
@@ -174,7 +178,7 @@ The busiest bike counters in 2022 were at bridge access points as well as Kent a
 
 # EDA: Violations
 
-## Violations over time
+## Violations Over Time
 
 ```{r}
 ts_daily_total |>
@@ -184,9 +188,9 @@ ts_daily_total |>
   ylab('Violation Count')
 ```
 
-There were 126,701 total violations consisting of 188 different types of violations handed out to cyclists during the time frame this data was collected. As we can see from the daily violations plot, there was a sharp drop-off in violations handed out after covid lockdown.
+There were 126,701 total violations consisting of 188 different types of violations handed out to cyclists during the time frame this data was collected. As we can see from the Total Daily Violations plot, there was a sharp drop-off in daily violations handed out after covid lockdown.
 
-## Violations per borough
+## Violations Per Borough
 
 ```{r}
 df_bike_violations |> 
@@ -195,8 +199,7 @@ df_bike_violations |>
   geom_bar() +
   labs(title="Yearly Cyclist Violations", 
        subtitle = 'Through June 30, 2023',
-       fill="Borough"
-       ) +
+       fill="Borough") +
   scale_fill_brewer() +
   xlab('Year') +
   ylab('Violations')
@@ -220,7 +223,7 @@ df_bike_violations |>
   kable_classic(full_width = F, html_font = "Cambria", position = "left")
 ```
 
-From this table, we can see that improper traffic behavior at red lights (1111D1C, 403A3IX), account for ~50% of all bicycle violations.  Other common violations include driving in the wrong direction, operating a bicycle with more than 1 earphone, not having a bell, and riding on the sidewalk. 
+From the Top 10 Violations table, we can see that improper traffic behavior at red lights (1111D1C, 403A3IX), account for ~50% of all bicycle violations.  Other common violations include driving in the wrong direction, operating a bicycle with more than 1 earphone, not having a bell, and riding on the sidewalk. 
 
 ```{r}
 df_bike_violations |>
@@ -316,7 +319,7 @@ gg_tsresiduals(mod_ETS_AAA) +
   ggtitle('ETS AAA Residuals')
 ```
 
-The residuals for this model do not show anything out of the ordinary. Additionally, it fails to reject the null for the box pierce (p = 0.3329984) and ljung-box (p =  0.1743495) tests, indicating that the residuals are white noise.  The residuals also fail to reject the Shapiro-Wilks test (p = 0.1783), indicating that the they are normally distributed.
+The residuals for this model do not show anything out of the ordinary. They fail to reject the null for the box pierce (p = 0.3329984) and ljung-box (p =  0.1743495) tests, indicating that the residuals are white noise.  They also fail to reject the Shapiro-Wilks test (p = 0.1783), indicating that the they are normally distributed.
 
 ## Forecast Plot to 2025
 
