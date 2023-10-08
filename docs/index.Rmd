@@ -264,7 +264,7 @@ The busiest violation days were mostly on summer days in 2018 and 2019. This is 
 
 ## Relationship between Violations and Ridership
 
-Are there more violations handed out to cyclists on days of higher ridership?  Or, in other words, as ridership increases, do violations also increase?  To answer this, a correlation coefficient between the two quantities was calculated as 0.05, indicating that there was no relationship.  However, after accounting for covid lockdown, a correlation coefficient of 0.45 was calculated for pre-covid lockdown, and a correlation coefficient of 0.35 was calculated for post-covid lockdown, indicating a positive relationship.  However, there is still a lot of unaccounted for variation, which tells us that there are more factors invovlved in this relationship.  
+Are there more violations handed out to cyclists on days of higher ridership?  Or, in other words, as ridership increases, do violations also increase?  To answer this, a correlation coefficient between the two quantities was calculated at 0.05, indicating that there was no relationship.  However, after accounting for covid lockdown, a correlation coefficient of 0.45 was calculated for pre-covid lockdown, and a correlation coefficient of 0.35 was calculated for post-covid lockdown, indicating a positive but not very strong relationship.  There is still a lot of unaccounted for variance, which tells us that there are more factors involved in this relationship.  
 
 # Time Series Forecasting: Rider Counts
 
