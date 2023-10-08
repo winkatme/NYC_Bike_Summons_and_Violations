@@ -1004,10 +1004,10 @@ ts_daily_total |>
   filter_index("2020-04" ~ .) |>
   ggplot(aes(x = daily_total_violations, y = daily_total_cyclists)) +
   geom_point() +
-  geom_smooth(method = lm) +
-  sm_statCorr(label_x = 120, label_y = 1000)
+  geom_smooth(method = loess)
+  #sm_statCorr(label_x = 120, label_y = 1000)
 
-# correlation:  ~0.37
+# correlation:  ~0.35
 ts_daily_total |>
   filter_index("2020-04" ~ .) |>
   select(daily_total_cyclists, daily_total_violations) |>
