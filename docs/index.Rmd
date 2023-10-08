@@ -199,7 +199,7 @@ df_bike_violations |>
   ylab('Violations')
 ```
 
-Per borough, we can see that Manhattan had the most violations, with Brooklyn coming in second. More information is required to determine why. It's possible that the police presence in Manhattan is higher. It is also possible that there are far more cyclists in Manhattan than in the other boroughs, although this can not be determined from the current data due to the disproportional bike counter placement.
+Per borough, we can see that Manhattan had the most violations, with Brooklyn coming in second. More information is required to determine why. It's possible that the police presence in Manhattan is higher. It is also possible that there are far more cyclists in Manhattan than in the other boroughs, although this can not be determined from the current data due to the disproportional bike counter placement. We can also see that the bump in violations from 2021 to 2022 was due to more violations being handed out in Brooklyn - Brooklyn increased from 2021 to 2022, while Manhattan decreased.
 
 ## Most Common Violations
 
@@ -261,6 +261,10 @@ df_bike_violations |>
 ```
 
 The busiest violation days were mostly on summer days in 2018 and 2019. This is consistent with our data that shows that there was a sharp drop-off in violations after covid lockdown, and that more ridership and violations are handed out in the summer months than in the colder months.
+
+## Relationship between Violations and Ridership
+
+Are there more violations handed out to cyclists on days of higher ridership?  Or, in other words, as ridership increases, do violations also increase?  To answer this, a correlation coefficient between the two quantities was calculated as 0.05, indicating that there was no relationship.  However, after accounting for covid lockdown, a correlation coefficient of 0.45 was calculated for pre-covid lockdown, and a correlation coefficient of 0.35 was calculated for post-covid lockdown, indicating a positive relationship.  However, there is still a lot of unaccounted for variation, which tells us that there are more factors invovlved in this relationship.  
 
 # Time Series Forecasting: Rider Counts
 
@@ -330,12 +334,16 @@ ts_monthly_total |>
 
 -   While ridership has been steadily increasing, with an average of 6.5 new riders per day, violations have noticeably decreased after covid lockdown - more violations were handed out before covid lockdown than after, despite rider increase.
 
+-   Bridge access is where bike counters count the most riders, highlighting the importance of these transportation access points.
+
+-   The Williamsburg Bridge bike was the busiest bike route with a bike counter in 2022.
+
 -   The busiest cycling days have mostly been in the late autumn, while the busiest violation days have been in the summer, before the covid lockdown.
 
 -   Seasonally, less violations are handed out around New Year's.
 
 -   Manhattan has the most violations handed out, by far, with Brooklyn coming in second.
 
--   The most common cycling violation, making up 50% of violations, involved illegal behavior at red lights and stop signs. Others include \'disobeying traffic device\', riding the wrong way, having more than one earphone in, not having a bell, and riding on the sidewalk.
+-   The most common cycling violation, making up 50% of violations, involved illegal behavior at red lights and stop signs. Others include 'disobeying traffic device', riding the wrong way, having more than one earphone in, not having a bell, and riding on the sidewalk.
 
-With bike ridership forcasted to continue its growing trend, the importance of a clearer understanding of bike violations will also increase.
+With bike ridership forecasted to continue its growing trend, the importance of a clearer understanding of bike violations will also increase. To facilitate this, more bike counters placed around the surrounding boroughs of Manhattan would give more accurate bike counts. Additionally, further spatial data analysis could help determine and predict cluster areas for different violations.
