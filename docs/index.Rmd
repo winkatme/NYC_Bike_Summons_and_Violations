@@ -168,7 +168,7 @@ df_busiest_counters |>
 
 ```
 
-The busiest bike counters in 2022 were at bridge access points as well as Kent Ave. in Williamsburg, which feeds onto the Williamsburg bridge. For 2023 (through June 30th), the order is mostly the same, with Kent Ave. and Brooklyn Bridge switching places. An analysis of daily total count data from just the Williamsburg bridge counter revealed similar seasonal trends to the total count data from all counters.
+The busiest bike counters in 2022 were at bridge access points as well as Kent Avenue in Williamsburg, which feeds onto the Williamsburg bridge. For 2023 (through June 30th), the order is mostly the same, with Kent Avenue and Brooklyn Bridge switching places. An analysis of daily total count data from just the Williamsburg bridge counter revealed similar seasonal trends to the total count data from all counters.
 
 # EDA: Violations
 
@@ -326,6 +326,16 @@ ts_monthly_total |>
   ylab('Monthly Total Cyclists')
 ```
 
-# Important Takeaways
+# Conclusion and Important Takeaways
 
-...
+-   While ridership has been steadily increasing, with an average of 6.5 new riders per day, violations have noticeably decreased after covid lockdown - more violations were handed out before covid lockdown than after, despite rider increase.
+
+-   The busiest cycling days have mostly been in the late autumn, while the busiest violation days have been in the summer, before the covid lockdown.
+
+-   Seasonally, less violations are handed out around New Year's.
+
+-   Manhattan has the most violations handed out, by far, with Brooklyn coming in second.
+
+-   The most common cycling violation, making up 50% of violations, involved illegal behavior at red lights and stop signs. Others include \'disobeying traffic device\', riding the wrong way, having more than one earphone in, not having a bell, and riding on the sidewalk.
+
+With bike ridership forcasted to continue its growing trend, the importance of a clearer understanding of bike violations will also increase.
