@@ -98,203 +98,6 @@ ts_daily_total <- df_bike_violations |>
 ```
 
 
-## Optional: Create st/sf for spatial analysis
-
-```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, echo=FALSE}
-# WORK IN PROGRESS
-
-# import df
-# source for help:  https://gis.stackexchange.com/questions/305403/load-a-csv-as-simple-features-r
-
-st_bike_violations <- readr::read_csv("Data/Processed/df_bike_violations_2023-08-05.csv") |> 
-  filter(!is.na(longitude)) |> 
-  st_as_sf(coords=c("longitude","latitude"), crs=4326) # remember x=lon and y=lat
-
-class(st_bike_violations$geometry)
-
-st_bbox(st_bike_violations)
-
-st_crs(st_bike_violations)
-
-#install.packages('stars')
-library(stars)
-
-plot(st_bike_violations)
-
-# point pattern test
-#install.packages('spatstat')
-library(spatstat)
-
-ppp_bike_violations <- df_bike_violations |> 
-  mutate(date = date(violation_date)) |> 
-  filter(date >= '2022-04-01') |> 
-  filter(violation_code=='1111D1C') |> 
-  filter(!is.na(x_coord_cd)) |> 
-  st_as_sf(coords = c("x_coord_cd", "y_coord_cd")) |> 
-  as.ppp()
-
-plot(ppp_bike_violations$window)
-plot(ppp_bike_violations)
-
-#plot(density(ppp_bike_violations,sigma = bw.diggle))
-#plot(ppp_bike_violations, add=T)
-
-
-# test: clusters for st_bike_violations
-
-?hclust
-
-
-
-d = dist(x = st_bike_violations$location, method = 'euclidean') 
-
-dim(st_bike_violations)
-
-
-st_bike_violations |> 
-  select(x_coord_cd, y_coord_cd) |> 
-  as.matrix() |> 
-  dist()
-# note: chnaged environment:
-# source: https://stackoverflow.com/questions/51295402/r-on-macos-error-vector-memory-exhausted-limit-reached
-#library(usethis) 
-#usethis::edit_r_environ()
-
-# since vector was too large to make distance matrix, just choose 1111D1C, since april 2022
-
-st_bike_violations_1111D1C <- st_bike_violations |> 
-  mutate(date= date(violation_date)) |> 
-  filter(date >= "2022-04-01") |>
-  filter(violation_code=='1111D1C')
-
-d = dist(x = st_bike_violations_1111D1C$location, method = 'euclidean')
-
-clusters = hclust(d = d,method='ward.D2')
-
-
-
-# test for spdep
-#install.packages('spdep')
-library(spdep)
-
-st_bike_violations_1111D1C |> 
-  st_geometry() |> 
-  plot(border = "grey", lwd = 0.5)
-nb_soi |> plot(coords = coords, add = TRUE, 
-               points = FALSE, lwd = 0.5)
-```
-
-
-```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, echo=FALSE}
-# WORK IN PROGRESS
-# test for ppp point pattern analysis 
-# source: https://cran.r-project.org/web/packages/spatstat/vignettes/getstart.pdf
-
-# for binding box dimensions:
-st_bbox(st_bike_violations_1111D1C)
-
-st_crs(st_bike_violations_1111D1C)
-owin(st_geometry(st_bike_violations_1111D1C))
-?st_transform()
-
-?owin
-
-# this works
-ppp_test <- ppp(st_coordinates(st_bike_violations_1111D1C)[,1], st_coordinates(st_bike_violations_1111D1C)[,2], c(-74.1556, -73.76750), c(40.57416, 40.88731))
-plot(ppp_test)
-
-
-
-# work:
-ggplot() + 
-  geom_sf(data = st_bike_violations_1111D1C, size=0.1)
-
-
-# this works
-plot(density(ppp_test))
-
-plot(quadratcount(ppp_test, nx=10, ny=10))
-
-
-kppm_test<-kppm(ppp_test)
-plot.kppm_test
-
-ppp_clust<-clusterset(ppp_test)
-
-plot(ppp_test, main=ppp_clust)
-ppp_clust
-
-as.SpatialPoints.ppp(ppp_test)
-ppp_test$y
-
-mapview(ppp_test, xcol = ppp_test$x, ycol = ppp_test$y, crs = 4269, grid = FALSE, alpha.regions = 0.1)
-
-```
-
-```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, echo=FALSE}
-# WORK IN PROGRESS
-
-# cluster test with regular data
-df_bike_violations_1111D1C <- df_bike_violations |> 
-  mutate(date = date(violation_date)) |> 
-  filter(date >= '2022-04-01') |> 
-  filter(violation_code=='1111D1C')
-
-colnames(df_bike_violations_1111D1C)
-
-distances <- df_bike_violations_1111D1C |> 
-  select(longitude, latitude) |> 
-  dist(method='euclidean')
-
-#distances
-
-
-clust = hclust(distances,method = "ward.D2")
-plot(clust)
-
-#library(dendextend)
-
-clusters = cutree(clust, k=6)
-clusters
-
-density <- density(ppp_test, sigma = 0.005)
-plot(density)
-
-str(density)
-
-install.packages('tigris')
-library(tigris)
-manhattan_tigris = tracts(state='NY',county = 'New York',cb = TRUE)
-
-#install.packages('tmap')
-library(tmap)
-
-tmap_mode("view")
-
-tm_shape(manhattan_tigris)+
-  tm_borders()+
-  plot(density)
-
-
-# ggmaps
-?register_google 
-
-library(ggmap)
-map = get_map(location = c(-77.08597,38.7),source="google",maptype="roadmap",zoom=12)
-ggmap(map)+geom_point(data = dat2,aes(x=longitude,y=latitude,size=Magnitude))
-
-ggplot(data=density$v)
-
-#install.packages('rgdal')
-library(rgdal)
-
-class(nyc)
-
-?density
-
-```
-
-
 
 ## Create monthly and yearly total data tsibbles
 
@@ -1098,8 +901,208 @@ Takeaway: Setting window to 90 looks better.  Takes into account increase in 202
 
 
 
+
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, echo=FALSE}
+# Scratchpad - please ignore!
+# WORK IN PROGRESS - Create st/sf for spatial analysis
+
+# import df
+# source for help:  https://gis.stackexchange.com/questions/305403/load-a-csv-as-simple-features-r
+
+st_bike_violations <- readr::read_csv("Data/Processed/df_bike_violations_2023-08-05.csv") |> 
+  filter(!is.na(longitude)) |> 
+  st_as_sf(coords=c("longitude","latitude"), crs=4326) # remember x=lon and y=lat
+
+class(st_bike_violations$geometry)
+
+st_bbox(st_bike_violations)
+
+st_crs(st_bike_violations)
+
+#install.packages('stars')
+library(stars)
+
+plot(st_bike_violations)
+
+# point pattern test
+#install.packages('spatstat')
+library(spatstat)
+
+ppp_bike_violations <- df_bike_violations |> 
+  mutate(date = date(violation_date)) |> 
+  filter(date >= '2022-04-01') |> 
+  filter(violation_code=='1111D1C') |> 
+  filter(!is.na(x_coord_cd)) |> 
+  st_as_sf(coords = c("x_coord_cd", "y_coord_cd")) |> 
+  as.ppp()
+
+plot(ppp_bike_violations$window)
+plot(ppp_bike_violations)
+
+#plot(density(ppp_bike_violations,sigma = bw.diggle))
+#plot(ppp_bike_violations, add=T)
+
+
+# test: clusters for st_bike_violations
+
+?hclust
+
+
+
+d = dist(x = st_bike_violations$location, method = 'euclidean') 
+
+dim(st_bike_violations)
+
+
+st_bike_violations |> 
+  select(x_coord_cd, y_coord_cd) |> 
+  as.matrix() |> 
+  dist()
+# note: chnaged environment:
+# source: https://stackoverflow.com/questions/51295402/r-on-macos-error-vector-memory-exhausted-limit-reached
+#library(usethis) 
+#usethis::edit_r_environ()
+
+# since vector was too large to make distance matrix, just choose 1111D1C, since april 2022
+
+st_bike_violations_1111D1C <- st_bike_violations |> 
+  mutate(date= date(violation_date)) |> 
+  filter(date >= "2022-04-01") |>
+  filter(violation_code=='1111D1C')
+
+d = dist(x = st_bike_violations_1111D1C$location, method = 'euclidean')
+
+clusters = hclust(d = d,method='ward.D2')
+
+
+
+# test for spdep
+#install.packages('spdep')
+library(spdep)
+
+st_bike_violations_1111D1C |> 
+  st_geometry() |> 
+  plot(border = "grey", lwd = 0.5)
+nb_soi |> plot(coords = coords, add = TRUE, 
+               points = FALSE, lwd = 0.5)
+```
+
+
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, echo=FALSE}
+# Scratchpad - please ignore!
+# WORK IN PROGRESS - Create st/sf for spatial analysis
+
+# test for ppp point pattern analysis 
+# source: https://cran.r-project.org/web/packages/spatstat/vignettes/getstart.pdf
+
+# for binding box dimensions:
+st_bbox(st_bike_violations_1111D1C)
+
+st_crs(st_bike_violations_1111D1C)
+owin(st_geometry(st_bike_violations_1111D1C))
+?st_transform()
+
+?owin
+
+# this works
+ppp_test <- ppp(st_coordinates(st_bike_violations_1111D1C)[,1], st_coordinates(st_bike_violations_1111D1C)[,2], c(-74.1556, -73.76750), c(40.57416, 40.88731))
+plot(ppp_test)
+
+
+
+# work:
+ggplot() + 
+  geom_sf(data = st_bike_violations_1111D1C, size=0.1)
+
+
+# this works
+plot(density(ppp_test))
+
+plot(quadratcount(ppp_test, nx=10, ny=10))
+
+
+kppm_test<-kppm(ppp_test)
+plot.kppm_test
+
+ppp_clust<-clusterset(ppp_test)
+
+plot(ppp_test, main=ppp_clust)
+ppp_clust
+
+as.SpatialPoints.ppp(ppp_test)
+ppp_test$y
+
+mapview(ppp_test, xcol = ppp_test$x, ycol = ppp_test$y, crs = 4269, grid = FALSE, alpha.regions = 0.1)
+
+```
+
+```{r eval=FALSE, message=FALSE, warning=FALSE, include=FALSE, echo=FALSE}
+# Scratchpad - please ignore!
+# WORK IN PROGRESS - Create st/sf for spatial analysis
+
+# cluster test with regular data
+df_bike_violations_1111D1C <- df_bike_violations |> 
+  mutate(date = date(violation_date)) |> 
+  filter(date >= '2022-04-01') |> 
+  filter(violation_code=='1111D1C')
+
+colnames(df_bike_violations_1111D1C)
+
+distances <- df_bike_violations_1111D1C |> 
+  select(longitude, latitude) |> 
+  dist(method='euclidean')
+
+#distances
+
+
+clust = hclust(distances,method = "ward.D2")
+plot(clust)
+
+#library(dendextend)
+
+clusters = cutree(clust, k=6)
+clusters
+
+density <- density(ppp_test, sigma = 0.005)
+plot(density)
+
+str(density)
+
+install.packages('tigris')
+library(tigris)
+manhattan_tigris = tracts(state='NY',county = 'New York',cb = TRUE)
+
+#install.packages('tmap')
+library(tmap)
+
+tmap_mode("view")
+
+tm_shape(manhattan_tigris)+
+  tm_borders()+
+  plot(density)
+
+
+# ggmaps
+?register_google 
+
+library(ggmap)
+map = get_map(location = c(-77.08597,38.7),source="google",maptype="roadmap",zoom=12)
+ggmap(map)+geom_point(data = dat2,aes(x=longitude,y=latitude,size=Magnitude))
+
+ggplot(data=density$v)
+
+#install.packages('rgdal')
+library(rgdal)
+
+class(nyc)
+
+?density
+
+```
+
 ```{r scratchpad, include=FALSE}
-   
+ # Scratchpad - please ignore!
+  
 
 str(df_bike_violations)
 
