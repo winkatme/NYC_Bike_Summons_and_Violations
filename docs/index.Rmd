@@ -122,7 +122,7 @@ ts_daily_total |>
   ylab('Daily Totaly Cyclists')
 ```
 
-From the plot of daily total cyclists a general increasing trend can be seen, as well as strong seasonality. There are more cyclists in the warmer summer months than in the colder months. The slope for the regression line is 6.537613, which indicates that there are on average approximately 6.5 new riders per day.
+From the plot of daily total cyclists a general increasing trend can be seen, as well as strong seasonality. There are more cyclists in the warmer summer months than in the colder months. The slope for the regression line is \~6.54, which indicates that there are on average 6.5 new riders per day.
 
 ### Seasonality
 
@@ -182,7 +182,7 @@ ts_daily_total |>
   ylab('Violation Count')
 ```
 
-There were 126,701 total violations consisting of 188 different types of violations handed out to cyclists during the time frame this data was collected. As we can see from the Total Daily Violations plot, there was a sharp drop-off in daily violations handed out after covid lockdown (April, 2020). Some seasonality is present as well, although not as pronounced as was seen in the count data. Fewer violations were handed out around the Christmas and New Year's holidays, and more were handed out in the late summer/early autumn.
+There were 126,701 total violations consisting of 188 different types of violations handed out to cyclists during the time frame this data was collected. As we can see from the Total Daily Violations plot, there was a sharp drop-off in daily violations handed out after covid lockdown (April, 2020). I do not know why this is, and more information would be needed. Some seasonality is present as well, although not as pronounced as was seen in the count data. Fewer violations were handed out around the Christmas and New Year's holidays, while more were handed out in the late summer/early autumn.
 
 ## Violations Per Borough
 
@@ -199,16 +199,14 @@ df_bike_violations |>
   ylab('Violations')
 ```
 
-Per borough, we can see that Manhattan had the most violations, with Brooklyn coming in second. More information is required as to determine why. It's possible that the police presence in Manhattan is higher. It is also possible that there are far more cyclists in Manhattan than in the other boroughs, although this can not be determined from the current data due to the disproportional bike counter placement.
+Per borough, we can see that Manhattan had the most violations, with Brooklyn coming in second. More information is required to determine why. It's possible that the police presence in Manhattan is higher. It is also possible that there are far more cyclists in Manhattan than in the other boroughs, although this can not be determined from the current data due to the disproportional bike counter placement.
 
 ## Most Common Violations
 
 ```{r}
 df_bike_violations |>
   mutate(violation_date = date(violation_date)) |>
-  summarise(
-    total = sum(n()),
-    .by = c(violation_code, description)) |>
+  summarise(total = sum(n()), .by = c(violation_code, description)) |>
   arrange(desc(total)) |>
   mutate(percent = 100 * round(total / sum(total), 3)) |>
   slice(1:10) |>
@@ -217,7 +215,7 @@ df_bike_violations |>
   kable_classic(full_width = F, html_font = "Cambria", position = "left")
 ```
 
-From the Top 10 Violations table, we can see that improper traffic behavior at red lights (1111D1C, 403A3IX), account for \~50% of all bicycle violations. Other common violations include driving in the wrong direction, operating a bicycle with more than 1 earphone, not having a bell, and riding on the sidewalk.
+From the Top 10 Violations table, we can see that improper traffic behavior at red lights (1111D1C, 403A3IX), account for \~50% of all cyclist violations. Other common violations include driving in the wrong direction, operating a bicycle with more than 1 earphone, not having a bell, and riding on the sidewalk.
 
 ```{r}
 df_bike_violations |>
@@ -231,12 +229,12 @@ df_bike_violations |>
 Looking at one year's worth of only the most common violation (1111D1C, since June 2022), we can see a few cluster areas emerge:
 
 -   Upper West and Upper East sides of Manhattan (and their corresponding avenues up through Harlem)
--   Up and down 1st and 2nd aves, especially in the East Village
+-   Up and down 1st and 2nd Avenues, especially in the East Village
 -   On the Brooklyn side of the Williamsburg Bridge
--   Up and down 4th and 5th aves in Brooklyn
--   Liberty Ave in Ozone park/ Richmond Hill
--   The East side of Prospect Park on Bedford Ave
--   Bensonhurst, Brooklyn.
+-   Up and down 4th and 5th Avenues in Brooklyn
+-   Liberty Ave in Ozone Park/ Richmond Hill
+-   The East side of Prospect Park on Bedford Avenue
+-   Bensonhurst, Brooklyn
 
 ### Notable Violation
 
@@ -262,15 +260,15 @@ df_bike_violations |>
   kable_classic(full_width = F, html_font = "Cambria", position = "left")
 ```
 
-The busiest violation days were mostly on summer days in 2018 and 2019. This is consistent with our data that shows that there was a sharp dropoff in violations after covid lockdown, and that more ridership and violations are handed out in the summer months than in the colder months.
+The busiest violation days were mostly on summer days in 2018 and 2019. This is consistent with our data that shows that there was a sharp drop-off in violations after covid lockdown, and that more ridership and violations are handed out in the summer months than in the colder months.
 
 # Time Series Forecasting: Rider Counts
 
 Since the seasonality for rider counts is yearly, I used monthly total ridership instead of daily total ridership for modeling. Daily total ridership proved to be too noisy.
 
-The training set consisted of data from the beginning of the data set, Jan 2018, until May 2022. The test set contained the data from June 2022 to June 2023.
+The training set consisted of data from the beginning of the data set, Jan 2018, through May 2022. The test set contained the data from June 2022 to June 2023.
 
-Five different models for monthly bike counts were attempted: A seasonal naive forecast, three Exponential smoothing models (ETS AAA, ETS AAdA, and the ETS function's choice (ETS MNM)) as well as the ARIMA function's choice (ARIMA (1,0,0)(1,1,0)[12]).
+Five different models for monthly bike counts were attempted: A seasonal naive model, three exponential smoothing models (ETS AAA, ETS AAdA, and the ETS function's choice (ETS MNM)) as well as the ARIMA function's choice (ARIMA (1,0,0)(1,1,0)[12]).
 
 Since there was strong seasonality, I decided to focus on exponential smoothing models. An ARIMA and seasonal naive forecast were modeled for comparison. When allowing the ETS function to choose what it thought would be the best model, it chose a multiplicative ETS model (MNM). I do not know why the function chose this. This highlights the importance of understanding analysis techniques when choosing the best model, and not leaving the decision up to an algorithm.
 
@@ -289,7 +287,7 @@ df_forecasting |>
   row_spec(2, bold=T)
 ```
 
-From the Forecasts table, we can see that ETS AAA (Exponential Smoothing with additive errors, additive trend, and additive seasonality), also known as Holt-Winter's Additive forecasting, fit the test dataset the best when evaluated on RMSE. This is consistent with the trends that we noticed earlier. The magnitude of the seasonality remains fairly constant, which would call for an additive seasonality in our model. If the seasonality grew in magnitude with time (for instance, if the difference between the winter ridership and summer ridership grew with each year), then multiplicative seasonality might have performed better. The magnitude of the trend also appears fairly constant (and linear), which would call for an additive trend in our model.
+From the Forecasts table, we can see that ETS AAA (Exponential Smoothing with additive errors, additive trend, and additive seasonality), also known as Holt-Winter's Additive forecasting, fit the test data the best when evaluated on RMSE. This is consistent with the trends that we noticed earlier. The magnitude of the seasonality remains fairly constant, which would call for an additive seasonality in our model. If the seasonality grew in magnitude with time (for instance, if the difference between the winter ridership and summer ridership grew with each year), then multiplicative seasonality might have performed better. The magnitude of the trend also appears fairly constant (and linear), which would call for an additive trend in our model.
 
 ## Model Diagnostics
 
@@ -308,7 +306,7 @@ gg_tsresiduals(mod_ETS_AAA) +
   ggtitle('ETS AAA Residuals')
 ```
 
-The residuals for this model do not show anything out of the ordinary. They fail to reject the null for the box pierce (p = 0.3329984) and ljung-box (p = 0.1743495) tests, indicating that the residuals are white noise. They also fail to reject the Shapiro-Wilks test (p = 0.1783), indicating that the they are normally distributed.
+The residuals for this model do not show anything out of the ordinary. They fail to reject the null for the box pierce (p = 0.3329984) and ljung-box (p = 0.1743495) tests, indicating that the residuals are white noise. They also fail to reject the null for the Shapiro-Wilks test (p = 0.1783), indicating that the they are normally distributed.
 
 ## Forecast Plot to 2025
 
