@@ -218,7 +218,7 @@ df_bike_violations |>
 From the Top 10 Violations table, we can see that improper traffic behavior at red lights (1111D1C, 403A3IX), account for \~50% of all cyclist violations. Other common violations include driving in the wrong direction, operating a bicycle with more than 1 earphone, not having a bell, and riding on the sidewalk.
 
 ```{r}
-df_bike_violations |>
+df_bike_violations  |>
   mutate(fct_lump = fct_lump(f = df_bike_violations$violation_code, n = 9)) |>
   mutate(date = date(violation_date)) |>
   filter(date >= "2022-06-01") |>
